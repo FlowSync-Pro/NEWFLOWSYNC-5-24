@@ -15,7 +15,7 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
 - Domain config, sitemap, robots, OG/Twitter images, favicon, JSON-LD, www→apex redirect.
 
 ## Phase 1 — Frontend / mockup (no backend required)
-- [ ] **Offer & pricing page** with order bumps:
+- [x] **Offer & pricing page** with order bumps (`/pricing`):
   - $17 one-time driver listing (core)
   - +$27 bump — "Step-by-step guide: get your DOT & EIN for free"
   - +$47 bump — Profit & Loss tracker tool
