@@ -46,12 +46,37 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: SITE_NAME,
+        url: SITE_URL,
+        description,
+        slogan: "Drive every kind of delivery, your way.",
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        url: SITE_URL,
+        name: SITE_NAME,
+        publisher: { "@id": `${SITE_URL}/#organization` },
+      },
+    ],
+  };
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
