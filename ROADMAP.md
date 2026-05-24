@@ -29,7 +29,9 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
 - [x] **Customer "book a driver" directory** (`/find-a-driver`) — search + service filters,
   request-a-quote modal; shows your own profile if you've created one.
 - [ ] **P&L tracker tool** (mockup) — weekly/monthly income vs. expenses.
-- [ ] **SEO deepening** — per-page metadata, Service + FAQ + Breadcrumb JSON-LD, performance.
+- [x] **SEO deepening** — per-service landing pages (`/services/[id]`) with Service + Breadcrumb
+  + FAQ JSON-LD; FAQPage on drivers; Product/Offer on pricing; Article+Breadcrumb on guides;
+  ItemList on services; canonicals; web manifest; theme color.
 
 ## Phase 2 — Real product (needs infrastructure + secrets + decisions)
 - [ ] Database (drivers, customers, profiles, bookings, payments).

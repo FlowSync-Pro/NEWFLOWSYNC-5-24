@@ -8,6 +8,7 @@ import {
   guidesByCategory,
 } from "@/lib/guides";
 import { SITE_URL } from "@/lib/site";
+import JsonLd, { breadcrumbLd } from "@/components/JsonLd";
 
 export function generateStaticParams() {
   return GUIDES.map((g) => ({ slug: g.slug }));
@@ -57,6 +58,12 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Grow", path: "/grow" },
+          { name: guide.title, path: `/grow/${guide.slug}` },
+        ])}
       />
       <div className="glow-radial pointer-events-none absolute inset-0 h-72" />
 

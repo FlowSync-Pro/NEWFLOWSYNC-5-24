@@ -5,7 +5,7 @@ import type { Service } from "@/lib/services";
 export default function ServiceCard({ service }: { service: Service }) {
   return (
     <Link
-      href={`/services#${service.id}`}
+      href={`/services/${service.id}`}
       className="card card-hover group flex flex-col p-6"
     >
       <div className="flex items-center justify-between">

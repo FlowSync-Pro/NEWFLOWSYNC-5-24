@@ -1,11 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import Reveal from "@/components/Reveal";
+import JsonLd, { faqLd } from "@/components/JsonLd";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "For Drivers — FlowSync",
   description:
     "Why drivers choose FlowSync: keep more of every job, build your own profile and reputation, and work across eight delivery services.",
+  alternates: { canonical: `${SITE_URL}/drivers` },
 };
 
 const COMPARE = [
@@ -43,6 +46,7 @@ const FAQ = [
 export default function DriversPage() {
   return (
     <div>
+      <JsonLd data={faqLd(FAQ)} />
       <section className="relative overflow-hidden border-b border-border">
         <div className="glow-radial pointer-events-none absolute inset-0" />
         <div className="grid-bg pointer-events-none absolute inset-0" />

@@ -3,11 +3,13 @@ import type { Metadata } from "next";
 import Reveal from "@/components/Reveal";
 import { SERVICES } from "@/lib/services";
 import ServiceIcon from "@/components/ServiceIcon";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "How it works — FlowSync",
   description:
     "From signup to your first job in four steps. See how FlowSync builds a service-matched profile and connects you to nearby work.",
+  alternates: { canonical: `${SITE_URL}/how-it-works` },
 };
 
 const STEPS = [

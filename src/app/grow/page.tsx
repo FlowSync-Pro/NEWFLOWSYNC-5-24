@@ -2,11 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { CATEGORY_LABEL, guidesByCategory, type GuideCategory } from "@/lib/guides";
 import Reveal from "@/components/Reveal";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Grow your delivery business — guides & playbooks",
   description:
     "Free guides to build your delivery business the right way: get your DOT & EIN, choose a business structure, get insured, and market on Nextdoor, Yelp, Thumbtack, Craigslist, and Indeed.",
+  alternates: { canonical: `${SITE_URL}/grow` },
 };
 
 const ORDER: GuideCategory[] = ["foundation", "marketing"];

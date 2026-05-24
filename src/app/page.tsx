@@ -117,7 +117,7 @@ export default function Home() {
             {SERVICES.map((s) => (
               <Link
                 key={s.id}
-                href={`/services#${s.id}`}
+                href={`/services/${s.id}`}
                 className="card card-hover flex shrink-0 items-center gap-2.5 px-4 py-2.5"
               >
                 <span className="text-accent">
