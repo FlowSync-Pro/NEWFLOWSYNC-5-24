@@ -40,6 +40,7 @@ export default function Footer() {
               <li><Link href="/how-it-works" className="hover:text-foreground">How it works</Link></li>
               <li><Link href="/pricing" className="hover:text-foreground">Pricing</Link></li>
               <li><Link href="/calculator" className="hover:text-foreground">Quote calculator</Link></li>
+              <li><Link href="/tools/profit-loss" className="hover:text-foreground">P&amp;L tracker</Link></li>
               <li><Link href="/signup" className="hover:text-foreground">Become a driver</Link></li>
             </ul>
           </div>

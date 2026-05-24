@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/grow",
     "/pricing",
     "/calculator",
+    "/tools/profit-loss",
     "/signup",
     ...GUIDES.map((g) => `/grow/${g.slug}`),
   ];

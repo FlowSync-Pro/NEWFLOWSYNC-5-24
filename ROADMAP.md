@@ -28,7 +28,8 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
   (Rookie→Legend), weekly chart, log-a-job, and unlockable awards.
 - [x] **Customer "book a driver" directory** (`/find-a-driver`) — search + service filters,
   request-a-quote modal; shows your own profile if you've created one.
-- [ ] **P&L tracker tool** (mockup) — weekly/monthly income vs. expenses.
+- [x] **P&L tracker tool** (`/tools/profit-loss`) — income/expense logging, period totals
+  (7-day/month/all), net profit & margin, category breakdown, and CSV export.
 - [x] **SEO deepening** — per-service landing pages (`/services/[id]`) with Service + Breadcrumb
   + FAQ JSON-LD; FAQPage on drivers; Product/Offer on pricing; Article+Breadcrumb on guides;
   ItemList on services; canonicals; web manifest; theme color.

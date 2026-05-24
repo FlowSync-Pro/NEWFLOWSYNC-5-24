@@ -133,6 +133,9 @@ export default function DriverDashboard() {
             <BadgeIcon icon="trophy" className="h-4 w-4" />
             {tier.name}
           </span>
+          <Link href="/tools/profit-loss" className="btn-ghost rounded-full px-5 py-2 text-sm">
+            P&amp;L tracker
+          </Link>
           <Link href="/profile" className="btn-ghost rounded-full px-5 py-2 text-sm">
             Public profile
           </Link>
