@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+:root {
+  --background: #07090b;
+  --surface: #0e1114;
+  --surface-2: #14181d;
+  --border: #20262d;
+  --foreground: #f4f7f5;
+  --muted: #9aa6a0;
+  --accent: #25e07a;
+  --accent-strong: #14b85c;
+  --accent-soft: rgba(37, 224, 122, 0.12);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient green glow used across hero / cards */
+.glow-radial {
+  background: radial-gradient(
+    60% 60% at 50% 0%,
+    rgba(37, 224, 122, 0.16) 0%,
+    rgba(37, 224, 122, 0) 70%
+  );
+}
+
+.text-gradient {
+  background: linear-gradient(180deg, #ffffff 0%, #b9c4be 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.accent-gradient {
+  background: linear-gradient(135deg, var(--accent) 0%, #5ff0a3 100%);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+.card-hover {
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  border-color: rgba(37, 224, 122, 0.5);
+  box-shadow: 0 18px 50px -20px rgba(37, 224, 122, 0.35);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #04130a;
+  font-weight: 650;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 10px 30px -10px rgba(37, 224, 122, 0.6);
+}
+.btn-primary:hover {
+  background: #44e98e;
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.btn-ghost:hover {
+  border-color: rgba(37, 224, 122, 0.6);
+  background: var(--accent-soft);
+}
+
+/* Reveal-on-scroll */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.reveal {
+  animation: fadeUp 0.6s ease both;
+}
+
+.grid-bg {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(60% 60% at 50% 0%, #000 0%, transparent 75%);
+}
+
+::selection {
+  background: rgba(37, 224, 122, 0.3);
+}
+
+/* Thin scrollbar for service chip rows */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
