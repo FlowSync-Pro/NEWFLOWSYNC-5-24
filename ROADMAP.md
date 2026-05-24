@@ -47,10 +47,38 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
 - [ ] **Customer migration**: import existing Stripe paying customers → create accounts →
       email sign-in info via Resend. ⚠️ Blocked until auth + Resend exist (see below).
 
+## Phase 2 plan (detail)
+
+**Recommended stack (keeps it Vercel-centric):** Next.js (current app) · Postgres via
+Vercel Marketplace (Neon) · Prisma ORM · Auth.js (NextAuth) · Vercel Blob for document
+storage · Resend for email · Stripe for payments. DB + storage are managed/billed through
+Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested).
+
+**Build order**
+1. **Accounts foundation** — Prisma schema (User, DriverProfile, Document, Booking),
+   Auth.js setup, migrate the localStorage profile + `/account` doc upload to DB + Vercel Blob.
+2. **Stripe Checkout** — $17 listing + $27/$47 bumps → Checkout Session → webhook creates the
+   account, marks paid, and triggers email. 5% fee logic for future job payouts.
+3. **Resend emails** — email verification link + temporary password on signup; receipts;
+   booking/quote notifications.
+4. **Customer migration** — import existing Stripe paying customers, create accounts, send
+   sign-in info via Resend (the originally-requested blast — now safe to run with a tested
+   template and explicit sign-off).
+5. **Bookings loop** — customer request → driver quote → pay in-app → 5% taken → review.
+
+**What the owner must provide (in Vercel, not the repo)**
+- Vercel Postgres (or Supabase) connection string · Vercel Blob token
+- Stripe secret + publishable keys + webhook signing secret
+- Resend API key + a verified sending domain (e.g., mail.flowsyncdriver.com)
+- `AUTH_SECRET` for session signing
+
+**Environment note:** live DB/Stripe/Resend calls can't run from this sandbox. Phase 2 work =
+writing the code against env placeholders + setup docs; provisioning + secrets happen in the
+owner's Vercel/Stripe/Resend accounts, then deploy.
+
 ## ⚠️ Blocked / needs owner decision
-- **Email blast to Stripe customers** — cannot run yet: (1) no Resend connected here,
-  (2) no account system to generate "sign-in info" for, (3) sending real customers
-  emails is irreversible and needs explicit sign-off + tested content.
+- **Email blast to Stripe customers** — deferred to Phase 2 step 4 (needs auth + Resend +
+  tested template + explicit sign-off). Irreversible; will not run without confirmation.
 
 ## Ideas to make the driver experience even better
 - Earnings/tax export, mileage tracking, downloadable invoices & receipts for customers.
