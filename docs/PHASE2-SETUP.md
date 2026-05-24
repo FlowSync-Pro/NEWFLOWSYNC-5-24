@@ -11,13 +11,36 @@ a backend underneath it, one milestone at a time.
 
 ## What's already in the repo (this milestone)
 
+**Data + client**
 - `prisma/schema.prisma` — the full data model (users, driver profiles, documents,
-  bookings, payments, plus the Auth.js adapter tables).
+  bookings, payments, plus Auth.js adapter tables for if/when you switch to Auth.js).
 - `src/lib/db.ts` — the shared Prisma client.
 - `.env.example` — every environment variable Phase 2 needs.
 - `postinstall: prisma generate` in `package.json` so Vercel builds the client.
 
-Nothing here connects to a live database yet — that needs the steps below.
+**Auth + persistence wiring (ready to flip on)**
+- `src/lib/password.ts` — scrypt password hashing (Node built-in).
+- `src/lib/session.ts` — signed-cookie sessions (`createSession`/`getSession`/`destroySession`).
+- `src/lib/enums.ts` — maps app service ids ↔ Prisma `ServiceType`.
+- `src/lib/storage.ts` — document storage shim (stores the data URL today; swap to Vercel Blob).
+- `src/app/actions/auth.ts` — `registerDriver`, `login`, `logout`, `setPassword`.
+- `src/app/actions/profile.ts` — `getMyDriverProfile`, `saveDriverProfile`.
+- `src/app/actions/documents.ts` — `saveDocument`, `removeDocument` (auto-sets `verified`).
+- `src/app/signin` + `src/app/reset-password` — working forms (need the DB to authenticate).
+
+Nothing connects to a live database yet, and the Phase 1 localStorage UI is still the
+default — flip the pages over to these actions during cut-over (below).
+
+### Why a built-in auth layer instead of Auth.js?
+
+The chosen stack named Auth.js, but the build sandbox couldn't install
+`next-auth`/`@vercel/blob`/`bcryptjs` (a corrupted lockfile state). So auth is wired
+with zero extra dependencies (Node `crypto`), which builds and runs cleanly. On your
+clean environment you can **either** keep this lightweight layer **or** swap to Auth.js:
+the Prisma schema already includes the `Account`/`Session`/`VerificationToken` adapter
+tables. If you install Auth.js and hit peer-dependency errors, add an `.npmrc` with
+`legacy-peer-deps=true`. Same for `@vercel/blob` (then implement `src/lib/storage.ts`
+per the comment in that file).
 
 ---
 
@@ -51,13 +74,15 @@ npx prisma migrate deploy
 
 ## 3. Build order (each is its own PR)
 
-1. **Accounts foundation** *(schema done — next: wiring)*
-   - `src/auth.ts` — Auth.js config (Credentials provider + Prisma adapter).
-   - `src/app/api/auth/[...nextauth]/route.ts` — auth route handler.
-   - Sign-in page + "must reset password" flow.
-   - Move `/account` profile edits and document uploads from `localStorage` to the
-     DB + Vercel Blob (the UI already exists — swap the persistence layer).
-   - Render the public profile + `/find-a-driver` directory from the DB.
+1. **Accounts foundation** *(schema + auth/persistence wiring done — next: cut-over)*
+   - DONE: sessions, password hashing, sign-in + reset-password pages, and server
+     actions for register/profile/documents (see file list above).
+   - CUT-OVER (needs the live DB): point the nav "Sign in" link at `/signin`; make
+     `AccountEditor` call `saveDriverProfile` + `saveDocument` instead of localStorage;
+     render the public profile and `/find-a-driver` directory from `getMyDriverProfile`
+     / `prisma.driverProfile.findMany`. Wrap any page that reads the session with
+     `export const dynamic = "force-dynamic"`.
+   - OPTIONAL: swap `src/lib/storage.ts` to real Vercel Blob.
 2. **Stripe Checkout** — `/api/checkout` creates a Checkout Session for the $17
    listing + selected bumps; `/api/stripe/webhook` marks the `Payment` paid,
    creates the `User` + temp password, and triggers the welcome email.
