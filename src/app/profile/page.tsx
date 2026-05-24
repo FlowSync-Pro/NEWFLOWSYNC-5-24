@@ -118,7 +118,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button className="btn-primary rounded-full px-6 py-2.5 text-sm">Request {fullName.split(" ")[0]}</button>
+            <Link href="/dashboard" className="btn-primary rounded-full px-6 py-2.5 text-sm">Dashboard</Link>
             <Link href="/signup" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Edit</Link>
           </div>
         </div>

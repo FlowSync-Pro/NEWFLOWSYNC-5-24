@@ -6,8 +6,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // The interactive demo profile is per-browser and not meant for indexing.
-      disallow: ["/profile"],
+      // Per-browser app pages, not meant for indexing.
+      disallow: ["/profile", "/dashboard"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

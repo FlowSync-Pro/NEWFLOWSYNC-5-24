@@ -24,7 +24,8 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
 - [ ] **Marketing playbook** — how to advertise on Nextdoor, Yelp, Thumbtack,
   Craigslist, Indeed; local SEO; getting first customers.
 - [ ] **Business foundation guide** — DOT, EIN, LLC, insurance; "mistakes new drivers make."
-- [ ] **Gamified dashboard mockup** — set monthly goal, progress ring, streaks, badges/awards.
+- [x] **Gamified dashboard** (`/dashboard`) — monthly goal + progress ring, streaks, tiers
+  (Rookie→Legend), weekly chart, log-a-job, and unlockable awards.
 - [ ] **Customer "book a driver" directory** — browse/filter drivers, request a quote.
 - [ ] **P&L tracker tool** (mockup) — weekly/monthly income vs. expenses.
 - [ ] **SEO deepening** — per-page metadata, Service + FAQ + Breadcrumb JSON-LD, performance.
