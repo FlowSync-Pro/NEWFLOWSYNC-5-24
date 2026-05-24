@@ -1,0 +1,221 @@
+// FlowSync — Phase 2 data model.
+// Provider is Postgres (Vercel Marketplace / Neon). Run migrations with:
+//   npx prisma migrate dev --name init
+// The Prisma Client is generated on postinstall (see package.json).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  DRIVER
+  CUSTOMER
+  ADMIN
+}
+
+enum ServiceType {
+  GROCERY
+  FOOD
+  FURNITURE
+  COURIER
+  PHARMACY
+  SENIOR
+  MOVING
+  AUTO_PARTS
+}
+
+enum DocKind {
+  PROFILE_PHOTO
+  VEHICLE_PHOTO
+  LICENSE
+  INSURANCE
+  DRIVING_RECORD
+}
+
+enum DocStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BookingStatus {
+  REQUESTED
+  QUOTED
+  ACCEPTED
+  PAID
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentType {
+  LISTING
+  BUMP
+  BOOKING
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  role              Role      @default(DRIVER)
+  hashedPassword    String?
+  // True until the driver replaces the temporary password emailed after checkout.
+  mustResetPassword Boolean   @default(false)
+  emailVerified     DateTime?
+  stripeCustomerId  String?   @unique
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  driverProfile DriverProfile?
+  payments      Payment[]
+  bookings      Booking[]      @relation("CustomerBookings")
+
+  // Auth.js adapter relations
+  accounts Account[]
+  sessions Session[]
+}
+
+model DriverProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName String
+  lastName  String
+  phone     String?
+  city      String?
+
+  primaryService     ServiceType
+  additionalServices ServiceType[]
+
+  headline        String?
+  bio             String?
+  hourlyRate      Int?
+  yearsExperience Int?
+  serviceRadius   String?
+  availability    String[]
+  languages       String[]
+
+  vehicleType      String?
+  vehicleMakeModel String?
+  vehicleYear      String?
+
+  // Service-specific answers keyed by field id (matches ProfileField.key in the app).
+  serviceDetails Json @default("{}")
+
+  verified  Boolean   @default(false)
+  listedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  documents Document[]
+  bookings  Booking[]
+
+  @@index([primaryService])
+  @@index([city])
+}
+
+model Document {
+  id              String        @id @default(cuid())
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id], onDelete: Cascade)
+
+  kind       DocKind
+  blobUrl    String
+  status     DocStatus @default(PENDING)
+  uploadedAt DateTime  @default(now())
+
+  @@unique([driverProfileId, kind])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  customerId      String
+  customer        User          @relation("CustomerBookings", fields: [customerId], references: [id])
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id])
+
+  service     ServiceType
+  status      BookingStatus @default(REQUESTED)
+  details     String
+  quoteAmount Int?
+  feePercent  Int           @default(5)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payment Payment?
+
+  @@index([driverProfileId, status])
+}
+
+model Payment {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  type     PaymentType
+  amount   Int // in cents
+  currency String        @default("usd")
+  status   PaymentStatus @default(PENDING)
+  // Selected order bumps (e.g. ["dot-ein-guide", "pnl-tracker"]) for listing payments.
+  bumps    String[]
+
+  stripeSessionId       String? @unique
+  stripePaymentIntentId String? @unique
+
+  bookingId String?  @unique
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// ---- Auth.js (NextAuth) adapter models ----
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
