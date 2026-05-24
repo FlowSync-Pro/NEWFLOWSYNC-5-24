@@ -42,13 +42,22 @@ npm run build    # production build
 npm start        # serve the production build
 ```
 
-## Deploy to Vercel
+## Deploy to Vercel (domain: flowsyncdriver.com)
 
-This is a standard Next.js app and deploys to Vercel with no configuration:
+This is a standard Next.js app and deploys to Vercel with no configuration. It
+is intended to live on its **own domain, `flowsyncdriver.com`** — completely
+separate from the existing `flowsyncdrivers.com` site.
 
-1. Import the repository in Vercel.
-2. Framework preset is auto-detected as **Next.js**.
-3. Deploy — no environment variables required.
+1. In a **separate Vercel account** (so the two sites stay isolated), import this
+   repository and the `claude/nice-allen-aFq38` branch.
+2. Framework preset is auto-detected as **Next.js**. Build/output settings need
+   no changes.
+3. (Optional) Set `NEXT_PUBLIC_SITE_URL` to your final URL — it defaults to
+   `https://flowsyncdriver.com` and feeds canonical/OG tags, `sitemap.xml`, and
+   `robots.txt`.
+4. Add the custom domain `flowsyncdriver.com` in **Project → Settings → Domains**
+   and point your registrar's DNS at Vercel (an `A` record to `76.76.21.21`, or a
+   `CNAME` to `cname.vercel-dns.com` for the `www` subdomain).
 
 > This is a mockup. The signup flow stores profile data only in the browser's
 > `localStorage` and never sends it anywhere.
