@@ -19,8 +19,8 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
   - $17 one-time driver listing (core)
   - +$27 bump — "Step-by-step guide: get your DOT & EIN for free"
   - +$47 bump — Profit & Loss tracker tool
-- [ ] **Quote calculator** — driver inputs distance/time/costs → fair quote; shows
-  "keep 95% vs. lose 20–40% on other apps" math.
+- [x] **Quote calculator** (`/calculator`) — distance/time/costs → fair quote; shows
+  "keep 95% vs. lose 20–40% on other apps" math + monthly projection.
 - [ ] **Marketing playbook** — how to advertise on Nextdoor, Yelp, Thumbtack,
   Craigslist, Indeed; local SEO; getting first customers.
 - [ ] **Business foundation guide** — DOT, EIN, LLC, insurance; "mistakes new drivers make."

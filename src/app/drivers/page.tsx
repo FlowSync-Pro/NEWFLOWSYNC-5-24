@@ -58,9 +58,14 @@ export default function DriversPage() {
             FlowSync gives you the tools, the profile, and the pay structure to turn your vehicle
             into a real service business — across whichever deliveries you choose.
           </p>
-          <Link href="/signup" className="btn-primary mt-9 inline-flex rounded-full px-8 py-3.5 text-base">
-            Become a driver
-          </Link>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link href="/signup" className="btn-primary w-full rounded-full px-8 py-3.5 text-base sm:w-auto">
+              Become a driver
+            </Link>
+            <Link href="/calculator" className="btn-ghost w-full rounded-full px-8 py-3.5 text-base sm:w-auto">
+              Try the quote calculator
+            </Link>
+          </div>
         </div>
       </section>
 
