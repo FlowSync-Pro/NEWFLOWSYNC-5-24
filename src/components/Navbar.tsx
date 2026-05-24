@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 import Logo from "./Logo";
 
 const LINKS = [
+  { href: "/find-a-driver", label: "Find a Driver" },
   { href: "/services", label: "Services" },
   { href: "/drivers", label: "For Drivers" },
-  { href: "/how-it-works", label: "How it works" },
+  { href: "/grow", label: "Grow" },
   { href: "/pricing", label: "Pricing" },
 ];
 
@@ -41,7 +42,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-7 lg:flex">
           {LINKS.map((l) => (
             <Link
               key={l.href}
@@ -55,7 +56,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           <Link href="/profile" className="text-sm text-muted transition-colors hover:text-foreground">
             Sign in
           </Link>
@@ -66,7 +67,7 @@ export default function Navbar() {
 
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border lg:hidden"
           aria-label="Toggle menu"
           aria-expanded={open}
         >
@@ -91,7 +92,7 @@ export default function Navbar() {
       </nav>
 
       {open && (
-        <div className="border-t border-border bg-background px-5 py-4 md:hidden">
+        <div className="border-t border-border bg-background px-5 py-4 lg:hidden">
           <div className="flex flex-col gap-1">
             {LINKS.map((l) => (
               <Link

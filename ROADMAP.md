@@ -21,12 +21,13 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
   - +$47 bump — Profit & Loss tracker tool
 - [x] **Quote calculator** (`/calculator`) — distance/time/costs → fair quote; shows
   "keep 95% vs. lose 20–40% on other apps" math + monthly projection.
-- [ ] **Marketing playbook** — how to advertise on Nextdoor, Yelp, Thumbtack,
-  Craigslist, Indeed; local SEO; getting first customers.
-- [ ] **Business foundation guide** — DOT, EIN, LLC, insurance; "mistakes new drivers make."
+- [x] **Marketing playbook + business foundation guides** (`/grow`, `/grow/[slug]`) —
+  9 guides (DOT/EIN, LLC, insurance, mistakes, Nextdoor/Yelp/Thumbtack/Craigslist/Indeed),
+  each with Article JSON-LD and CTAs.
 - [x] **Gamified dashboard** (`/dashboard`) — monthly goal + progress ring, streaks, tiers
   (Rookie→Legend), weekly chart, log-a-job, and unlockable awards.
-- [ ] **Customer "book a driver" directory** — browse/filter drivers, request a quote.
+- [x] **Customer "book a driver" directory** (`/find-a-driver`) — search + service filters,
+  request-a-quote modal; shows your own profile if you've created one.
 - [ ] **P&L tracker tool** (mockup) — weekly/monthly income vs. expenses.
 - [ ] **SEO deepening** — per-page metadata, Service + FAQ + Breadcrumb JSON-LD, performance.
 

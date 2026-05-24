@@ -104,6 +104,12 @@ export default function Home() {
                 Explore services
               </Link>
             </div>
+            <p className="mt-5 text-sm text-muted">
+              Need something delivered?{" "}
+              <Link href="/find-a-driver" className="font-medium text-accent underline-offset-4 hover:underline">
+                Find a driver near you →
+              </Link>
+            </p>
           </div>
 
           {/* Service chip row */}
