@@ -24,6 +24,38 @@ export interface DriverProfile {
   languages: string[];
   // service-specific fields keyed by ProfileField.key
   serviceDetails: Record<string, string | string[]>;
+  // uploaded documents/photos as data URLs, keyed by DocKey
+  documents?: Partial<Record<DocKey, string>>;
+}
+
+export type DocKey =
+  | "profilePhoto"
+  | "vehiclePhoto"
+  | "license"
+  | "insurance"
+  | "drivingRecord";
+
+export interface DocConfig {
+  key: DocKey;
+  label: string;
+  description: string;
+  required: boolean;
+}
+
+export const DOCUMENTS: DocConfig[] = [
+  { key: "profilePhoto", label: "Profile photo", description: "A clear headshot customers will see.", required: true },
+  { key: "vehiclePhoto", label: "Vehicle photo", description: "Show the vehicle you'll deliver with.", required: false },
+  { key: "license", label: "Driver's license", description: "Required to verify your identity.", required: true },
+  { key: "insurance", label: "Valid insurance", description: "Proof of current auto insurance.", required: true },
+  { key: "drivingRecord", label: "Driving record", description: "A recent clean driving record.", required: false },
+];
+
+/** Docs that must be present for a profile to count as verified. */
+export const VERIFY_REQUIRED: DocKey[] = ["license", "insurance"];
+
+export function isVerified(profile: DriverProfile): boolean {
+  const docs = profile.documents ?? {};
+  return VERIFY_REQUIRED.every((k) => !!docs[k]);
 }
 
 const KEY = "flowsync.driverProfile";

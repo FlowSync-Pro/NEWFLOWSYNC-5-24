@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { loadProfile, clearProfile, type DriverProfile } from "@/lib/profile";
+import { loadProfile, clearProfile, isVerified, type DriverProfile } from "@/lib/profile";
 import { getService } from "@/lib/services";
 import ServiceIcon from "@/components/ServiceIcon";
 
@@ -96,18 +96,31 @@ export default function ProfilePage() {
         {/* Header */}
         <div className="-mt-14 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-end gap-5">
-            <div className="flex h-28 w-28 items-center justify-center rounded-3xl border border-border bg-surface-2 text-3xl font-bold text-accent shadow-xl">
-              {initials(profile.firstName, profile.lastName)}
+            <div className="h-28 w-28 overflow-hidden rounded-3xl border border-border bg-surface-2 shadow-xl">
+              {profile.documents?.profilePhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.documents.profilePhoto} alt={fullName} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-accent">
+                  {initials(profile.firstName, profile.lastName)}
+                </div>
+              )}
             </div>
             <div className="pb-1">
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold">{fullName}</h1>
-                <span className="flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
-                    <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 19.3 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8z" />
-                  </svg>
-                  Verified
-                </span>
+                {isVerified(profile) ? (
+                  <span className="flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
+                      <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 19.3 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8z" />
+                    </svg>
+                    Verified
+                  </span>
+                ) : (
+                  <Link href="/account" className="rounded-full border border-border px-2 py-0.5 text-xs text-muted hover:text-foreground">
+                    Get verified
+                  </Link>
+                )}
               </div>
               <p className="mt-0.5 text-muted">{profile.headline || primary.profileHeadline}</p>
               <div className="mt-1.5 flex items-center gap-3 text-sm text-muted">
@@ -119,7 +132,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex gap-2">
             <Link href="/dashboard" className="btn-primary rounded-full px-6 py-2.5 text-sm">Dashboard</Link>
-            <Link href="/signup" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Edit</Link>
+            <Link href="/account" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Edit</Link>
           </div>
         </div>
 
@@ -213,17 +226,23 @@ export default function ProfilePage() {
 
           {/* Right sidebar */}
           <div className="space-y-6">
-            <section className="card p-6">
-              <h3 className="text-sm font-semibold">Vehicle</h3>
-              <div className="mt-3 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
-                  <ServiceIcon id={primary.id} className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="font-medium">{profile.vehicleType || primary.vehicle}</p>
-                  <p className="text-sm text-muted">
-                    {[profile.vehicleMakeModel, profile.vehicleYear].filter(Boolean).join(" · ") || "Vehicle on file"}
-                  </p>
+            <section className="card overflow-hidden">
+              {profile.documents?.vehiclePhoto && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.documents.vehiclePhoto} alt="Vehicle" className="h-36 w-full object-cover" />
+              )}
+              <div className="p-6">
+                <h3 className="text-sm font-semibold">Vehicle</h3>
+                <div className="mt-3 flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                    <ServiceIcon id={primary.id} className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-medium">{profile.vehicleType || primary.vehicle}</p>
+                    <p className="text-sm text-muted">
+                      {[profile.vehicleMakeModel, profile.vehicleYear].filter(Boolean).join(" · ") || "Vehicle on file"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </section>

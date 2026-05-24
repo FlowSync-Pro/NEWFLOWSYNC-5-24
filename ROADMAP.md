@@ -33,11 +33,14 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
 - [x] **SEO deepening** — per-service landing pages (`/services/[id]`) with Service + Breadcrumb
   + FAQ JSON-LD; FAQPage on drivers; Product/Offer on pricing; Article+Breadcrumb on guides;
   ItemList on services; canonicals; web manifest; theme color.
+- [x] **Editable account + document upload/verification UI** (`/account`) — edit all profile
+  fields + service details, upload 5 docs (image preview, downscaled to localStorage),
+  verification status, and a conditional Verified badge on the public profile.
 
 ## Phase 2 — Real product (needs infrastructure + secrets + decisions)
 - [ ] Database (drivers, customers, profiles, bookings, payments).
-- [ ] Auth + **email verification** + temp-password sign-in; profile editing
-      (profile/vehicle/license/insurance/driving-record uploads).
+- [ ] Auth + **email verification** + temp-password sign-in (profile-editing UI + document
+      upload already built in Phase 1 — needs real storage + auth wiring).
 - [ ] **Stripe Checkout** (live) for $17 + bumps; webhooks; 5% payout logic.
 - [ ] **Resend** transactional email (verify, temp password, receipts, booking alerts).
 - [ ] Secure file storage for driver documents.

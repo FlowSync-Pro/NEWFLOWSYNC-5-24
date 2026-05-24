@@ -1,0 +1,323 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import {
+  DOCUMENTS,
+  isVerified,
+  loadProfile,
+  saveProfile,
+  VERIFY_REQUIRED,
+  WEEKDAYS,
+  type DocKey,
+  type DriverProfile,
+} from "@/lib/profile";
+import { getService } from "@/lib/services";
+import { fileToScaledDataUrl } from "@/lib/image";
+import { TextField, TextArea, ChipSelect, TagInput } from "./inputs";
+
+const VEHICLE_TYPES = ["Sedan", "SUV", "Cargo van", "Sprinter van", "Box truck", "Pickup truck", "Bike / scooter"];
+const RADII = ["Within 5 mi", "Within 15 mi", "Within 30 mi", "Regional"];
+const LANGS = ["English", "Spanish", "Mandarin", "French", "Vietnamese", "Tagalog"];
+
+function DocCard({
+  label,
+  description,
+  required,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  required: boolean;
+  value?: string;
+  onChange: (dataUrl: string | null) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  const handleFile = async (file?: File) => {
+    if (!file) return;
+    setBusy(true);
+    const url = await fileToScaledDataUrl(file);
+    setBusy(false);
+    onChange(url);
+  };
+
+  return (
+    <div className="card overflow-hidden">
+      <div className="relative flex h-36 items-center justify-center bg-surface-2">
+        {value ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={value} alt={label} className="h-full w-full object-cover" />
+        ) : (
+          <span className="text-xs text-muted">{busy ? "Processing…" : "No file uploaded"}</span>
+        )}
+        {value && (
+          <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-[#04130a]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-3 w-3">
+              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Uploaded
+          </span>
+        )}
+      </div>
+      <div className="p-4">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold">{label}</p>
+          {required && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] text-accent">Required</span>}
+        </div>
+        <p className="mt-1 text-xs text-muted">{description}</p>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="btn-ghost flex-1 rounded-lg px-3 py-2 text-xs"
+          >
+            {value ? "Replace" : "Upload"}
+          </button>
+          {value && (
+            <button
+              type="button"
+              onClick={() => onChange(null)}
+              className="rounded-lg border border-border px-3 py-2 text-xs text-muted hover:text-foreground"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AccountEditor() {
+  const [data, setData] = useState<DriverProfile | null | undefined>(undefined);
+  const [savedAt, setSavedAt] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setData(loadProfile()));
+    return () => {
+      cancelAnimationFrame(raf);
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, []);
+
+  if (data === undefined) return <div className="py-24 text-center text-muted">Loading…</div>;
+
+  if (!data) {
+    return (
+      <div className="mx-auto max-w-2xl px-5 py-24 text-center">
+        <div className="card p-12">
+          <h1 className="text-2xl font-bold">No profile to edit yet</h1>
+          <p className="mt-3 text-muted">Create your driver profile first, then come back to add documents and get verified.</p>
+          <Link href="/signup" className="btn-primary mt-7 inline-flex rounded-full px-7 py-3 text-sm">
+            Create your profile
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const profile = data;
+  const primary = getService(profile.primaryService);
+
+  const flash = () => {
+    setSavedAt(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setSavedAt(false), 2200);
+  };
+
+  const set = <K extends keyof DriverProfile>(key: K, value: DriverProfile[K]) =>
+    setData((d) => (d ? { ...d, [key]: value } : d));
+
+  const setDetail = (key: string, value: string | string[]) =>
+    setData((d) => (d ? { ...d, serviceDetails: { ...d.serviceDetails, [key]: value } } : d));
+
+  const setDoc = (key: DocKey, url: string | null) => {
+    setData((d) => {
+      if (!d) return d;
+      const documents = { ...(d.documents ?? {}) };
+      if (url) documents[key] = url;
+      else delete documents[key];
+      const next = { ...d, documents };
+      saveProfile(next); // documents persist immediately
+      return next;
+    });
+    flash();
+  };
+
+  const toggleDay = (day: string) =>
+    setData((d) =>
+      d
+        ? {
+            ...d,
+            availability: d.availability.includes(day)
+              ? d.availability.filter((x) => x !== day)
+              : [...d.availability, day],
+          }
+        : d
+    );
+
+  const save = () => {
+    saveProfile(profile);
+    flash();
+  };
+
+  const uploadedCount = DOCUMENTS.filter((doc) => profile.documents?.[doc.key]).length;
+  const verified = isVerified(profile);
+  const missingRequired = VERIFY_REQUIRED.filter((k) => !profile.documents?.[k]);
+
+  return (
+    <div className="mx-auto max-w-5xl px-5 py-10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Edit your account</h1>
+          <p className="mt-1 text-muted">Update your details, upload documents, and get verified.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {savedAt && <span className="text-sm text-accent">Saved</span>}
+          <Link href="/profile" className="btn-ghost rounded-full px-5 py-2.5 text-sm">View profile</Link>
+          <button onClick={save} className="btn-primary rounded-full px-6 py-2.5 text-sm">Save changes</button>
+        </div>
+      </div>
+
+      {/* Verification */}
+      <section className="card mt-8 p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${verified ? "bg-accent text-[#04130a]" : "bg-surface-2 text-muted"}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6">
+                <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 19l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold">
+                {verified ? "You're verified" : "Get verified"}
+              </h2>
+              <p className="text-sm text-muted">
+                {verified
+                  ? "Your license and insurance are on file — customers see a Verified badge."
+                  : `Upload your ${missingRequired.map((k) => DOCUMENTS.find((d) => d.key === k)?.label.toLowerCase()).join(" and ")} to earn your Verified badge.`}
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-accent">{uploadedCount}/{DOCUMENTS.length}</p>
+            <p className="text-xs text-muted">documents</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Documents */}
+      <section className="mt-6">
+        <h2 className="text-lg font-semibold">Documents & photos</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {DOCUMENTS.map((doc) => (
+            <DocCard
+              key={doc.key}
+              label={doc.label}
+              description={doc.description}
+              required={doc.required}
+              value={profile.documents?.[doc.key]}
+              onChange={(url) => setDoc(doc.key, url)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Profile details */}
+      <section className="card mt-6 space-y-5 p-7">
+        <h2 className="text-lg font-semibold">Profile details</h2>
+        <TextField label="Headline" value={profile.headline} onChange={(v) => set("headline", v)} placeholder={primary?.profileHeadline} />
+        <TextArea label="About you" value={profile.bio} onChange={(v) => set("bio", v)} placeholder="Tell customers why they should book you…" />
+        <div className="grid gap-5 sm:grid-cols-3">
+          <TextField label="Hourly rate ($)" type="number" value={profile.hourlyRate} onChange={(v) => set("hourlyRate", v)} placeholder="28" />
+          <TextField label="Years experience" type="number" value={profile.yearsExperience} onChange={(v) => set("yearsExperience", v)} placeholder="3" />
+          <div>
+            <span className="text-sm font-medium">Service radius</span>
+            <select
+              value={profile.serviceRadius}
+              onChange={(e) => set("serviceRadius", e.target.value)}
+              className="mt-2 w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none focus:border-accent"
+            >
+              {RADII.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+        </div>
+        <div>
+          <span className="text-sm font-medium">Availability</span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {WEEKDAYS.map((day) => {
+              const on = profile.availability.includes(day);
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => toggleDay(day)}
+                  className={`h-10 w-12 rounded-lg border text-sm transition-colors ${on ? "border-accent bg-accent-soft text-foreground" : "border-border text-muted hover:border-accent/50"}`}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <TagInput label="Languages" value={profile.languages} onChange={(v) => set("languages", v)} placeholder="Add a language…" suggestions={LANGS} />
+      </section>
+
+      {/* Vehicle */}
+      <section className="card mt-6 space-y-5 p-7">
+        <h2 className="text-lg font-semibold">Vehicle</h2>
+        <ChipSelect label="Vehicle type" options={VEHICLE_TYPES} value={profile.vehicleType} onChange={(v) => set("vehicleType", v)} />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <TextField label="Make & model" value={profile.vehicleMakeModel} onChange={(v) => set("vehicleMakeModel", v)} placeholder="Toyota RAV4" />
+          <TextField label="Year" value={profile.vehicleYear} onChange={(v) => set("vehicleYear", v)} placeholder="2021" />
+        </div>
+      </section>
+
+      {/* Service-specific */}
+      {primary && primary.profileFields.length > 0 && (
+        <section className="card mt-6 space-y-5 p-7">
+          <h2 className="text-lg font-semibold">{primary.profileSectionTitle}</h2>
+          {primary.profileFields.map((field) => {
+            const val = profile.serviceDetails[field.key];
+            if (field.type === "select") {
+              return (
+                <ChipSelect
+                  key={field.key}
+                  label={field.label}
+                  options={field.suggestions ?? []}
+                  value={typeof val === "string" ? val : ""}
+                  onChange={(v) => setDetail(field.key, v)}
+                />
+              );
+            }
+            return (
+              <TagInput
+                key={field.key}
+                label={field.label}
+                placeholder={field.placeholder}
+                suggestions={field.suggestions}
+                value={Array.isArray(val) ? val : []}
+                onChange={(v) => setDetail(field.key, v)}
+              />
+            );
+          })}
+        </section>
+      )}
+
+      <div className="mt-8 flex justify-end">
+        <button onClick={save} className="btn-primary rounded-full px-7 py-3 text-sm">Save changes</button>
+      </div>
+    </div>
+  );
+}
