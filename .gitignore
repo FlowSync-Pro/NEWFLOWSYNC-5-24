@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# exported customer lists (PII — never commit)
+*.csv
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
