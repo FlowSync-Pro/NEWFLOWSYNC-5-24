@@ -67,7 +67,9 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
 - [x] **Admin / document-verification view** (`/admin`) — gated by the `ADMIN_EMAILS` env
       var; review uploaded license/insurance/photos and Approve/Reject drivers. Verification
       is now admin-controlled (single source of truth) — uploading docs no longer auto-verifies;
-      it sets the driver to "pending review." Verified end-to-end locally.
+      it sets the driver to "pending review." Approving emails the driver; unverified drivers
+      are hidden from the public directory and see a "pending verification" banner. Verified
+      end-to-end locally.
 
 ## Phase 2 plan (detail)
 

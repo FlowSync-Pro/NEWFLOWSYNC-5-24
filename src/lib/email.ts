@@ -124,6 +124,17 @@ export async function sendBookingReceiptEmail(opts: {
   return send(opts.to, `Receipt — ${money(opts.amountCents)} to ${opts.driverName}`, shell("Payment confirmed", body));
 }
 
+export async function sendDriverApprovedEmail(opts: {
+  to: string;
+  firstName: string;
+  profileUrl: string;
+}) {
+  const body = `
+    <p style="color:#aebac1;line-height:1.6">Great news, ${opts.firstName} — your documents have been reviewed and your FlowSync profile is now <strong style="color:#25e07a">verified</strong>. Customers will see your Verified badge and can book you directly.</p>
+    <p style="margin-top:8px">${button(opts.profileUrl, "View your profile")}</p>`;
+  return send(opts.to, "You're verified on FlowSync", shell("You're verified", body));
+}
+
 export async function sendWelcomeEmail(opts: { to: string; firstName: string; profileUrl: string }) {
   const body = `
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName}, welcome to FlowSync. Your account is ready — finish your profile and upload your documents to get verified.</p>

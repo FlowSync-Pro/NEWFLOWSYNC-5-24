@@ -14,9 +14,11 @@ export const metadata: Metadata = {
 };
 
 export default async function FindADriverPage() {
+  // Only admin-verified drivers are shown publicly.
   const rows = await prisma.driverProfile.findMany({
+    where: { verified: true },
     include: { documents: true },
-    orderBy: [{ verified: "desc" }, { createdAt: "desc" }],
+    orderBy: { createdAt: "desc" },
   });
 
   const drivers: DirectoryCard[] = rows.map((db) => ({

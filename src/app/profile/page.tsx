@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { dbToAppProfile } from "@/lib/profileMap";
 import ProfileView from "@/components/ProfileView";
+import PendingBanner from "@/components/PendingBanner";
+import { DocKind } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +27,13 @@ export default async function ProfilePage() {
   });
   if (!db) redirect("/signin");
 
+  const kinds = new Set(db.documents.map((d) => d.kind));
+  const hasDocs = kinds.has(DocKind.LICENSE) && kinds.has(DocKind.INSURANCE);
+
   return (
-    <ProfileView
+    <>
+      {!db.verified && <PendingBanner hasDocs={hasDocs} />}
+      <ProfileView
       profile={dbToAppProfile(db)}
       headerActions={
         <>
@@ -41,6 +48,7 @@ export default async function ProfilePage() {
           <Link href="/account" className="btn-ghost mt-3 inline-flex rounded-full px-6 py-2.5 text-sm">Edit profile</Link>
         </section>
       }
-    />
+      />
+    </>
   );
 }
