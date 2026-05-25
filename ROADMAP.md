@@ -39,9 +39,10 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
 
 ## Phase 2 — Real product (needs infrastructure + secrets + decisions)
 - [ ] Database (drivers, customers, profiles, bookings, payments).
-- [~] Auth + temp-password sign-in — **wired** (sessions, scrypt hashing, sign-in +
-      reset-password pages, register/profile/document server actions). Remaining: cut the
-      UI over from localStorage to the actions + a live DB; optional Auth.js swap.
+- [x] Auth + accounts — **live & tested against Postgres**: register/sign-in/sign-out,
+      `/account` auth-gated and reading/writing the DB (profile fields + document uploads,
+      auto-verified badge). Initial Prisma migration committed. Remaining: cut `/profile`
+      + `/find-a-driver` over to the DB; swap storage shim to Vercel Blob; optional Auth.js.
 - [ ] **Stripe Checkout** (live) for $17 + bumps; webhooks; 5% payout logic.
 - [ ] **Resend** transactional email (verify, temp password, receipts, booking alerts).
 - [ ] Secure file storage for driver documents.

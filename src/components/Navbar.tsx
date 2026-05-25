@@ -57,7 +57,7 @@ export default function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link href="/profile" className="text-sm text-muted transition-colors hover:text-foreground">
+          <Link href="/signin" className="text-sm text-muted transition-colors hover:text-foreground">
             Sign in
           </Link>
           <Link href="/signup" className="btn-primary rounded-full px-5 py-2 text-sm">
@@ -105,7 +105,7 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
-              href="/profile"
+              href="/signin"
               onClick={() => setOpen(false)}
               className="rounded-lg px-3 py-3 text-sm text-muted hover:bg-surface hover:text-foreground"
             >

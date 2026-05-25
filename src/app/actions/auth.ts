@@ -53,6 +53,32 @@ export interface AuthState {
   error?: string;
 }
 
+const SERVICE_IDS: ServiceId[] = [
+  "grocery", "food", "furniture", "courier", "pharmacy", "senior", "moving", "auto-parts",
+];
+
+export async function register(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  const primaryService = String(formData.get("primaryService") ?? "") as ServiceId;
+
+  if (!email || !firstName || !lastName) return { error: "Fill in your name and email." };
+  if (password.length < 8) return { error: "Use a password of at least 8 characters." };
+  if (!SERVICE_IDS.includes(primaryService)) return { error: "Choose your main service." };
+
+  let userId: string;
+  try {
+    ({ userId } = await registerDriver({ email, firstName, lastName, primaryService, password }));
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not create your account." };
+  }
+
+  await createSession({ userId, role: "DRIVER", mustResetPassword: false });
+  redirect("/account");
+}
+
 export async function login(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");

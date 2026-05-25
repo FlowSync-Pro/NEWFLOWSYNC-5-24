@@ -5,15 +5,8 @@ import { DocKind } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { putDocument } from "@/lib/storage";
+import { DOC_KIND } from "@/lib/enums";
 import type { DocKey } from "@/lib/profile";
-
-const DOC_KIND: Record<DocKey, DocKind> = {
-  profilePhoto: DocKind.PROFILE_PHOTO,
-  vehiclePhoto: DocKind.VEHICLE_PHOTO,
-  license: DocKind.LICENSE,
-  insurance: DocKind.INSURANCE,
-  drivingRecord: DocKind.DRIVING_RECORD,
-};
 
 async function requireProfileId(): Promise<string> {
   const session = await getSession();

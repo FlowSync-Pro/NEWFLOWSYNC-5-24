@@ -1,12 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   DOCUMENTS,
   isVerified,
-  loadProfile,
-  saveProfile,
   VERIFY_REQUIRED,
   WEEKDAYS,
   type DocKey,
@@ -14,6 +11,9 @@ import {
 } from "@/lib/profile";
 import { getService } from "@/lib/services";
 import { fileToScaledDataUrl } from "@/lib/image";
+import { saveDriverProfile, type ProfileInput } from "@/app/actions/profile";
+import { saveDocument, removeDocument } from "@/app/actions/documents";
+import { logout } from "@/app/actions/auth";
 import { TextField, TextArea, ChipSelect, TagInput } from "./inputs";
 
 const VEHICLE_TYPES = ["Sedan", "SUV", "Cargo van", "Sprinter van", "Box truck", "Pickup truck", "Bike / scooter"];
@@ -68,27 +68,13 @@ function DocCard({
           {required && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] text-accent">Required</span>}
         </div>
         <p className="mt-1 text-xs text-muted">{description}</p>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => handleFile(e.target.files?.[0])}
-        />
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
         <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="btn-ghost flex-1 rounded-lg px-3 py-2 text-xs"
-          >
+          <button type="button" onClick={() => inputRef.current?.click()} className="btn-ghost flex-1 rounded-lg px-3 py-2 text-xs">
             {value ? "Replace" : "Upload"}
           </button>
           {value && (
-            <button
-              type="button"
-              onClick={() => onChange(null)}
-              className="rounded-lg border border-border px-3 py-2 text-xs text-muted hover:text-foreground"
-            >
+            <button type="button" onClick={() => onChange(null)} className="rounded-lg border border-border px-3 py-2 text-xs text-muted hover:text-foreground">
               Remove
             </button>
           )}
@@ -98,36 +84,13 @@ function DocCard({
   );
 }
 
-export default function AccountEditor() {
-  const [data, setData] = useState<DriverProfile | null | undefined>(undefined);
+export default function AccountEditor({ initial }: { initial: DriverProfile }) {
+  const [profile, setProfile] = useState<DriverProfile>(initial);
   const [savedAt, setSavedAt] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setData(loadProfile()));
-    return () => {
-      cancelAnimationFrame(raf);
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, []);
-
-  if (data === undefined) return <div className="py-24 text-center text-muted">Loading…</div>;
-
-  if (!data) {
-    return (
-      <div className="mx-auto max-w-2xl px-5 py-24 text-center">
-        <div className="card p-12">
-          <h1 className="text-2xl font-bold">No profile to edit yet</h1>
-          <p className="mt-3 text-muted">Create your driver profile first, then come back to add documents and get verified.</p>
-          <Link href="/signup" className="btn-primary mt-7 inline-flex rounded-full px-7 py-3 text-sm">
-            Create your profile
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const profile = data;
   const primary = getService(profile.primaryService);
 
   const flash = () => {
@@ -137,39 +100,73 @@ export default function AccountEditor() {
   };
 
   const set = <K extends keyof DriverProfile>(key: K, value: DriverProfile[K]) =>
-    setData((d) => (d ? { ...d, [key]: value } : d));
+    setProfile((p) => ({ ...p, [key]: value }));
 
   const setDetail = (key: string, value: string | string[]) =>
-    setData((d) => (d ? { ...d, serviceDetails: { ...d.serviceDetails, [key]: value } } : d));
+    setProfile((p) => ({ ...p, serviceDetails: { ...p.serviceDetails, [key]: value } }));
 
-  const setDoc = (key: DocKey, url: string | null) => {
-    setData((d) => {
-      if (!d) return d;
-      const documents = { ...(d.documents ?? {}) };
+  const setDoc = async (key: DocKey, url: string | null) => {
+    const prev = profile.documents?.[key];
+    setProfile((p) => {
+      const documents = { ...(p.documents ?? {}) };
       if (url) documents[key] = url;
       else delete documents[key];
-      const next = { ...d, documents };
-      saveProfile(next); // documents persist immediately
-      return next;
+      return { ...p, documents };
     });
-    flash();
+    setError(null);
+    try {
+      if (url) await saveDocument(key, url);
+      else await removeDocument(key);
+      flash();
+    } catch {
+      // revert on failure
+      setProfile((p) => {
+        const documents = { ...(p.documents ?? {}) };
+        if (prev) documents[key] = prev;
+        else delete documents[key];
+        return { ...p, documents };
+      });
+      setError("Couldn't save that file. Please try again.");
+    }
   };
 
   const toggleDay = (day: string) =>
-    setData((d) =>
-      d
-        ? {
-            ...d,
-            availability: d.availability.includes(day)
-              ? d.availability.filter((x) => x !== day)
-              : [...d.availability, day],
-          }
-        : d
-    );
+    setProfile((p) => ({
+      ...p,
+      availability: p.availability.includes(day)
+        ? p.availability.filter((x) => x !== day)
+        : [...p.availability, day],
+    }));
 
-  const save = () => {
-    saveProfile(profile);
-    flash();
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    const input: ProfileInput = {
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      phone: profile.phone,
+      city: profile.city,
+      headline: profile.headline,
+      bio: profile.bio,
+      hourlyRate: profile.hourlyRate ? Number(profile.hourlyRate) : null,
+      yearsExperience: profile.yearsExperience ? Number(profile.yearsExperience) : null,
+      serviceRadius: profile.serviceRadius,
+      availability: profile.availability,
+      languages: profile.languages,
+      vehicleType: profile.vehicleType,
+      vehicleMakeModel: profile.vehicleMakeModel,
+      vehicleYear: profile.vehicleYear,
+      additionalServices: profile.additionalServices,
+      serviceDetails: profile.serviceDetails,
+    };
+    try {
+      await saveDriverProfile(input);
+      flash();
+    } catch {
+      setError("Couldn't save your changes. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const uploadedCount = DOCUMENTS.filter((doc) => profile.documents?.[doc.key]).length;
@@ -185,8 +182,13 @@ export default function AccountEditor() {
         </div>
         <div className="flex items-center gap-3">
           {savedAt && <span className="text-sm text-accent">Saved</span>}
-          <Link href="/profile" className="btn-ghost rounded-full px-5 py-2.5 text-sm">View profile</Link>
-          <button onClick={save} className="btn-primary rounded-full px-6 py-2.5 text-sm">Save changes</button>
+          {error && <span className="text-sm text-red-400">{error}</span>}
+          <form action={logout}>
+            <button type="submit" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Sign out</button>
+          </form>
+          <button onClick={save} disabled={saving} className="btn-primary rounded-full px-6 py-2.5 text-sm disabled:opacity-60">
+            {saving ? "Saving…" : "Save changes"}
+          </button>
         </div>
       </div>
 
@@ -200,9 +202,7 @@ export default function AccountEditor() {
               </svg>
             </span>
             <div>
-              <h2 className="text-lg font-semibold">
-                {verified ? "You're verified" : "Get verified"}
-              </h2>
+              <h2 className="text-lg font-semibold">{verified ? "You're verified" : "Get verified"}</h2>
               <p className="text-sm text-muted">
                 {verified
                   ? "Your license and insurance are on file — customers see a Verified badge."
@@ -219,7 +219,7 @@ export default function AccountEditor() {
 
       {/* Documents */}
       <section className="mt-6">
-        <h2 className="text-lg font-semibold">Documents & photos</h2>
+        <h2 className="text-lg font-semibold">Documents &amp; photos</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {DOCUMENTS.map((doc) => (
             <DocCard
@@ -244,11 +244,8 @@ export default function AccountEditor() {
           <TextField label="Years experience" type="number" value={profile.yearsExperience} onChange={(v) => set("yearsExperience", v)} placeholder="3" />
           <div>
             <span className="text-sm font-medium">Service radius</span>
-            <select
-              value={profile.serviceRadius}
-              onChange={(e) => set("serviceRadius", e.target.value)}
-              className="mt-2 w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none focus:border-accent"
-            >
+            <select value={profile.serviceRadius} onChange={(e) => set("serviceRadius", e.target.value)} className="mt-2 w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none focus:border-accent">
+              <option value="">Choose…</option>
               {RADII.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
@@ -259,12 +256,7 @@ export default function AccountEditor() {
             {WEEKDAYS.map((day) => {
               const on = profile.availability.includes(day);
               return (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => toggleDay(day)}
-                  className={`h-10 w-12 rounded-lg border text-sm transition-colors ${on ? "border-accent bg-accent-soft text-foreground" : "border-border text-muted hover:border-accent/50"}`}
-                >
+                <button key={day} type="button" onClick={() => toggleDay(day)} className={`h-10 w-12 rounded-lg border text-sm transition-colors ${on ? "border-accent bg-accent-soft text-foreground" : "border-border text-muted hover:border-accent/50"}`}>
                   {day}
                 </button>
               );
@@ -292,31 +284,20 @@ export default function AccountEditor() {
             const val = profile.serviceDetails[field.key];
             if (field.type === "select") {
               return (
-                <ChipSelect
-                  key={field.key}
-                  label={field.label}
-                  options={field.suggestions ?? []}
-                  value={typeof val === "string" ? val : ""}
-                  onChange={(v) => setDetail(field.key, v)}
-                />
+                <ChipSelect key={field.key} label={field.label} options={field.suggestions ?? []} value={typeof val === "string" ? val : ""} onChange={(v) => setDetail(field.key, v)} />
               );
             }
             return (
-              <TagInput
-                key={field.key}
-                label={field.label}
-                placeholder={field.placeholder}
-                suggestions={field.suggestions}
-                value={Array.isArray(val) ? val : []}
-                onChange={(v) => setDetail(field.key, v)}
-              />
+              <TagInput key={field.key} label={field.label} placeholder={field.placeholder} suggestions={field.suggestions} value={Array.isArray(val) ? val : []} onChange={(v) => setDetail(field.key, v)} />
             );
           })}
         </section>
       )}
 
       <div className="mt-8 flex justify-end">
-        <button onClick={save} className="btn-primary rounded-full px-7 py-3 text-sm">Save changes</button>
+        <button onClick={save} disabled={saving} className="btn-primary rounded-full px-7 py-3 text-sm disabled:opacity-60">
+          {saving ? "Saving…" : "Save changes"}
+        </button>
       </div>
     </div>
   );

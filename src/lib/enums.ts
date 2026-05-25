@@ -1,5 +1,6 @@
-import { ServiceType } from "@prisma/client";
+import { ServiceType, DocKind } from "@prisma/client";
 import type { ServiceId } from "./services";
+import type { DocKey } from "./profile";
 
 // Bridge between the app's lowercase service ids (src/lib/services.ts) and the
 // Prisma `ServiceType` enum.
@@ -25,4 +26,20 @@ export function serviceToEnum(id: ServiceId): ServiceType {
 
 export function serviceFromEnum(e: ServiceType): ServiceId {
   return FROM_ENUM[e];
+}
+
+export const DOC_KIND: Record<DocKey, DocKind> = {
+  profilePhoto: DocKind.PROFILE_PHOTO,
+  vehiclePhoto: DocKind.VEHICLE_PHOTO,
+  license: DocKind.LICENSE,
+  insurance: DocKind.INSURANCE,
+  drivingRecord: DocKind.DRIVING_RECORD,
+};
+
+const DOC_KEY = Object.fromEntries(
+  Object.entries(DOC_KIND).map(([k, e]) => [e, k])
+) as Record<DocKind, DocKey>;
+
+export function docKeyFromKind(kind: DocKind): DocKey {
+  return DOC_KEY[kind];
 }
