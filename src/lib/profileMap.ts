@@ -27,5 +27,6 @@ export function dbToAppProfile(db: DbProfile & { documents: Document[] }): Drive
     languages: db.languages,
     serviceDetails: (db.serviceDetails as Record<string, string | string[]>) ?? {},
     documents,
+    verified: db.verified,
   };
 }

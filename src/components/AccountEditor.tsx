@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import {
   DOCUMENTS,
   isVerified,
+  hasRequiredDocs,
   VERIFY_REQUIRED,
   WEEKDAYS,
   type DocKey,
@@ -85,7 +86,7 @@ function DocCard({
   );
 }
 
-export default function AccountEditor({ initial }: { initial: DriverProfile }) {
+export default function AccountEditor({ initial, isAdmin = false }: { initial: DriverProfile; isAdmin?: boolean }) {
   const [profile, setProfile] = useState<DriverProfile>(initial);
   const [savedAt, setSavedAt] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -108,11 +109,13 @@ export default function AccountEditor({ initial }: { initial: DriverProfile }) {
 
   const setDoc = async (key: DocKey, url: string | null) => {
     const prev = profile.documents?.[key];
+    const prevVerified = profile.verified;
     setProfile((p) => {
       const documents = { ...(p.documents ?? {}) };
       if (url) documents[key] = url;
       else delete documents[key];
-      return { ...p, documents };
+      // Changing a document sends the driver back to pending review.
+      return { ...p, documents, verified: false };
     });
     setError(null);
     try {
@@ -125,7 +128,7 @@ export default function AccountEditor({ initial }: { initial: DriverProfile }) {
         const documents = { ...(p.documents ?? {}) };
         if (prev) documents[key] = prev;
         else delete documents[key];
-        return { ...p, documents };
+        return { ...p, documents, verified: prevVerified };
       });
       setError("Couldn't save that file. Please try again.");
     }
@@ -172,6 +175,7 @@ export default function AccountEditor({ initial }: { initial: DriverProfile }) {
 
   const uploadedCount = DOCUMENTS.filter((doc) => profile.documents?.[doc.key]).length;
   const verified = isVerified(profile);
+  const docsReady = hasRequiredDocs(profile);
   const missingRequired = VERIFY_REQUIRED.filter((k) => !profile.documents?.[k]);
 
   return (
@@ -184,6 +188,7 @@ export default function AccountEditor({ initial }: { initial: DriverProfile }) {
         <div className="flex items-center gap-3">
           {savedAt && <span className="text-sm text-accent">Saved</span>}
           {error && <span className="text-sm text-red-400">{error}</span>}
+          {isAdmin && <Link href="/admin" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Admin</Link>}
           <Link href="/account/bookings" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Bookings</Link>
           <form action={logout}>
             <button type="submit" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Sign out</button>
@@ -204,11 +209,15 @@ export default function AccountEditor({ initial }: { initial: DriverProfile }) {
               </svg>
             </span>
             <div>
-              <h2 className="text-lg font-semibold">{verified ? "You're verified" : "Get verified"}</h2>
+              <h2 className="text-lg font-semibold">
+                {verified ? "You're verified" : docsReady ? "Pending review" : "Get verified"}
+              </h2>
               <p className="text-sm text-muted">
                 {verified
-                  ? "Your license and insurance are on file — customers see a Verified badge."
-                  : `Upload your ${missingRequired.map((k) => DOCUMENTS.find((d) => d.key === k)?.label.toLowerCase()).join(" and ")} to earn your Verified badge.`}
+                  ? "Your documents are approved — customers see a Verified badge."
+                  : docsReady
+                    ? "Your documents are submitted. A FlowSync admin will review and approve you shortly."
+                    : `Upload your ${missingRequired.map((k) => DOCUMENTS.find((d) => d.key === k)?.label.toLowerCase()).join(" and ")} to submit for verification.`}
               </p>
             </div>
           </div>

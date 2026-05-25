@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { getAdminUserId } from "@/lib/admin";
 import { dbToAppProfile } from "@/lib/profileMap";
 import AccountEditor from "@/components/AccountEditor";
 
@@ -24,11 +25,13 @@ export default async function AccountPage() {
   });
   if (!db) redirect("/account/setup");
 
+  const isAdmin = !!(await getAdminUserId());
+
   return (
     <div className="relative">
       <div className="glow-radial pointer-events-none absolute inset-0 h-72" />
       <div className="relative">
-        <AccountEditor initial={dbToAppProfile(db)} />
+        <AccountEditor initial={dbToAppProfile(db)} isAdmin={isAdmin} />
       </div>
     </div>
   );

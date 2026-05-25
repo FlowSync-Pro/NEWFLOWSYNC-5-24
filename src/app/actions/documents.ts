@@ -25,17 +25,14 @@ export async function saveDocument(key: DocKey, dataUrl: string): Promise<{ ok: 
   const kind = DOC_KIND[key];
   const blobUrl = await putDocument(dataUrl, `documents/${driverProfileId}/${key}`);
 
+  // A new/replaced document resets review: it goes back to PENDING and the
+  // driver is un-verified until an admin reviews it again.
   await prisma.document.upsert({
     where: { driverProfileId_kind: { driverProfileId, kind } },
     create: { driverProfileId, kind, blobUrl },
     update: { blobUrl, status: "PENDING" },
   });
-
-  // Verified once license + insurance are present.
-  const docs = await prisma.document.findMany({ where: { driverProfileId }, select: { kind: true } });
-  const kinds = new Set(docs.map((d) => d.kind));
-  const verified = kinds.has(DocKind.LICENSE) && kinds.has(DocKind.INSURANCE);
-  await prisma.driverProfile.update({ where: { id: driverProfileId }, data: { verified } });
+  await prisma.driverProfile.update({ where: { id: driverProfileId }, data: { verified: false } });
 
   revalidatePath("/account");
   revalidatePath("/profile");

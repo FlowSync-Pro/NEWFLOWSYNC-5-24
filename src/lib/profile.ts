@@ -26,6 +26,8 @@ export interface DriverProfile {
   serviceDetails: Record<string, string | string[]>;
   // uploaded documents/photos as data URLs, keyed by DocKey
   documents?: Partial<Record<DocKey, string>>;
+  // admin-approved verification status (from the DB)
+  verified?: boolean;
 }
 
 export type DocKey =
@@ -50,10 +52,16 @@ export const DOCUMENTS: DocConfig[] = [
   { key: "drivingRecord", label: "Driving record", description: "A recent clean driving record.", required: false },
 ];
 
-/** Docs that must be present for a profile to count as verified. */
+/** Docs that must be present before a driver can be approved. */
 export const VERIFY_REQUIRED: DocKey[] = ["license", "insurance"];
 
+/** Admin-approved verification (the badge customers see). */
 export function isVerified(profile: DriverProfile): boolean {
+  return !!profile.verified;
+}
+
+/** Whether the required documents have been uploaded (ready for admin review). */
+export function hasRequiredDocs(profile: DriverProfile): boolean {
   const docs = profile.documents ?? {};
   return VERIFY_REQUIRED.every((k) => !!docs[k]);
 }

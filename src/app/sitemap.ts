@@ -3,8 +3,9 @@ import { SITE_URL } from "@/lib/site";
 import { GUIDES } from "@/lib/guides";
 import { prisma } from "@/lib/db";
 
-// Regenerate periodically so newly listed drivers appear without a redeploy.
-export const revalidate = 3600;
+// Generated on-demand (not at build) so it never needs the DB during `next build`
+// and always reflects currently listed drivers.
+export const dynamic = "force-dynamic";
 
 async function listedDrivers(): Promise<{ id: string; updatedAt: Date }[]> {
   try {

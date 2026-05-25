@@ -6,8 +6,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Per-browser app pages, not meant for indexing.
-      disallow: ["/profile", "/dashboard"],
+      // App/admin pages, not meant for indexing.
+      disallow: ["/profile", "/dashboard", "/account", "/admin", "/signin", "/reset-password", "/book"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

@@ -64,6 +64,10 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
       emails sign-in info. **Dry-run by default**; idempotent; `--apply` to perform.
       Profile-less accounts complete a profile on first sign-in (`/account/setup`). Verified
       in `--demo` mode (dry-run/apply/idempotent/gate). Real run needs live keys + sign-off.
+- [x] **Admin / document-verification view** (`/admin`) — gated by the `ADMIN_EMAILS` env
+      var; review uploaded license/insurance/photos and Approve/Reject drivers. Verification
+      is now admin-controlled (single source of truth) — uploading docs no longer auto-verifies;
+      it sets the driver to "pending review." Verified end-to-end locally.
 
 ## Phase 2 plan (detail)
 
