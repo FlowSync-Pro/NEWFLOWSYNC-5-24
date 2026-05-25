@@ -103,3 +103,42 @@ npx prisma migrate deploy
   models when we cut over.
 - `DocKind` enum values match the app's `DocKey`s; `ServiceType` matches the eight
   service ids in `src/lib/services.ts`.
+
+---
+
+## Deploy & domains checklist
+
+> ⚠️ **Two near-identical domains.** This new build belongs on **`flowsyncdriver.com`**
+> (singular, no "s"). The existing live site is **`flowsyncdrivers.com`** (plural). One
+> letter apart — slow down at every step below so the new project never lands on the
+> existing site.
+
+**Before you attach any custom domain**
+- [ ] Confirm you actually own `flowsyncdriver.com` (singular). Register it if not — and
+      don't reflexively grab the plural.
+- [ ] Deploy this repo as a **brand-new, separate Vercel project** (not the one serving
+      `flowsyncdrivers.com`, if that's also on Vercel).
+- [ ] Verify on the temporary `*.vercel.app` URL first. It's fully isolated from both real
+      domains — nothing public until you attach a custom domain.
+
+**Environment variables (Vercel → Project → Settings → Environment Variables)**
+- [ ] `DATABASE_URL`, `DIRECT_URL` (added automatically when you create the Vercel Postgres DB)
+- [ ] `AUTH_SECRET` (`npx auth secret`)
+- [ ] `BLOB_READ_WRITE_TOKEN` (when you enable Blob)
+- [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- [ ] `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
+- [ ] `NEXT_PUBLIC_SITE_URL=https://flowsyncdriver.com`
+
+**Attaching the domain (do this deliberately)**
+- [ ] In the new project → Settings → Domains, type **`flowsyncdriver.com`** and read it
+      back letter-by-letter before saving. No "s".
+- [ ] Add DNS records **only** at the registrar entry for `flowsyncdriver.com`.
+- [ ] Do **not** touch `flowsyncdrivers.com`'s DNS or domain settings at all.
+- [ ] After it resolves, confirm the address bar shows the singular domain.
+
+**Database migration on first deploy**
+- [ ] Run `npx prisma migrate deploy` against the production DB (Vercel build step or one-off).
+
+**Safety**
+- [ ] The customer email blast (Phase 2 step 4) stays off until explicitly signed off on a
+      tested template — it hits real inboxes and can't be undone.
