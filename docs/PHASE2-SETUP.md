@@ -65,12 +65,9 @@ a local `.env.local` for development (see `.env.example` for the full list).
 
 ## 2. Create the database tables
 
-```bash
-npm install                 # also runs `prisma generate`
-npx prisma migrate dev --name init   # local: creates tables + a migration
-# on first deploy, Vercel/CI runs:
-npx prisma migrate deploy
-```
+**Automatic on Vercel** — `vercel.json` runs `prisma migrate deploy` before each build,
+so the tables are created/updated on deploy with no terminal step. (Locally, run
+`npm install` then `npx prisma migrate dev` if you're developing.)
 
 ## 3. Build order (each is its own PR)
 
