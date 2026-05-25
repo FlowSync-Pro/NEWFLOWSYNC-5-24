@@ -96,9 +96,13 @@ npx prisma migrate deploy
    self-service signup, via the `resend` SDK. Graceful no-op (logged) without keys. To
    go live: set `RESEND_API_KEY` and a verified `RESEND_FROM_EMAIL` (e.g.
    `FlowSync <hello@mail.flowsyncdriver.com>`). Later: receipts + booking notifications.
-4. **Customer migration** — script reads existing Stripe customers, creates `User`
-   rows, and sends sign-in info via Resend. **Run once, with explicit sign-off**, on
-   a tested template (irreversible — real customer inboxes).
+4. **Customer migration** *(built)* — `scripts/migrate-stripe-customers.mjs` reads Stripe
+   customers, creates `User` rows (temp password, must-reset, linked `stripeCustomerId`),
+   and emails sign-in info via Resend. **Dry run by default**; idempotent. Usage:
+   `node --env-file=.env scripts/migrate-stripe-customers.mjs` (preview), then
+   `--apply` to perform (`--limit=N` for a test batch). Run the real `--apply` once, with
+   explicit sign-off — it hits real inboxes and can't be undone. Migrated accounts with no
+   profile complete one on first sign-in via `/account/setup`.
 5. **Bookings loop** — customer request → driver quote → in-app payment (5% fee) →
    completion + review.
 

@@ -56,8 +56,11 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
       no-op without keys; send failures never break the flow). Needs a `RESEND_API_KEY` +
       verified `RESEND_FROM_EMAIL` domain. Later: receipts + booking alerts.
 - [ ] Secure file storage for driver documents.
-- [ ] **Customer migration**: import existing Stripe paying customers → create accounts →
-      email sign-in info via Resend. ⚠️ Blocked until auth + Resend exist (see below).
+- [x] **Customer migration** — `scripts/migrate-stripe-customers.mjs`: reads Stripe
+      customers, creates accounts (temp password, must-reset, linked stripeCustomerId), and
+      emails sign-in info. **Dry-run by default**; idempotent; `--apply` to perform.
+      Profile-less accounts complete a profile on first sign-in (`/account/setup`). Verified
+      in `--demo` mode (dry-run/apply/idempotent/gate). Real run needs live keys + sign-off.
 
 ## Phase 2 plan (detail)
 

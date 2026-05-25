@@ -22,7 +22,7 @@ export default async function AccountPage() {
     where: { userId: session.userId },
     include: { documents: true },
   });
-  if (!db) redirect("/signin");
+  if (!db) redirect("/account/setup");
 
   return (
     <div className="relative">

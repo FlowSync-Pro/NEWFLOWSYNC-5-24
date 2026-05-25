@@ -52,40 +52,41 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
 
   let user = await prisma.user.findUnique({ where: { email }, include: { driverProfile: true } });
 
-  // Create the account if it's a new paying customer with enough info for a profile.
-  if (!user && md.firstName && primaryService) {
+  // New paying customer → create the account + temp password and email it.
+  // A profile is created here if we have the info; otherwise the driver completes
+  // it on first sign-in (/account → /account/setup).
+  if (!user) {
     const tempPassword = generateTempPassword();
     user = await prisma.user.create({
       data: {
         email,
-        name: `${md.firstName} ${md.lastName ?? ""}`.trim(),
+        name: md.firstName ? `${md.firstName} ${md.lastName ?? ""}`.trim() : null,
         role: "DRIVER",
         hashedPassword: hashPassword(tempPassword),
         mustResetPassword: true,
         emailVerified: new Date(),
-        driverProfile: {
-          create: {
-            firstName: md.firstName,
-            lastName: md.lastName ?? "",
-            primaryService: serviceToEnum(primaryService),
-            listedAt: new Date(),
-          },
-        },
+        ...(md.firstName && primaryService
+          ? {
+              driverProfile: {
+                create: {
+                  firstName: md.firstName,
+                  lastName: md.lastName ?? "",
+                  primaryService: serviceToEnum(primaryService),
+                  listedAt: new Date(),
+                },
+              },
+            }
+          : {}),
       },
       include: { driverProfile: true },
     });
     const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
     await sendDriverWelcomeEmail({
       to: email,
-      firstName: md.firstName,
+      firstName: md.firstName || "there",
       tempPassword,
       signInUrl: `${base}/signin`,
     });
-  }
-
-  if (!user) {
-    console.warn(`[stripe] paid session ${session.id} for ${email} but no account could be created (missing profile info).`);
-    return;
   }
 
   if (user.driverProfile && !user.driverProfile.listedAt) {
