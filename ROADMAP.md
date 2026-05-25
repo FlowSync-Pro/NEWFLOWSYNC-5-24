@@ -46,7 +46,11 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
       (public, SEO metadata + request-a-quote), and `/find-a-driver` all read from Postgres.
       Demo drivers seeded (`prisma/seed.mjs`). Remaining: swap storage shim to Vercel Blob;
       add driver profiles to the sitemap; optional Auth.js.
-- [ ] **Stripe Checkout** (live) for $17 + bumps; webhooks; 5% payout logic.
+- [x] **Stripe Checkout** for $17 + bumps — `/api/checkout` (hosted Checkout Session) and
+      `/api/stripe/webhook` (signature-verified; on `checkout.session.completed` creates the
+      driver account + records a PAID Payment). Pricing page wired with graceful demo
+      fallback when no keys. Verified locally with signed events (create, replay/idempotent,
+      bad-signature reject). Needs: real Stripe keys + the temp-password email (Resend, next).
 - [ ] **Resend** transactional email (verify, temp password, receipts, booking alerts).
 - [ ] Secure file storage for driver documents.
 - [ ] **Customer migration**: import existing Stripe paying customers → create accounts →

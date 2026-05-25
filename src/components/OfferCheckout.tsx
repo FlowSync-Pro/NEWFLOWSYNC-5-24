@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BUMPS, CORE_OFFER, PLATFORM_FEE_PERCENT } from "@/lib/pricing";
+import { SERVICES } from "@/lib/services";
 
 function Check({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -12,11 +13,44 @@ function Check({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
+const fieldCls =
+  "w-full rounded-xl border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none transition-colors focus:border-accent";
+
 export default function OfferCheckout() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [details, setDetails] = useState({ firstName: "", lastName: "", email: "", primaryService: "" });
 
   const toggle = (id: string) => setSelected((s) => ({ ...s, [id]: !s[id] }));
+
+  const setField = (key: keyof typeof details, value: string) =>
+    setDetails((d) => ({ ...d, [key]: value }));
+
+  async function handleCheckout() {
+    setError(null);
+    setLoading(true);
+    try {
+      const bumps = BUMPS.filter((b) => selected[b.id]).map((b) => b.id);
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ bumps, ...details }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url; // hosted Stripe Checkout
+        return;
+      }
+      // Stripe not configured yet — show the demo confirmation.
+      setDone(true);
+    } catch {
+      setError("Something went wrong starting checkout. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const { total, lineItems } = useMemo(() => {
     const items: { label: string; price: number }[] = [
@@ -158,13 +192,30 @@ export default function OfferCheckout() {
                 </Link>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setDone(true)}
-                className="btn-primary mt-6 w-full rounded-full px-6 py-3.5 text-base"
-              >
-                Complete checkout — ${total}
-              </button>
+              <>
+                <div className="mt-6 space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <input className={fieldCls} placeholder="First name" value={details.firstName} onChange={(e) => setField("firstName", e.target.value)} />
+                    <input className={fieldCls} placeholder="Last name" value={details.lastName} onChange={(e) => setField("lastName", e.target.value)} />
+                  </div>
+                  <input className={fieldCls} type="email" placeholder="Email" value={details.email} onChange={(e) => setField("email", e.target.value)} />
+                  <select className={fieldCls} value={details.primaryService} onChange={(e) => setField("primaryService", e.target.value)}>
+                    <option value="">Main service…</option>
+                    {SERVICES.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={loading}
+                  className="btn-primary mt-3 w-full rounded-full px-6 py-3.5 text-base disabled:opacity-60"
+                >
+                  {loading ? "Starting checkout…" : `Complete checkout — $${total}`}
+                </button>
+              </>
             )}
 
             <div className="mt-5 space-y-2 text-xs text-muted">

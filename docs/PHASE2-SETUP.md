@@ -83,9 +83,14 @@ npx prisma migrate deploy
      / `prisma.driverProfile.findMany`. Wrap any page that reads the session with
      `export const dynamic = "force-dynamic"`.
    - OPTIONAL: swap `src/lib/storage.ts` to real Vercel Blob.
-2. **Stripe Checkout** — `/api/checkout` creates a Checkout Session for the $17
-   listing + selected bumps; `/api/stripe/webhook` marks the `Payment` paid,
-   creates the `User` + temp password, and triggers the welcome email.
+2. **Stripe Checkout** *(built — needs keys)* — `/api/checkout` creates a hosted
+   Checkout Session for the $17 listing + selected bumps; `/api/stripe/webhook`
+   verifies the signature and, on `checkout.session.completed`, creates the driver
+   `User` (temp password, must-reset) + `DriverProfile` and records a PAID `Payment`.
+   Uses the official `stripe` SDK. To go live: set `STRIPE_SECRET_KEY` +
+   `STRIPE_WEBHOOK_SECRET`, and register the webhook endpoint at
+   `https://flowsyncdriver.com/api/stripe/webhook` for the `checkout.session.completed`
+   event. The temp-password email is currently logged — wire it to Resend in step 3.
 3. **Resend emails** — verification link + temporary password on signup; receipts;
    booking/quote notifications.
 4. **Customer migration** — script reads existing Stripe customers, creates `User`
