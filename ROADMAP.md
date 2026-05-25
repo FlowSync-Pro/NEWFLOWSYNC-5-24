@@ -44,8 +44,10 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
       auto-verified badge). Initial Prisma migration committed.
 - [x] Public profile + directory from DB — `/profile` (owner, auth-gated), `/d/[id]`
       (public, SEO metadata + request-a-quote), and `/find-a-driver` all read from Postgres.
-      Demo drivers seeded (`prisma/seed.mjs`). Remaining: swap storage shim to Vercel Blob;
-      add driver profiles to the sitemap; optional Auth.js.
+      Demo drivers seeded (`prisma/seed.mjs`). Remaining: add driver profiles to the
+      sitemap; optional Auth.js.
+- [x] **Vercel Blob document storage** — `src/lib/storage.ts` uploads documents to Vercel
+      Blob when `BLOB_READ_WRITE_TOKEN` is set, with an inline fallback for local dev.
 - [x] **Stripe Checkout** for $17 + bumps — `/api/checkout` (hosted Checkout Session) and
       `/api/stripe/webhook` (signature-verified; on `checkout.session.completed` creates the
       driver account + records a PAID Payment). Pricing page wired with graceful demo

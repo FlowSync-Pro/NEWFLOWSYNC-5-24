@@ -23,7 +23,7 @@ async function requireProfileId(): Promise<string> {
 export async function saveDocument(key: DocKey, dataUrl: string): Promise<{ ok: boolean }> {
   const driverProfileId = await requireProfileId();
   const kind = DOC_KIND[key];
-  const blobUrl = await putDocument(dataUrl);
+  const blobUrl = await putDocument(dataUrl, `documents/${driverProfileId}/${key}`);
 
   await prisma.document.upsert({
     where: { driverProfileId_kind: { driverProfileId, kind } },

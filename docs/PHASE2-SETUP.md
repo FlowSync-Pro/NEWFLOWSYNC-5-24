@@ -22,7 +22,7 @@ a backend underneath it, one milestone at a time.
 - `src/lib/password.ts` — scrypt password hashing (Node built-in).
 - `src/lib/session.ts` — signed-cookie sessions (`createSession`/`getSession`/`destroySession`).
 - `src/lib/enums.ts` — maps app service ids ↔ Prisma `ServiceType`.
-- `src/lib/storage.ts` — document storage shim (stores the data URL today; swap to Vercel Blob).
+- `src/lib/storage.ts` — uploads documents to Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set (inline fallback for local dev).
 - `src/app/actions/auth.ts` — `registerDriver`, `login`, `logout`, `setPassword`.
 - `src/app/actions/profile.ts` — `getMyDriverProfile`, `saveDriverProfile`.
 - `src/app/actions/documents.ts` — `saveDocument`, `removeDocument` (auto-sets `verified`).
@@ -82,7 +82,6 @@ npx prisma migrate deploy
      render the public profile and `/find-a-driver` directory from `getMyDriverProfile`
      / `prisma.driverProfile.findMany`. Wrap any page that reads the session with
      `export const dynamic = "force-dynamic"`.
-   - OPTIONAL: swap `src/lib/storage.ts` to real Vercel Blob.
 2. **Stripe Checkout** *(built — needs keys)* — `/api/checkout` creates a hosted
    Checkout Session for the $17 listing + selected bumps; `/api/stripe/webhook`
    verifies the signature and, on `checkout.session.completed`, creates the driver
