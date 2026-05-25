@@ -4,6 +4,8 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
+import { sendDriverWelcomeEmail } from "@/lib/email";
+import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
 
 export const runtime = "nodejs";
@@ -72,8 +74,13 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
       },
       include: { driverProfile: true },
     });
-    // TODO(resend): email `tempPassword` + a verification link to the driver.
-    console.log(`[stripe] created driver ${email}; temp password=${tempPassword}`);
+    const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+    await sendDriverWelcomeEmail({
+      to: email,
+      firstName: md.firstName,
+      tempPassword,
+      signInUrl: `${base}/signin`,
+    });
   }
 
   if (!user) {

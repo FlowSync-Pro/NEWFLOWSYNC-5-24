@@ -91,8 +91,11 @@ npx prisma migrate deploy
    `STRIPE_WEBHOOK_SECRET`, and register the webhook endpoint at
    `https://flowsyncdriver.com/api/stripe/webhook` for the `checkout.session.completed`
    event. The temp-password email is currently logged — wire it to Resend in step 3.
-3. **Resend emails** — verification link + temporary password on signup; receipts;
-   booking/quote notifications.
+3. **Resend emails** *(built — needs keys)* — `src/lib/email.ts` sends a branded
+   welcome + temporary-password email from the Stripe webhook, and a welcome email on
+   self-service signup, via the `resend` SDK. Graceful no-op (logged) without keys. To
+   go live: set `RESEND_API_KEY` and a verified `RESEND_FROM_EMAIL` (e.g.
+   `FlowSync <hello@mail.flowsyncdriver.com>`). Later: receipts + booking notifications.
 4. **Customer migration** — script reads existing Stripe customers, creates `User`
    rows, and sends sign-in info via Resend. **Run once, with explicit sign-off**, on
    a tested template (irreversible — real customer inboxes).

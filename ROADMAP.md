@@ -51,7 +51,10 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
       driver account + records a PAID Payment). Pricing page wired with graceful demo
       fallback when no keys. Verified locally with signed events (create, replay/idempotent,
       bad-signature reject). Needs: real Stripe keys + the temp-password email (Resend, next).
-- [ ] **Resend** transactional email (verify, temp password, receipts, booking alerts).
+- [x] **Resend** transactional email — branded welcome/temp-password email sent from the
+      Stripe webhook, and a welcome email on self-service signup. Lazy + graceful (logged
+      no-op without keys; send failures never break the flow). Needs a `RESEND_API_KEY` +
+      verified `RESEND_FROM_EMAIL` domain. Later: receipts + booking alerts.
 - [ ] Secure file storage for driver documents.
 - [ ] **Customer migration**: import existing Stripe paying customers → create accounts →
       email sign-in info via Resend. ⚠️ Blocked until auth + Resend exist (see below).

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { createSession, destroySession, getSession } from "@/lib/session";
 import { generateTempPassword, hashPassword, verifyPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
+import { sendWelcomeEmail } from "@/lib/email";
+import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
 
 export interface RegisterInput {
@@ -74,6 +76,9 @@ export async function register(_prev: AuthState, formData: FormData): Promise<Au
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not create your account." };
   }
+
+  const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+  await sendWelcomeEmail({ to: email, firstName, profileUrl: `${base}/account` });
 
   await createSession({ userId, role: "DRIVER", mustResetPassword: false });
   redirect("/account");
