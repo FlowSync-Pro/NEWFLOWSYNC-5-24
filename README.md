@@ -4,6 +4,32 @@ A fresh, dark/premium marketing + onboarding mockup for **FlowSync** — a drive
 marketplace for every kind of delivery and errand. Built with Next.js (App Router),
 TypeScript, and Tailwind CSS v4, designed to deploy on **Vercel** with zero config.
 
+## ⚡ Continue here (handoff for any editor / agent)
+
+**Current state:** Phase 1 (the full marketing + onboarding frontend) **and** Phase 2
+(a real backend) are built and verified locally against Postgres + Stripe/Resend test events.
+
+- **Phase 2 stack:** Postgres + Prisma · built-in cookie-session auth (scrypt — the schema
+  also keeps Auth.js adapter tables if you'd rather swap) · Stripe Checkout + webhooks ·
+  Resend email · Vercel Blob document storage.
+- **What works end to end:** paid driver signup → temp-password email → sign in → edit
+  profile + upload/verify documents; a DB-backed public directory + profiles (`/find-a-driver`,
+  `/d/[id]`); and the full customer booking loop (request → quote → pay, 5% fee). Plus a
+  Stripe customer-migration script (`scripts/migrate-stripe-customers.mjs`, dry-run by default).
+
+**To pick up the work, read:**
+- [`ROADMAP.md`](ROADMAP.md) — what's done and what's left, checkbox by checkbox.
+- [`docs/PHASE2-SETUP.md`](docs/PHASE2-SETUP.md) — the step-by-step deploy runbook.
+
+**Immediate next step: deploy a Vercel preview** (see the runbook) — create the Postgres + Blob
+stores, set env vars (`AUTH_SECRET`, Stripe **test** keys + webhook secret, `RESEND_API_KEY` /
+`RESEND_FROM_EMAIL`, `NEXT_PUBLIC_SITE_URL`), run `npx prisma migrate deploy`, wire the Stripe
+webhook, then smoke-test on the `*.vercel.app` URL. Secrets go in `.env.local` (gitignored) —
+copy [`.env.example`](.env.example). A clean `npm ci && npm run build` is verified to pass.
+
+> ⚠️ Deploy to its **own** Vercel project/domain (`flowsyncdriver.com`, singular). Never point it
+> at the existing `flowsyncdrivers.com` site. Stay on Stripe **test** keys until verified.
+
 ## What's inside
 
 - **Home** (`/`) — dark hero, service showcase, how-it-works, driver perks, testimonials.
@@ -59,5 +85,9 @@ separate from the existing `flowsyncdrivers.com` site.
    and point your registrar's DNS at Vercel (an `A` record to `76.76.21.21`, or a
    `CNAME` to `cname.vercel-dns.com` for the `www` subdomain).
 
-> This is a mockup. The signup flow stores profile data only in the browser's
-> `localStorage` and never sends it anywhere.
+> **Two layers:** the marketing/demo flows (multi-step `/signup`, the gamified dashboard,
+> the P&L and quote tools) run client-side in `localStorage`. The **authenticated app**
+> — `/signin`, `/account`, `/profile`, `/find-a-driver`, `/d/[id]`, bookings, and Stripe
+> checkout — is backed by Postgres + Stripe + Resend + Vercel Blob once the env vars from
+> [`docs/PHASE2-SETUP.md`](docs/PHASE2-SETUP.md) are set. Without keys it degrades gracefully
+> (demo confirmations, inline file storage) so the app still builds and runs.
