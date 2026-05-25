@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { serviceFromEnum, docKeyFromKind } from "@/lib/enums";
+import { dbToAppProfile } from "@/lib/profileMap";
 import AccountEditor from "@/components/AccountEditor";
-import type { DocKey, DriverProfile } from "@/lib/profile";
 
 export const dynamic = "force-dynamic";
 
@@ -25,36 +24,11 @@ export default async function AccountPage() {
   });
   if (!db) redirect("/signin");
 
-  const documents: Partial<Record<DocKey, string>> = {};
-  for (const d of db.documents) documents[docKeyFromKind(d.kind)] = d.blobUrl;
-
-  const initial: DriverProfile = {
-    firstName: db.firstName,
-    lastName: db.lastName,
-    email: "",
-    phone: db.phone ?? "",
-    city: db.city ?? "",
-    primaryService: serviceFromEnum(db.primaryService),
-    additionalServices: db.additionalServices.map(serviceFromEnum),
-    vehicleType: db.vehicleType ?? "",
-    vehicleMakeModel: db.vehicleMakeModel ?? "",
-    vehicleYear: db.vehicleYear ?? "",
-    headline: db.headline ?? "",
-    bio: db.bio ?? "",
-    hourlyRate: db.hourlyRate?.toString() ?? "",
-    yearsExperience: db.yearsExperience?.toString() ?? "",
-    serviceRadius: db.serviceRadius ?? "",
-    availability: db.availability,
-    languages: db.languages,
-    serviceDetails: (db.serviceDetails as Record<string, string | string[]>) ?? {},
-    documents,
-  };
-
   return (
     <div className="relative">
       <div className="glow-radial pointer-events-none absolute inset-0 h-72" />
       <div className="relative">
-        <AccountEditor initial={initial} />
+        <AccountEditor initial={dbToAppProfile(db)} />
       </div>
     </div>
   );
