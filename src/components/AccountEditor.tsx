@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   DOCUMENTS,
@@ -183,6 +184,7 @@ export default function AccountEditor({ initial }: { initial: DriverProfile }) {
         <div className="flex items-center gap-3">
           {savedAt && <span className="text-sm text-accent">Saved</span>}
           {error && <span className="text-sm text-red-400">{error}</span>}
+          <Link href="/account/bookings" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Bookings</Link>
           <form action={logout}>
             <button type="submit" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Sign out</button>
           </form>

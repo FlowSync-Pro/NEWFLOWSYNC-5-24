@@ -103,7 +103,7 @@ npx prisma migrate deploy
    `--apply` to perform (`--limit=N` for a test batch). Run the real `--apply` once, with
    explicit sign-off — it hits real inboxes and can't be undone. Migrated accounts with no
    profile complete one on first sign-in via `/account/setup`.
-5. **Bookings loop** — customer request → driver quote → in-app payment (5% fee) →
+5. **Bookings loop** *(built)* — customer request → driver quote → in-app payment (5% fee) →
    completion + review.
 
 ## Notes

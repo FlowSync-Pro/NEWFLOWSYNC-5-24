@@ -79,7 +79,9 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 4. **Customer migration** — import existing Stripe paying customers, create accounts, send
    sign-in info via Resend (the originally-requested blast — now safe to run with a tested
    template and explicit sign-off).
-5. **Bookings loop** — customer request → driver quote → pay in-app → 5% taken → review.
+5. **Bookings loop** *(built)* — `/d/[id]` request → driver quotes on `/account/bookings`
+   → customer pays at `/book/[id]/pay` (Stripe) → webhook marks PAID + records a BOOKING
+   Payment (5% fee). Emails at each step. Verified end-to-end locally.
 
 **What the owner must provide (in Vercel, not the repo)**
 - Vercel Postgres (or Supabase) connection string · Vercel Blob token

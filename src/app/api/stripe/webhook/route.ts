@@ -4,7 +4,7 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
-import { sendDriverWelcomeEmail } from "@/lib/email";
+import { sendDriverWelcomeEmail, sendBookingPaidEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
 
@@ -30,10 +30,45 @@ export async function POST(req: Request) {
   }
 
   if (event.type === "checkout.session.completed") {
-    await fulfillCheckout(event.data.object);
+    const session = event.data.object;
+    if (session.metadata?.type === "booking") await fulfillBooking(session);
+    else await fulfillCheckout(session);
   }
 
   return NextResponse.json({ received: true });
+}
+
+async function fulfillBooking(session: Stripe.Checkout.Session) {
+  const bookingId = session.metadata?.bookingId;
+  if (!bookingId) return;
+
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { driverProfile: { include: { user: true } }, customer: true },
+  });
+  if (!booking || booking.status === "PAID") return; // idempotent
+
+  const amount = session.amount_total ?? booking.quoteAmount ?? 0;
+  await prisma.booking.update({ where: { id: bookingId }, data: { status: "PAID" } });
+  await prisma.payment.create({
+    data: {
+      userId: booking.driverProfile.userId,
+      type: "BOOKING",
+      amount,
+      currency: session.currency ?? "usd",
+      status: "PAID",
+      bookingId: booking.id,
+      stripeSessionId: session.id,
+      stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
+    },
+  });
+
+  await sendBookingPaidEmail({
+    to: booking.driverProfile.user.email,
+    driverFirstName: booking.driverProfile.firstName,
+    customerName: booking.customer.name ?? "A customer",
+    amountCents: amount,
+  });
 }
 
 async function fulfillCheckout(session: Stripe.Checkout.Session) {

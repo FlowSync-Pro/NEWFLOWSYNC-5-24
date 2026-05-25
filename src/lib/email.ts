@@ -64,6 +64,48 @@ export async function sendDriverWelcomeEmail(opts: {
   return send(opts.to, "Welcome to FlowSync — your sign-in details", shell("You're listed", body));
 }
 
+const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
+export async function sendBookingRequestEmail(opts: {
+  to: string;
+  driverFirstName: string;
+  customerName: string;
+  service: string;
+  details: string;
+  bookingsUrl: string;
+}) {
+  const body = `
+    <p style="color:#aebac1;line-height:1.6">Hi ${opts.driverFirstName}, you have a new ${opts.service.toLowerCase()} request from <strong style="color:#e7ecef">${opts.customerName}</strong>:</p>
+    <div style="background:#11181c;border:1px solid #1d262b;border-radius:12px;padding:14px;margin:14px 0;color:#aebac1">${opts.details}</div>
+    <p style="margin-top:8px">${button(opts.bookingsUrl, "Review & send a quote")}</p>`;
+  return send(opts.to, `New ${opts.service.toLowerCase()} request from ${opts.customerName}`, shell("New booking request", body));
+}
+
+export async function sendQuoteEmail(opts: {
+  to: string;
+  customerName: string;
+  driverName: string;
+  amountCents: number;
+  payUrl: string;
+}) {
+  const body = `
+    <p style="color:#aebac1;line-height:1.6">Hi ${opts.customerName}, ${opts.driverName} sent you a quote:</p>
+    <div style="background:#11181c;border:1px solid #1d262b;border-radius:12px;padding:14px;margin:14px 0;text-align:center;font-size:24px;font-weight:800;color:#25e07a">${money(opts.amountCents)}</div>
+    <p style="margin-top:8px">${button(opts.payUrl, "Review & pay")}</p>`;
+  return send(opts.to, `Your quote from ${opts.driverName} — ${money(opts.amountCents)}`, shell("You have a quote", body));
+}
+
+export async function sendBookingPaidEmail(opts: {
+  to: string;
+  driverFirstName: string;
+  customerName: string;
+  amountCents: number;
+}) {
+  const body = `
+    <p style="color:#aebac1;line-height:1.6">Hi ${opts.driverFirstName}, ${opts.customerName} just paid ${money(opts.amountCents)}. You keep 95% — go make it happen!</p>`;
+  return send(opts.to, `You got booked — ${money(opts.amountCents)}`, shell("Payment received", body));
+}
+
 export async function sendWelcomeEmail(opts: { to: string; firstName: string; profileUrl: string }) {
   const body = `
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName}, welcome to FlowSync. Your account is ready — finish your profile and upload your documents to get verified.</p>

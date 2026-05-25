@@ -38,7 +38,7 @@ export default async function PublicProfilePage({ params }: PageProps<"/d/[id]">
     <ProfileView
       profile={profile}
       sidebarCta={
-        <RequestQuoteButton driverName={`${profile.firstName} ${profile.lastName}`} service={svc?.name ?? "delivery"} />
+        <RequestQuoteButton driverProfileId={db.id} driverName={`${profile.firstName} ${profile.lastName}`} service={svc?.name ?? "delivery"} />
       }
     />
   );
