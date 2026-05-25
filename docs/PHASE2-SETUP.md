@@ -49,8 +49,8 @@ per the comment in that file).
 All of this is created once and lives under your Vercel account.
 
 1. **Postgres** — Vercel Dashboard → Storage → Create Database → Neon Postgres.
-   Vercel auto-adds `DATABASE_URL` (and a pooled/direct pair) to the project. Map
-   the direct connection to `DIRECT_URL`.
+   Vercel adds `DATABASE_URL`. Set it to the **direct/non-pooled** string (the host
+   WITHOUT `-pooler`) so migrations run cleanly.
 2. **Blob** — Vercel Dashboard → Storage → Create → Blob. Adds `BLOB_READ_WRITE_TOKEN`.
 3. **Stripe** — from the Stripe dashboard copy the secret key and the publishable
    key. Create a webhook endpoint (after first deploy) pointed at
@@ -130,7 +130,7 @@ so the tables are created/updated on deploy with no terminal step. (Locally, run
       domains — nothing public until you attach a custom domain.
 
 **Environment variables (Vercel → Project → Settings → Environment Variables)**
-- [ ] `DATABASE_URL`, `DIRECT_URL` (added automatically when you create the Vercel Postgres DB)
+- [ ] `DATABASE_URL` (from the Vercel Postgres DB — use the non-pooled string)
 - [ ] `AUTH_SECRET` (`npx auth secret`)
 - [ ] `BLOB_READ_WRITE_TOKEN` (when you enable Blob)
 - [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
