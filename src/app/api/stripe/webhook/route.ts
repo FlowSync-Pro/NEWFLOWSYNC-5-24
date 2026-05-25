@@ -4,7 +4,7 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
-import { sendDriverWelcomeEmail, sendBookingPaidEmail } from "@/lib/email";
+import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
 
@@ -63,10 +63,17 @@ async function fulfillBooking(session: Stripe.Checkout.Session) {
     },
   });
 
+  const driverName = `${booking.driverProfile.firstName} ${booking.driverProfile.lastName}`.trim();
   await sendBookingPaidEmail({
     to: booking.driverProfile.user.email,
     driverFirstName: booking.driverProfile.firstName,
     customerName: booking.customer.name ?? "A customer",
+    amountCents: amount,
+  });
+  await sendBookingReceiptEmail({
+    to: booking.customer.email,
+    customerName: booking.customer.name ?? "there",
+    driverName,
     amountCents: amount,
   });
 }

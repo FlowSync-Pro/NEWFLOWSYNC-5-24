@@ -106,6 +106,24 @@ export async function sendBookingPaidEmail(opts: {
   return send(opts.to, `You got booked — ${money(opts.amountCents)}`, shell("Payment received", body));
 }
 
+export async function sendBookingReceiptEmail(opts: {
+  to: string;
+  customerName: string;
+  driverName: string;
+  amountCents: number;
+}) {
+  const body = `
+    <p style="color:#aebac1;line-height:1.6">Hi ${opts.customerName}, thanks for your payment. Here's your receipt:</p>
+    <div style="background:#11181c;border:1px solid #1d262b;border-radius:12px;padding:14px;margin:14px 0">
+      <table style="width:100%;color:#aebac1;font-size:14px">
+        <tr><td>Driver</td><td style="text-align:right;color:#e7ecef">${opts.driverName}</td></tr>
+        <tr><td style="padding-top:8px">Amount paid</td><td style="text-align:right;color:#25e07a;font-weight:700;padding-top:8px">${money(opts.amountCents)}</td></tr>
+      </table>
+    </div>
+    <p style="color:#7c8a92;font-size:13px">${opts.driverName} has been notified and will be in touch to coordinate.</p>`;
+  return send(opts.to, `Receipt — ${money(opts.amountCents)} to ${opts.driverName}`, shell("Payment confirmed", body));
+}
+
 export async function sendWelcomeEmail(opts: { to: string; firstName: string; profileUrl: string }) {
   const body = `
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName}, welcome to FlowSync. Your account is ready — finish your profile and upload your documents to get verified.</p>
