@@ -9,7 +9,10 @@ import ProfileView from "@/components/ProfileView";
 import RequestQuoteButton from "@/components/RequestQuoteButton";
 
 async function fetchProfile(id: string) {
-  return prisma.driverProfile.findUnique({ where: { id }, include: { documents: true } });
+  return prisma.driverProfile.findUnique({
+    where: { id },
+    include: { documents: true, services: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
+  });
 }
 
 export async function generateMetadata({ params }: PageProps<"/d/[id]">): Promise<Metadata> {
@@ -33,10 +36,12 @@ export default async function PublicProfilePage({ params }: PageProps<"/d/[id]">
 
   const profile = dbToAppProfile(db);
   const svc = getService(profile.primaryService);
+  const services = db.services.map((s) => ({ id: s.id, name: s.name, description: s.description, priceCents: s.priceCents }));
 
   return (
     <ProfileView
       profile={profile}
+      services={services}
       sidebarCta={
         <RequestQuoteButton driverProfileId={db.id} driverName={`${profile.firstName} ${profile.lastName}`} service={svc?.name ?? "delivery"} />
       }

@@ -70,6 +70,12 @@ Domain: **flowsyncdriver.com** (separate from flowsyncdrivers.com).
       it sets the driver to "pending review." Approving emails the driver; unverified drivers
       are hidden from the public directory and see a "pending verification" banner. Verified
       end-to-end locally.
+- [x] **Premium ($97) tier** — two-tier pricing (Standard $17 / Premium $97) with Premium
+      highlighted; tier set at checkout (webhook) or via admin "Upgrade to Premium" (emails the
+      driver). Premium unlocks **My Services** (`/account/services`, custom service menu) —
+      Standard sees an upgrade CTA — plus a Premium badge, an external website field, and a
+      services/pricing + website section on the public profile. Migration `premium_tier`.
+      Verified end-to-end locally (new flowsyncdriver.com only — old site untouched).
 
 ## Phase 2 plan (detail)
 

@@ -66,6 +66,11 @@ enum PaymentStatus {
   FAILED
 }
 
+enum Tier {
+  STANDARD
+  PREMIUM
+}
+
 model User {
   id                String    @id @default(cuid())
   email             String    @unique
@@ -116,6 +121,10 @@ model DriverProfile {
   // Service-specific answers keyed by field id (matches ProfileField.key in the app).
   serviceDetails Json @default("{}")
 
+  // Premium ($97) vs Standard ($17) tier.
+  tier               Tier    @default(STANDARD)
+  externalWebsiteUrl String?
+
   verified  Boolean   @default(false)
   listedAt  DateTime?
   createdAt DateTime  @default(now())
@@ -123,9 +132,26 @@ model DriverProfile {
 
   documents Document[]
   bookings  Booking[]
+  services  DriverService[]
 
   @@index([primaryService])
   @@index([city])
+}
+
+// Premium "My Services": drivers build their own service menu with custom prices.
+model DriverService {
+  id              String        @id @default(cuid())
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  priceCents  Int
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([driverProfileId])
 }
 
 model Document {

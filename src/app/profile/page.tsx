@@ -23,17 +23,19 @@ export default async function ProfilePage() {
 
   const db = await prisma.driverProfile.findUnique({
     where: { userId: session.userId },
-    include: { documents: true },
+    include: { documents: true, services: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
   });
   if (!db) redirect("/signin");
 
   const kinds = new Set(db.documents.map((d) => d.kind));
   const hasDocs = kinds.has(DocKind.LICENSE) && kinds.has(DocKind.INSURANCE);
+  const services = db.services.map((s) => ({ id: s.id, name: s.name, description: s.description, priceCents: s.priceCents }));
 
   return (
     <>
       {!db.verified && <PendingBanner hasDocs={hasDocs} />}
       <ProfileView
+      services={services}
       profile={dbToAppProfile(db)}
       headerActions={
         <>

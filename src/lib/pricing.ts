@@ -26,6 +26,56 @@ export const CORE_OFFER = {
 
 export const PLATFORM_FEE_PERCENT = 5;
 
+export type TierId = "standard" | "premium";
+
+export interface Tier {
+  id: TierId;
+  price: number;
+  name: string;
+  tagline: string;
+  features: string[];
+  highlight?: boolean;
+}
+
+export const TIERS: Record<TierId, Tier> = {
+  standard: {
+    id: "standard",
+    price: 17,
+    name: "Standard",
+    tagline: "Get listed and take direct bookings.",
+    features: [
+      "Listed in the FlowSync driver directory",
+      "Direct customer bookings — keep 95%",
+      "Service-matched profile page",
+      "Fair-quote calculator",
+      "Set your own rates and schedule",
+    ],
+  },
+  premium: {
+    id: "premium",
+    price: 97,
+    name: "Premium",
+    tagline: "Run your business your way — build your own service menu.",
+    highlight: true,
+    features: [
+      "Everything in Standard",
+      "★ My Services — build your own menu with custom pricing",
+      "Premium badge & elevated profile styling",
+      "Add your own external website link",
+      "Priority placement in the directory",
+    ],
+  },
+};
+
+export function getTier(id: TierId): Tier {
+  return TIERS[id];
+}
+
+/** Accepts the DB enum ("PREMIUM") or the lowercase id ("premium"). */
+export function isPremiumTier(tier?: string | null): boolean {
+  return (tier ?? "").toUpperCase() === "PREMIUM";
+}
+
 export const BUMPS: Bump[] = [
   {
     id: "dot-ein-guide",

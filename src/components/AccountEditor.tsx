@@ -12,6 +12,7 @@ import {
   type DriverProfile,
 } from "@/lib/profile";
 import { getService } from "@/lib/services";
+import { isPremiumTier } from "@/lib/pricing";
 import { fileToScaledDataUrl } from "@/lib/image";
 import { saveDriverProfile, type ProfileInput } from "@/app/actions/profile";
 import { saveDocument, removeDocument } from "@/app/actions/documents";
@@ -162,6 +163,7 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
       vehicleYear: profile.vehicleYear,
       additionalServices: profile.additionalServices,
       serviceDetails: profile.serviceDetails,
+      externalWebsiteUrl: profile.externalWebsiteUrl,
     };
     try {
       await saveDriverProfile(input);
@@ -175,6 +177,7 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
 
   const uploadedCount = DOCUMENTS.filter((doc) => profile.documents?.[doc.key]).length;
   const verified = isVerified(profile);
+  const premium = isPremiumTier(profile.tier);
   const docsReady = hasRequiredDocs(profile);
   const missingRequired = VERIFY_REQUIRED.filter((k) => !profile.documents?.[k]);
 
@@ -182,13 +185,19 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
     <div className="mx-auto max-w-5xl px-5 py-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit your account</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">Edit your account</h1>
+            {premium && (
+              <span className="rounded-full bg-amber-400/20 px-2.5 py-1 text-xs font-bold text-amber-300">★ Premium</span>
+            )}
+          </div>
           <p className="mt-1 text-muted">Update your details, upload documents, and get verified.</p>
         </div>
         <div className="flex items-center gap-3">
           {savedAt && <span className="text-sm text-accent">Saved</span>}
           {error && <span className="text-sm text-red-400">{error}</span>}
           {isAdmin && <Link href="/admin" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Admin</Link>}
+          <Link href="/account/services" className="btn-ghost rounded-full px-5 py-2.5 text-sm">My Services</Link>
           <Link href="/account/bookings" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Bookings</Link>
           <form action={logout}>
             <button type="submit" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Sign out</button>
@@ -275,6 +284,16 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
           </div>
         </div>
         <TagInput label="Languages" value={profile.languages} onChange={(v) => set("languages", v)} placeholder="Add a language…" suggestions={LANGS} />
+        {premium ? (
+          <TextField label="Your website (Premium)" value={profile.externalWebsiteUrl ?? ""} onChange={(v) => set("externalWebsiteUrl", v)} placeholder="https://yourbusiness.com" />
+        ) : (
+          <div className="rounded-xl border border-border bg-surface-2 p-4 text-sm">
+            <p className="font-medium">Add your own website link <span className="text-amber-300">★ Premium</span></p>
+            <p className="mt-1 text-muted">
+              <Link href="/account/services" className="text-accent hover:underline">Upgrade to Premium</Link> to link your external site and build a custom service menu.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Vehicle */}

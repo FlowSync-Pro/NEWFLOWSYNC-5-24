@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { approveDriver, rejectDriver } from "@/app/actions/admin";
+import { approveDriver, rejectDriver, setDriverTier } from "@/app/actions/admin";
 
 export interface AdminDoc {
   kind: string;
@@ -17,6 +17,7 @@ export interface AdminDriverRow {
   service: string;
   city: string;
   verified: boolean;
+  tier: string;
   createdAt: string;
   documents: AdminDoc[];
 }
@@ -42,6 +43,7 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
 
   const hasLicense = driver.documents.some((d) => d.kind === "LICENSE");
   const hasInsurance = driver.documents.some((d) => d.kind === "INSURANCE");
+  const premium = driver.tier === "PREMIUM";
 
   return (
     <div className="card p-6">
@@ -51,6 +53,9 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
             <p className="font-semibold">{driver.name || "(no name)"}</p>
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${driver.verified ? "bg-accent text-[#04130a]" : "bg-surface-2 text-muted"}`}>
               {driver.verified ? "Verified" : "Pending"}
+            </span>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${premium ? "bg-amber-400/20 text-amber-300" : "bg-surface-2 text-muted"}`}>
+              {premium ? "★ Premium" : "Standard"}
             </span>
           </div>
           <p className="text-xs text-muted">{driver.email} · {driver.service} · {driver.city || "—"}</p>
@@ -64,6 +69,13 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
           </button>
           <button onClick={() => act(rejectDriver)} disabled={busy} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground disabled:opacity-50">
             {driver.verified ? "Revoke" : "Reject"}
+          </button>
+          <button
+            onClick={() => act((id) => setDriverTier(id, premium ? "STANDARD" : "PREMIUM"))}
+            disabled={busy}
+            className={`rounded-full px-5 py-2 text-sm disabled:opacity-50 ${premium ? "border border-border text-muted hover:text-foreground" : "bg-amber-400/20 text-amber-300 hover:bg-amber-400/30"}`}
+          >
+            {premium ? "Set Standard" : "★ Upgrade to Premium"}
           </button>
         </div>
       </div>

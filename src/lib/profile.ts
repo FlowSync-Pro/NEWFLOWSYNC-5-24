@@ -28,6 +28,9 @@ export interface DriverProfile {
   documents?: Partial<Record<DocKey, string>>;
   // admin-approved verification status (from the DB)
   verified?: boolean;
+  // "STANDARD" | "PREMIUM"
+  tier?: string;
+  externalWebsiteUrl?: string;
 }
 
 export type DocKey =

@@ -28,5 +28,7 @@ export function dbToAppProfile(db: DbProfile & { documents: Document[] }): Drive
     serviceDetails: (db.serviceDetails as Record<string, string | string[]>) ?? {},
     documents,
     verified: db.verified,
+    tier: db.tier,
+    externalWebsiteUrl: db.externalWebsiteUrl ?? "",
   };
 }

@@ -1,7 +1,15 @@
 import type { ReactNode } from "react";
 import { isVerified, type DriverProfile } from "@/lib/profile";
+import { isPremiumTier } from "@/lib/pricing";
 import { getService } from "@/lib/services";
 import ServiceIcon from "@/components/ServiceIcon";
+
+export interface ProfileServiceItem {
+  id: string;
+  name: string;
+  description: string | null;
+  priceCents: number;
+}
 
 function initials(first: string, last: string) {
   return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || "FS";
@@ -27,15 +35,19 @@ const MOCK_REVIEWS = [
 
 export default function ProfileView({
   profile,
+  services = [],
   headerActions,
   sidebarCta,
 }: {
   profile: DriverProfile;
+  services?: ProfileServiceItem[];
   headerActions?: ReactNode;
   sidebarCta?: ReactNode;
 }) {
   const primary = getService(profile.primaryService);
   if (!primary) return null;
+  const premium = isPremiumTier(profile.tier);
+  const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   const years = Number(profile.yearsExperience) || 2;
   const jobs = 180 + years * 215;
@@ -84,6 +96,9 @@ export default function ProfileView({
                     Verified
                   </span>
                 )}
+                {premium && (
+                  <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs font-bold text-amber-300">★ Premium</span>
+                )}
               </div>
               <p className="mt-0.5 text-muted">{profile.headline || primary.profileHeadline}</p>
               <div className="mt-1.5 flex items-center gap-3 text-sm text-muted">
@@ -123,7 +138,36 @@ export default function ProfileView({
                   </div>
                 </div>
               )}
+              {premium && profile.externalWebsiteUrl && (
+                <div className="mt-5">
+                  <p className="text-xs uppercase tracking-widest text-muted">Website</p>
+                  <a href={profile.externalWebsiteUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline">
+                    {profile.externalWebsiteUrl.replace(/^https?:\/\//, "")}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M7 17 17 7M9 7h8v8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </a>
+                </div>
+              )}
             </section>
+
+            {premium && services.length > 0 && (
+              <section className="card overflow-hidden">
+                <div className="flex items-center gap-2 border-b border-border bg-amber-400/10 px-7 py-4">
+                  <span className="text-amber-300">★</span>
+                  <h2 className="text-lg font-semibold">Services &amp; pricing</h2>
+                </div>
+                <div className="divide-y divide-border">
+                  {services.map((s) => (
+                    <div key={s.id} className="flex items-start justify-between gap-4 px-7 py-4">
+                      <div>
+                        <p className="font-medium">{s.name}</p>
+                        {s.description && <p className="mt-0.5 text-sm text-muted">{s.description}</p>}
+                      </div>
+                      <span className="shrink-0 font-bold text-accent">{money(s.priceCents)}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section className="card p-7">
               <div className="flex items-center gap-3">

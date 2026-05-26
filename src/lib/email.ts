@@ -135,6 +135,18 @@ export async function sendDriverApprovedEmail(opts: {
   return send(opts.to, "You're verified on FlowSync", shell("You're verified", body));
 }
 
+export async function sendPremiumUpgradeEmail(opts: {
+  to: string;
+  firstName: string;
+  servicesUrl: string;
+}) {
+  const body = `
+    <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName} — you've been upgraded to <strong style="color:#25e07a">FlowSync Premium</strong>.</p>
+    <p style="color:#aebac1;line-height:1.6">Your account now includes the premium badge, elevated profile styling, your own website link, and <strong style="color:#e7ecef">My Services</strong> — build your own service menu and set your own prices.</p>
+    <p style="margin-top:8px">${button(opts.servicesUrl, "Build your service menu")}</p>`;
+  return send(opts.to, "You've been upgraded to FlowSync Premium", shell("Welcome to Premium", body));
+}
+
 export async function sendWelcomeEmail(opts: { to: string; firstName: string; profileUrl: string }) {
   const body = `
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName}, welcome to FlowSync. Your account is ready — finish your profile and upload your documents to get verified.</p>

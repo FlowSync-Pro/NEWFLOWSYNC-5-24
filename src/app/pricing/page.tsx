@@ -1,31 +1,31 @@
 import type { Metadata } from "next";
 import OfferCheckout from "@/components/OfferCheckout";
 import JsonLd from "@/components/JsonLd";
-import { BUMPS, CORE_OFFER } from "@/lib/pricing";
+import { BUMPS, TIERS, type TierId } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Pricing — Get listed for $17",
+  title: "Pricing — Standard $17 or Premium $97",
   description:
-    "A one-time $17 gets you listed in the FlowSync driver directory with direct customer bookings — keep 95% of every job. Add the free DOT & EIN guide ($27) and the Profit & Loss tracker ($47).",
+    "Get listed in the FlowSync driver directory and keep 95% of every job. Standard ($17) for direct bookings, or Premium ($97) to build your own service menu with custom pricing. Optional DOT & EIN guide and Profit & Loss tracker add-ons.",
   alternates: { canonical: `${SITE_URL}/pricing` },
 };
 
 const productLd = {
   "@context": "https://schema.org",
   "@type": "Product",
-  name: CORE_OFFER.name,
-  description: CORE_OFFER.tagline,
+  name: "FlowSync Driver Listing",
+  description: "Get listed and take direct bookings — keep 95% of every job.",
   brand: { "@type": "Brand", name: "FlowSync" },
   offers: [
-    {
+    ...Object.values(TIERS).map((t) => ({
       "@type": "Offer",
-      name: CORE_OFFER.name,
-      price: String(CORE_OFFER.price),
+      name: `${t.name} listing`,
+      price: String(t.price),
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: `${SITE_URL}/pricing`,
-    },
+    })),
     ...BUMPS.map((b) => ({
       "@type": "Offer",
       name: b.name,
@@ -37,13 +37,17 @@ const productLd = {
   ],
 };
 
-export default function PricingPage() {
+export default async function PricingPage({ searchParams }: PageProps<"/pricing">) {
+  const sp = await searchParams;
+  const raw = Array.isArray(sp.tier) ? sp.tier[0] : sp.tier;
+  const initialTier: TierId = raw === "premium" ? "premium" : "standard";
+
   return (
     <div className="relative">
       <JsonLd data={productLd} />
       <div className="glow-radial pointer-events-none absolute inset-0 h-80" />
       <div className="relative">
-        <OfferCheckout />
+        <OfferCheckout initialTier={initialTier} />
       </div>
     </div>
   );

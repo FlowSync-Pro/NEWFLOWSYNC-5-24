@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
-import { CORE_OFFER, getBump } from "@/lib/pricing";
+import { getBump, TIERS, type TierId } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 
@@ -44,9 +44,11 @@ export async function POST(req: Request) {
   const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
   const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
   const primaryService = typeof body.primaryService === "string" ? body.primaryService : "";
+  const tierId: TierId = body.tier === "premium" ? "premium" : "standard";
+  const tier = TIERS[tierId];
 
   const priced = [
-    { name: CORE_OFFER.name, amount: CORE_OFFER.price * 100 },
+    { name: `FlowSync ${tier.name} listing`, amount: tier.price * 100 },
     ...bumps.map((id) => {
       const b = getBump(id)!;
       return { name: b.name, amount: b.price * 100 };
@@ -60,7 +62,7 @@ export async function POST(req: Request) {
       quantity: 1,
     })),
     customer_email: email || undefined,
-    metadata: { type: "listing", bumps: bumps.join(","), firstName, lastName, primaryService },
+    metadata: { type: "listing", tier: tierId, bumps: bumps.join(","), firstName, lastName, primaryService },
     success_url: `${base}/signin?checkout=success`,
     cancel_url: `${base}/pricing?checkout=cancelled`,
   });

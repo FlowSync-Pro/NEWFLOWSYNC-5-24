@@ -91,6 +91,7 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
   const primaryService = SERVICE_IDS.includes(md.primaryService as ServiceId)
     ? (md.primaryService as ServiceId)
     : null;
+  const tierEnum = md.tier === "premium" ? "PREMIUM" : "STANDARD";
 
   let user = await prisma.user.findUnique({ where: { email }, include: { driverProfile: true } });
 
@@ -114,6 +115,7 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
                   firstName: md.firstName,
                   lastName: md.lastName ?? "",
                   primaryService: serviceToEnum(primaryService),
+                  tier: tierEnum,
                   listedAt: new Date(),
                 },
               },
@@ -131,8 +133,13 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
     });
   }
 
-  if (user.driverProfile && !user.driverProfile.listedAt) {
-    await prisma.driverProfile.update({ where: { id: user.driverProfile.id }, data: { listedAt: new Date() } });
+  if (user.driverProfile) {
+    const data: { listedAt?: Date; tier?: "PREMIUM" } = {};
+    if (!user.driverProfile.listedAt) data.listedAt = new Date();
+    if (tierEnum === "PREMIUM" && user.driverProfile.tier !== "PREMIUM") data.tier = "PREMIUM";
+    if (Object.keys(data).length) {
+      await prisma.driverProfile.update({ where: { id: user.driverProfile.id }, data });
+    }
   }
 
   await prisma.payment.create({

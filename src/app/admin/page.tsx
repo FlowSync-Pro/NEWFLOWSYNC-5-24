@@ -47,6 +47,7 @@ export default async function AdminPage() {
     service: getService(serviceFromEnum(p.primaryService))?.name ?? "—",
     city: p.city ?? "",
     verified: p.verified,
+    tier: p.tier,
     createdAt: p.createdAt.toISOString(),
     documents: p.documents.map((d) => ({ kind: d.kind, url: d.blobUrl, status: d.status })),
   }));

@@ -63,6 +63,7 @@ export interface ProfileInput {
   vehicleYear?: string;
   additionalServices?: ServiceId[];
   serviceDetails?: Record<string, string | string[]>;
+  externalWebsiteUrl?: string;
 }
 
 /** Update the signed-in driver's profile. The profile row is created at registration. */
@@ -87,6 +88,7 @@ export async function saveDriverProfile(input: ProfileInput): Promise<{ ok: bool
     vehicleYear: input.vehicleYear,
     additionalServices: input.additionalServices?.map(serviceToEnum),
     serviceDetails: input.serviceDetails as Prisma.InputJsonValue | undefined,
+    externalWebsiteUrl: input.externalWebsiteUrl?.trim() || null,
   };
 
   await prisma.driverProfile.update({ where: { userId: session.userId }, data });
