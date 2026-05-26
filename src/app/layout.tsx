@@ -59,7 +59,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  const metaPixelId =
+    process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "2070476707153491";
   const fbAppId = process.env.NEXT_PUBLIC_FB_APP_ID;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -89,12 +90,12 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <GoogleTagManager />
+        <MetaPixel pixelId={metaPixelId} />
         {fbAppId && <meta property="fb:app_id" content={fbAppId} />}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {metaPixelId && <MetaPixel pixelId={metaPixelId} />}
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
