@@ -42,9 +42,11 @@ export const metadata: Metadata = {
     description,
   },
   // Meta domain verification (Business Settings → Brand Safety → Domains).
-  ...(process.env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION
-    ? { other: { "facebook-domain-verification": process.env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION } }
-    : {}),
+  other: {
+    "facebook-domain-verification":
+      process.env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION ??
+      "ih9zjpk5stwwwehn8qehjd7csvupd4",
+  },
 };
 
 export const viewport: Viewport = {
