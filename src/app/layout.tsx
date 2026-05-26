@@ -57,6 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  const fbAppId = process.env.NEXT_PUBLIC_FB_APP_ID;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -84,6 +85,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
+        {fbAppId && <meta property="fb:app_id" content={fbAppId} />}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
