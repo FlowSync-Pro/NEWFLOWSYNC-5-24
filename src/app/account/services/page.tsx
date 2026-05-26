@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { isPremiumTier, TIERS } from "@/lib/pricing";
 import MyServicesEditor, { type ServiceRow } from "@/components/MyServicesEditor";
+import UpgradeButton from "@/components/UpgradeButton";
 
 export const dynamic = "force-dynamic";
 
@@ -56,9 +57,7 @@ export default async function MyServicesPage() {
                   <p className="text-3xl font-extrabold text-accent">${TIERS.premium.price}<span className="text-base font-medium text-muted"> one-time</span></p>
                   <p className="text-sm text-muted">Upgrade from Standard anytime.</p>
                 </div>
-                <Link href="/pricing?tier=premium" className="btn-primary rounded-full px-7 py-3.5 text-sm">
-                  Upgrade to Premium
-                </Link>
+                <UpgradeButton label={`Upgrade to Premium — $${TIERS.premium.price}`} />
               </div>
             </div>
           )}

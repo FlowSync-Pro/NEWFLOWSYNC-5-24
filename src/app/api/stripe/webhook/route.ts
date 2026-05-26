@@ -4,7 +4,7 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
-import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail } from "@/lib/email";
+import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendPremiumUpgradeEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
 
@@ -32,10 +32,47 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     if (session.metadata?.type === "booking") await fulfillBooking(session);
+    else if (session.metadata?.type === "upgrade") await fulfillUpgrade(session);
     else await fulfillCheckout(session);
   }
 
   return NextResponse.json({ received: true });
+}
+
+async function fulfillUpgrade(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId;
+  if (!userId) return;
+
+  // Idempotent on the Stripe session id.
+  const already = await prisma.payment.findUnique({ where: { stripeSessionId: session.id } });
+  if (already) return;
+
+  const profile = await prisma.driverProfile.findUnique({
+    where: { userId },
+    include: { user: true },
+  });
+  if (!profile) return;
+
+  await prisma.driverProfile.update({ where: { id: profile.id }, data: { tier: "PREMIUM" } });
+  await prisma.payment.create({
+    data: {
+      userId,
+      type: "LISTING",
+      amount: session.amount_total ?? 9700,
+      currency: session.currency ?? "usd",
+      status: "PAID",
+      bumps: [],
+      stripeSessionId: session.id,
+      stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
+    },
+  });
+
+  const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+  await sendPremiumUpgradeEmail({
+    to: profile.user.email,
+    firstName: profile.firstName,
+    servicesUrl: `${base}/account/services`,
+  });
 }
 
 async function fulfillBooking(session: Stripe.Checkout.Session) {

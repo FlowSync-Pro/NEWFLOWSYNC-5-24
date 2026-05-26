@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
-import { getBump, TIERS, type TierId } from "@/lib/pricing";
+import { getSession } from "@/lib/session";
+import { getBump, isPremiumTier, TIERS, type TierId } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,33 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const base = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+
+  // Self-serve upgrade: a signed-in Standard driver pays $97 to go Premium.
+  if (body.intent === "upgrade") {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Please sign in to upgrade." }, { status: 401 });
+    const profile = await prisma.driverProfile.findUnique({
+      where: { userId: session.userId },
+      include: { user: true },
+    });
+    if (!profile) return NextResponse.json({ error: "Complete your profile first." }, { status: 400 });
+    if (isPremiumTier(profile.tier)) return NextResponse.json({ error: "You're already on Premium." }, { status: 400 });
+
+    const upgrade = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          price_data: { currency: "usd", unit_amount: TIERS.premium.price * 100, product_data: { name: "FlowSync Premium upgrade" } },
+          quantity: 1,
+        },
+      ],
+      customer_email: profile.user.email,
+      metadata: { type: "upgrade", userId: session.userId },
+      success_url: `${base}/account/services?upgraded=1`,
+      cancel_url: `${base}/account/services`,
+    });
+    return NextResponse.json({ url: upgrade.url });
+  }
 
   // Booking payment: customer pays a driver's quote.
   if (typeof body.bookingId === "string" && body.bookingId) {
