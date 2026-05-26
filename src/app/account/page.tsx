@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { getAdminUserId } from "@/lib/admin";
 import { dbToAppProfile } from "@/lib/profileMap";
 import AccountEditor from "@/components/AccountEditor";
+import TrackEvent from "@/components/TrackEvent";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default async function AccountPage() {
+export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const session = await getSession();
   if (!session) redirect("/signin");
   if (session.mustResetPassword) redirect("/reset-password");
@@ -26,9 +27,11 @@ export default async function AccountPage() {
   if (!db) redirect("/account/setup");
 
   const isAdmin = !!(await getAdminUserId());
+  const justRegistered = (await searchParams).registered === "1";
 
   return (
     <div className="relative">
+      {justRegistered && <TrackEvent event="CompleteRegistration" />}
       <div className="glow-radial pointer-events-none absolute inset-0 h-72" />
       <div className="relative">
         <AccountEditor initial={dbToAppProfile(db)} isAdmin={isAdmin} />

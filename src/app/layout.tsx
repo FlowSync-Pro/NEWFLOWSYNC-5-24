@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import MetaPixel from "@/components/MetaPixel";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,10 @@ export const metadata: Metadata = {
     title,
     description,
   },
+  // Meta domain verification (Business Settings → Brand Safety → Domains).
+  ...(process.env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION
+    ? { other: { "facebook-domain-verification": process.env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION } }
+    : {}),
 };
 
 export const viewport: Viewport = {
@@ -51,6 +56,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -82,6 +88,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        {metaPixelId && <MetaPixel pixelId={metaPixelId} />}
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

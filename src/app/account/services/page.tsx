@@ -6,6 +6,7 @@ import { getSession } from "@/lib/session";
 import { isPremiumTier, TIERS } from "@/lib/pricing";
 import MyServicesEditor, { type ServiceRow } from "@/components/MyServicesEditor";
 import UpgradeButton from "@/components/UpgradeButton";
+import TrackEvent from "@/components/TrackEvent";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +15,11 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default async function MyServicesPage() {
+export default async function MyServicesPage({ searchParams }: PageProps<"/account/services">) {
   const session = await getSession();
   if (!session) redirect("/signin");
   if (session.mustResetPassword) redirect("/reset-password");
+  const justUpgraded = (await searchParams).upgraded === "1";
 
   const profile = await prisma.driverProfile.findUnique({
     where: { userId: session.userId },
@@ -29,6 +31,7 @@ export default async function MyServicesPage() {
 
   return (
     <div className="relative">
+      {justUpgraded && premium && <TrackEvent event="Purchase" value={TIERS.premium.price} />}
       <div className="glow-radial pointer-events-none absolute inset-0 h-48" />
       <div className="relative mx-auto max-w-4xl px-5 py-10">
         <div className="flex items-center justify-between">

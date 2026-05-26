@@ -81,7 +81,7 @@ export async function register(_prev: AuthState, formData: FormData): Promise<Au
   await sendWelcomeEmail({ to: email, firstName, profileUrl: `${base}/account` });
 
   await createSession({ userId, role: "DRIVER", mustResetPassword: false });
-  redirect("/account");
+  redirect("/account?registered=1");
 }
 
 export async function login(_prev: AuthState, formData: FormData): Promise<AuthState> {

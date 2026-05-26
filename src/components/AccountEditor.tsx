@@ -14,6 +14,7 @@ import {
 import { getService } from "@/lib/services";
 import { isPremiumTier } from "@/lib/pricing";
 import { fileToScaledDataUrl } from "@/lib/image";
+import UpgradeButton from "./UpgradeButton";
 import { saveDriverProfile, type ProfileInput } from "@/app/actions/profile";
 import { saveDocument, removeDocument } from "@/app/actions/documents";
 import { logout } from "@/app/actions/auth";
@@ -197,6 +198,7 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
           {savedAt && <span className="text-sm text-accent">Saved</span>}
           {error && <span className="text-sm text-red-400">{error}</span>}
           {isAdmin && <Link href="/admin" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Admin</Link>}
+          {!premium && <UpgradeButton label="★ Upgrade to Premium" className="rounded-full bg-amber-400/20 px-5 py-2.5 text-sm font-medium text-amber-300 transition-colors hover:bg-amber-400/30" />}
           <Link href="/account/services" className="btn-ghost rounded-full px-5 py-2.5 text-sm">My Services</Link>
           <Link href="/account/bookings" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Bookings</Link>
           <form action={logout}>
