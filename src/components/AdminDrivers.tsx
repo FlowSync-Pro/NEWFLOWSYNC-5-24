@@ -19,6 +19,8 @@ export interface AdminDriverRow {
   city: string;
   verified: boolean;
   tier: string;
+  paid: boolean;
+  trips: number;
   createdAt: string;
   documents: AdminDoc[];
 }
@@ -74,10 +76,13 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${premium ? "bg-amber-400/20 text-amber-300" : "bg-surface-2 text-muted"}`}>
               {premium ? "★ Premium" : "Standard"}
             </span>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${driver.paid ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted"}`}>
+              {driver.paid ? "Paid" : "Unpaid"}
+            </span>
           </div>
           <p className="text-xs text-muted">{driver.email} · {driver.service} · {driver.city || "—"}</p>
           <p className="mt-1 text-xs text-muted">
-            License {hasLicense ? "✓" : "✗"} · Insurance {hasInsurance ? "✓" : "✗"}
+            License {hasLicense ? "✓" : "✗"} · Insurance {hasInsurance ? "✓" : "✗"} · {driver.trips} trip{driver.trips === 1 ? "" : "s"} logged
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -137,28 +142,42 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
   );
 }
 
+type Tab = "review" | "unpaid" | "verified" | "all";
+
 export default function AdminDrivers({ drivers }: { drivers: AdminDriverRow[] }) {
-  const [tab, setTab] = useState<"pending" | "all">("pending");
-  const pending = drivers.filter((d) => !d.verified);
-  const shown = tab === "pending" ? pending : drivers;
+  const [tab, setTab] = useState<Tab>("review");
+
+  const buckets: Record<Tab, AdminDriverRow[]> = {
+    review: drivers.filter((d) => !d.verified && d.paid),
+    unpaid: drivers.filter((d) => !d.verified && !d.paid),
+    verified: drivers.filter((d) => d.verified),
+    all: drivers,
+  };
+  const labels: Record<Tab, string> = {
+    review: `Paid · to verify (${buckets.review.length})`,
+    unpaid: `Applied · unpaid (${buckets.unpaid.length})`,
+    verified: `Verified (${buckets.verified.length})`,
+    all: `All (${buckets.all.length})`,
+  };
+  const shown = buckets[tab];
 
   return (
     <div>
-      <div className="mb-5 flex gap-1 rounded-full border border-border bg-surface p-1 w-fit">
-        {([["pending", `Pending (${pending.length})`], ["all", `All (${drivers.length})`]] as const).map(([id, label]) => (
+      <div className="mb-5 flex flex-wrap gap-1 rounded-full border border-border bg-surface p-1 w-fit">
+        {(["review", "unpaid", "verified", "all"] as Tab[]).map((id) => (
           <button
             key={id}
             onClick={() => setTab(id)}
             className={`rounded-full px-4 py-2 text-sm transition-colors ${tab === id ? "bg-accent text-[#04130a]" : "text-muted hover:text-foreground"}`}
           >
-            {label}
+            {labels[id]}
           </button>
         ))}
       </div>
 
       {shown.length === 0 ? (
         <div className="card p-10 text-center text-muted">
-          {tab === "pending" ? "Nothing waiting for review." : "No drivers yet."}
+          {tab === "review" ? "No paid drivers waiting for verification." : tab === "unpaid" ? "No unpaid applicants." : tab === "verified" ? "No verified drivers yet." : "No drivers yet."}
         </div>
       ) : (
         <div className="space-y-4">
