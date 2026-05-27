@@ -147,6 +147,18 @@ export async function sendPremiumUpgradeEmail(opts: {
   return send(opts.to, "You've been upgraded to FlowSync Premium", shell("Welcome to Premium", body));
 }
 
+export async function sendPasswordResetEmail(opts: {
+  to: string;
+  firstName: string;
+  resetUrl: string;
+}) {
+  const body = `
+    <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName}, we got a request to reset your FlowSync password. Click below to choose a new one — the link expires in 1 hour.</p>
+    <p style="margin-top:8px">${button(opts.resetUrl, "Reset my password")}</p>
+    <p style="color:#7c8a92;font-size:13px;margin-top:14px">If you didn't request this, you can safely ignore this email — your password won't change.</p>`;
+  return send(opts.to, "Reset your FlowSync password", shell("Password reset", body));
+}
+
 export async function sendWelcomeEmail(opts: { to: string; firstName: string; profileUrl: string }) {
   const body = `
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName}, welcome to FlowSync. Your account is ready — finish your profile and upload your documents to get verified.</p>
