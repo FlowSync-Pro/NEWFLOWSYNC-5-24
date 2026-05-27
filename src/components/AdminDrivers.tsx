@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { approveDriver, rejectDriver, setDriverTier, adminResetDriverPassword } from "@/app/actions/admin";
+import { approveDriver, rejectDriver, setDriverTier, adminResetDriverPassword, deleteDriver } from "@/app/actions/admin";
 
 export interface AdminDoc {
   kind: string;
@@ -49,6 +49,14 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
     if (res.tempPassword) setTempPw(res.tempPassword);
   };
 
+  const remove = async () => {
+    if (!confirm(`Delete ${driver.name || "this driver"}? This permanently removes their account, profile, and documents. This can't be undone.`)) return;
+    setBusy(true);
+    await deleteDriver(driver.id);
+    setBusy(false);
+    router.refresh();
+  };
+
   const hasLicense = driver.documents.some((d) => d.kind === "LICENSE");
   const hasInsurance = driver.documents.some((d) => d.kind === "INSURANCE");
   const premium = driver.tier === "PREMIUM";
@@ -71,13 +79,17 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
             License {hasLicense ? "✓" : "✗"} · Insurance {hasInsurance ? "✓" : "✗"}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => act(approveDriver)} disabled={busy || driver.verified} className="btn-primary rounded-full px-5 py-2 text-sm disabled:opacity-50">
-            Approve
-          </button>
-          <button onClick={() => act(rejectDriver)} disabled={busy} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground disabled:opacity-50">
-            {driver.verified ? "Revoke" : "Reject"}
-          </button>
+        <div className="flex flex-wrap gap-2">
+          {!driver.verified && (
+            <>
+              <button onClick={() => act(approveDriver)} disabled={busy} className="btn-primary rounded-full px-5 py-2 text-sm disabled:opacity-50">
+                Approve
+              </button>
+              <button onClick={() => act(rejectDriver)} disabled={busy} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground disabled:opacity-50">
+                Reject
+              </button>
+            </>
+          )}
           <button
             onClick={() => act((id) => setDriverTier(id, premium ? "STANDARD" : "PREMIUM"))}
             disabled={busy}
@@ -87,6 +99,9 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
           </button>
           <button onClick={resetPassword} disabled={busy} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground disabled:opacity-50">
             Reset password
+          </button>
+          <button onClick={remove} disabled={busy} className="rounded-full border border-red-500/40 px-5 py-2 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50">
+            Delete
           </button>
         </div>
       </div>

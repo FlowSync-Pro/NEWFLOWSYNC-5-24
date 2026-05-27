@@ -93,3 +93,28 @@ export async function rejectDriver(driverProfileId: string): Promise<{ ok: boole
   revalidatePath("/find-a-driver");
   return { ok: true };
 }
+
+/** Permanently delete a driver (account, profile, documents, services, and their
+ * bookings/payments). Used to clear out unwanted/spam requests. */
+export async function deleteDriver(driverProfileId: string): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  const profile = await prisma.driverProfile.findUnique({
+    where: { id: driverProfileId },
+    select: { userId: true },
+  });
+  if (!profile) return { ok: false, error: "Driver not found." };
+
+  try {
+    await prisma.$transaction([
+      prisma.payment.deleteMany({ where: { userId: profile.userId } }),
+      prisma.booking.deleteMany({ where: { driverProfileId } }),
+      // Deleting the user cascades the profile, its documents, and its services.
+      prisma.user.delete({ where: { id: profile.userId } }),
+    ]);
+  } catch {
+    return { ok: false, error: "Could not delete this driver." };
+  }
+  revalidatePath("/admin");
+  revalidatePath("/find-a-driver");
+  return { ok: true };
+}
