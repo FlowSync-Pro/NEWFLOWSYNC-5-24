@@ -70,6 +70,15 @@ function Register() {
   const [state, action, pending] = useActionState<AuthState, FormData>(register, {});
   return (
     <form action={action} className="space-y-3">
+      <div className="rounded-xl border border-accent/30 bg-accent-soft p-3 text-xs text-muted">
+        <p className="font-semibold text-accent">How getting listed works</p>
+        <p className="mt-1 leading-relaxed">
+          Creating your account is step 1. To get <strong className="text-foreground">verified and listed</strong> in
+          the directory so customers can book you, there&apos;s a one-time <strong className="text-foreground">$17 listing fee</strong>.
+          You can <Link href="/pricing" className="text-accent underline underline-offset-2">pay now &amp; get listed</Link>, or
+          finish here and complete it next — you&apos;re verified once it&apos;s paid.
+        </p>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <input name="firstName" placeholder="First name" autoComplete="given-name" required className={inputCls} />
         <input name="lastName" placeholder="Last name" autoComplete="family-name" required className={inputCls} />
@@ -86,6 +95,7 @@ function Register() {
       <button type="submit" disabled={pending} className="btn-primary w-full rounded-full px-6 py-3 text-sm disabled:opacity-60">
         {pending ? "Creating account…" : "Create account"}
       </button>
+      <p className="text-center text-xs text-muted">Free to start · $17 one-time to get verified &amp; listed</p>
     </form>
   );
 }
