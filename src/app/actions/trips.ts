@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { putDocument } from "@/lib/storage";
+import { drivingMiles, mapsKey } from "@/lib/distance";
 
 async function requireProfileId(): Promise<string> {
   const session = await getSession();
@@ -64,6 +65,19 @@ export async function addTrip(input: TripInput): Promise<{ ok: boolean; error?: 
   });
   revalidatePath("/account/trips");
   return { ok: true };
+}
+
+/** Auto-calculate loaded (pickup->drop-off) and deadhead (start->pickup) miles. */
+export async function estimateTripMiles(input: { start?: string; pickup: string; dropoff: string }): Promise<{
+  configured: boolean;
+  paidMiles?: number;
+  deadheadMiles?: number;
+}> {
+  await requireProfileId();
+  if (!mapsKey()) return { configured: false };
+  const paidMiles = (await drivingMiles(input.pickup, input.dropoff)) ?? undefined;
+  const deadheadMiles = input.start?.trim() ? ((await drivingMiles(input.start, input.pickup)) ?? undefined) : 0;
+  return { configured: true, paidMiles, deadheadMiles };
 }
 
 export async function deleteTrip(id: string): Promise<{ ok: boolean }> {

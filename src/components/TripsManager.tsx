@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addTrip, deleteTrip, addInspection } from "@/app/actions/trips";
+import { addTrip, deleteTrip, addInspection, estimateTripMiles } from "@/app/actions/trips";
 import { fileToScaledDataUrl } from "@/lib/image";
 import { INSPECTION_ITEMS, money, sumTrips, tripStats, type TripView } from "@/lib/trips";
 import TripMap from "./TripMap";
@@ -109,11 +109,23 @@ function InspectionSection({ inspections, onDone }: { inspections: InspectionVie
 
 function TripForm({ onDone }: { onDone: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [f, setF] = useState({ date: todayStr(), pickupAddress: "", dropoffAddress: "", earnings: "", paidMiles: "", deadheadMiles: "", fuel: "", tolls: "", otherExpenses: "", durationMinutes: "", notes: "" });
+  const [f, setF] = useState({ date: todayStr(), startAddress: "", pickupAddress: "", dropoffAddress: "", earnings: "", paidMiles: "", deadheadMiles: "", fuel: "", tolls: "", otherExpenses: "", durationMinutes: "", notes: "" });
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [calc, setCalc] = useState(false);
+  const [calcMsg, setCalcMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
+
+  const calcMiles = async () => {
+    if (!f.pickupAddress.trim() || !f.dropoffAddress.trim()) { setCalcMsg("Enter pickup and drop-off first."); return; }
+    setCalc(true); setCalcMsg(null);
+    const res = await estimateTripMiles({ start: f.startAddress, pickup: f.pickupAddress, dropoff: f.dropoffAddress });
+    setCalc(false);
+    if (!res.configured) { setCalcMsg("Auto-mileage isn't enabled yet (add a Google Maps key)."); return; }
+    setF((s) => ({ ...s, paidMiles: res.paidMiles != null ? String(res.paidMiles) : s.paidMiles, deadheadMiles: res.deadheadMiles != null ? String(res.deadheadMiles) : s.deadheadMiles }));
+    setCalcMsg("Filled from addresses — adjust if needed.");
+  };
 
   const addPhotos = async (files: FileList | null) => {
     if (!files) return;
@@ -135,7 +147,7 @@ function TripForm({ onDone }: { onDone: () => void }) {
       durationMinutes: Number(f.durationMinutes), notes: f.notes, photos,
     });
     setBusy(false);
-    if (res.ok) { setF({ date: todayStr(), pickupAddress: "", dropoffAddress: "", earnings: "", paidMiles: "", deadheadMiles: "", fuel: "", tolls: "", otherExpenses: "", durationMinutes: "", notes: "" }); setPhotos([]); onDone(); }
+    if (res.ok) { setF({ date: todayStr(), startAddress: "", pickupAddress: "", dropoffAddress: "", earnings: "", paidMiles: "", deadheadMiles: "", fuel: "", tolls: "", otherExpenses: "", durationMinutes: "", notes: "" }); setPhotos([]); setCalcMsg(null); onDone(); }
     else setError(res.error ?? "Couldn't save the trip.");
   };
 
@@ -143,8 +155,15 @@ function TripForm({ onDone }: { onDone: () => void }) {
     <form onSubmit={submit} className="card space-y-3 p-6 lg:sticky lg:top-24">
       <h2 className="text-lg font-semibold">Log a trip</h2>
       <input className={field} type="date" value={f.date} onChange={(e) => set("date", e.target.value)} />
+      <input className={field} placeholder="Starting location (optional — for deadhead)" value={f.startAddress} onChange={(e) => set("startAddress", e.target.value)} />
       <input className={field} placeholder="Pickup address" value={f.pickupAddress} onChange={(e) => set("pickupAddress", e.target.value)} required />
       <input className={field} placeholder="Drop-off address" value={f.dropoffAddress} onChange={(e) => set("dropoffAddress", e.target.value)} required />
+      <div>
+        <button type="button" onClick={calcMiles} disabled={calc} className="btn-ghost w-full rounded-xl px-4 py-2.5 text-sm disabled:opacity-60">
+          {calc ? "Calculating…" : "⚡ Auto-calculate miles from addresses"}
+        </button>
+        {calcMsg && <p className="mt-1 text-xs text-muted">{calcMsg}</p>}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <label className="text-xs text-muted">Earnings ($)<input className={field} type="number" step="0.01" value={f.earnings} onChange={(e) => set("earnings", e.target.value)} /></label>
         <label className="text-xs text-muted">Duration (min)<input className={field} type="number" value={f.durationMinutes} onChange={(e) => set("durationMinutes", e.target.value)} /></label>
