@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { approveDriver, rejectDriver, setDriverTier, adminResetDriverPassword, deleteDriver } from "@/app/actions/admin";
@@ -103,6 +104,9 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
           <button onClick={remove} disabled={busy} className="rounded-full border border-red-500/40 px-5 py-2 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50">
             Delete
           </button>
+          <Link href={`/admin/drivers/${driver.id}`} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground">
+            View ops
+          </Link>
         </div>
       </div>
 
