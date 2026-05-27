@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { approveDriver, rejectDriver, setDriverTier } from "@/app/actions/admin";
+import { approveDriver, rejectDriver, setDriverTier, adminResetDriverPassword } from "@/app/actions/admin";
 
 export interface AdminDoc {
   kind: string;
@@ -33,12 +33,20 @@ const DOC_LABEL: Record<string, string> = {
 function DriverCard({ driver }: { driver: AdminDriverRow }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [tempPw, setTempPw] = useState<string | null>(null);
 
   const act = async (fn: (id: string) => Promise<{ ok: boolean }>) => {
     setBusy(true);
     await fn(driver.id);
     setBusy(false);
     router.refresh();
+  };
+
+  const resetPassword = async () => {
+    setBusy(true);
+    const res = await adminResetDriverPassword(driver.id);
+    setBusy(false);
+    if (res.tempPassword) setTempPw(res.tempPassword);
   };
 
   const hasLicense = driver.documents.some((d) => d.kind === "LICENSE");
@@ -77,8 +85,19 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
           >
             {premium ? "Set Standard" : "★ Upgrade to Premium"}
           </button>
+          <button onClick={resetPassword} disabled={busy} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground disabled:opacity-50">
+            Reset password
+          </button>
         </div>
       </div>
+
+      {tempPw && (
+        <div className="mt-4 rounded-xl border border-accent/40 bg-accent-soft p-4 text-sm">
+          <p className="font-semibold text-accent">Temporary password created</p>
+          <p className="mt-1 text-muted">Send this to {driver.name || "the driver"} — they&apos;ll set their own password on first sign-in. We also emailed it.</p>
+          <code className="mt-2 inline-block select-all rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-base text-foreground">{tempPw}</code>
+        </div>
+      )}
 
       {driver.documents.length > 0 ? (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">

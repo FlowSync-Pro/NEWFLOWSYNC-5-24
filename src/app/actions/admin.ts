@@ -3,8 +3,37 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
-import { sendDriverApprovedEmail, sendPremiumUpgradeEmail } from "@/lib/email";
+import { generateTempPassword, hashPassword } from "@/lib/password";
+import { sendDriverApprovedEmail, sendPremiumUpgradeEmail, sendTempPasswordEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
+
+/** Admin-issues a temporary password for a driver who's locked out.
+ * Returns the temp password so the admin can relay it directly (e.g. if email
+ * isn't reaching the driver). The driver must set a new one on next sign-in. */
+export async function adminResetDriverPassword(driverProfileId: string): Promise<{ ok: boolean; tempPassword?: string; error?: string }> {
+  await requireAdmin();
+  const driver = await prisma.driverProfile.findUnique({
+    where: { id: driverProfileId },
+    include: { user: true },
+  });
+  if (!driver) return { ok: false, error: "Driver not found." };
+
+  const tempPassword = generateTempPassword();
+  await prisma.user.update({
+    where: { id: driver.user.id },
+    data: { hashedPassword: hashPassword(tempPassword), mustResetPassword: true },
+  });
+
+  const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+  await sendTempPasswordEmail({
+    to: driver.user.email,
+    firstName: driver.firstName,
+    tempPassword,
+    signInUrl: `${base}/signin`,
+  });
+
+  return { ok: true, tempPassword };
+}
 
 export async function setDriverTier(driverProfileId: string, tier: "STANDARD" | "PREMIUM"): Promise<{ ok: boolean }> {
   await requireAdmin();
