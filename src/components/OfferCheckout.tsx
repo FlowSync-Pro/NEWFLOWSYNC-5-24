@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BUMPS, PLATFORM_FEE_PERCENT, TIERS, type TierId } from "@/lib/pricing";
+import { BUMPS, PLATFORM_FEE_PERCENT, TIERS } from "@/lib/pricing";
 
 function Check({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -11,13 +11,12 @@ function Check({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-export default function OfferCheckout({ initialTier = "standard" }: { initialTier?: TierId }) {
-  const [tierId, setTierId] = useState<TierId>(initialTier);
+export default function OfferCheckout() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const tier = TIERS[tierId];
+  const tier = TIERS.standard;
   const toggle = (id: string) => setSelected((s) => ({ ...s, [id]: !s[id] }));
 
   async function handleCheckout() {
@@ -28,7 +27,7 @@ export default function OfferCheckout({ initialTier = "standard" }: { initialTie
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tier: tierId, bumps }),
+        body: JSON.stringify({ tier: "standard", bumps }),
       });
       const data = await res.json();
       if (data.url) {
@@ -60,54 +59,38 @@ export default function OfferCheckout({ initialTier = "standard" }: { initialTie
           Get listed. Get booked. <span className="text-accent">Keep 95%.</span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-muted">
-          Pick a plan, get in the directory, and start taking direct bookings. We only take{" "}
+          Get in the directory and start taking direct bookings. We only take{" "}
           {PLATFORM_FEE_PERCENT}% — you set the price and keep the rest.
         </p>
       </div>
 
-      {/* Tier selector */}
-      <div className="mt-10 grid gap-4 sm:grid-cols-2">
-        {(["standard", "premium"] as TierId[]).map((id) => {
-          const t = TIERS[id];
-          const active = tierId === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTierId(id)}
-              className={`relative rounded-2xl border p-6 text-left transition-colors ${
-                active ? "border-accent bg-accent-soft" : "border-border bg-surface hover:border-accent/50"
-              } ${t.highlight ? "ring-1 ring-accent/30" : ""}`}
-            >
-              {t.highlight && (
-                <span className="absolute -top-3 right-5 rounded-full bg-accent px-3 py-1 text-[11px] font-bold text-[#04130a]">
-                  ★ Most popular
-                </span>
-              )}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${active ? "border-accent bg-accent text-[#04130a]" : "border-border"}`}>
-                    {active && <Check className="h-3.5 w-3.5" />}
-                  </span>
-                  <span className="text-lg font-bold">{t.name}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-2xl font-extrabold text-accent">${t.price}</span>
-                  <span className="block text-xs text-muted">one-time</span>
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-muted">{t.tagline}</p>
-              <ul className="mt-4 space-y-2">
-                {t.features.map((f) => (
-                  <li key={f} className="flex gap-2 text-sm">
-                    <span className="mt-0.5 text-accent"><Check className="h-4 w-4" /></span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </button>
-          );
-        })}
+      {/* Standard offer */}
+      <div className="mx-auto mt-10 max-w-2xl">
+        <div className="rounded-2xl border border-accent bg-accent-soft p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-lg font-bold">{tier.name} listing</span>
+              <p className="mt-1 text-sm text-muted">{tier.tagline}</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <span className="text-3xl font-extrabold text-accent">${tier.price}</span>
+              <span className="block text-xs text-muted">one-time</span>
+            </div>
+          </div>
+          <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+            {tier.features.map((f) => (
+              <li key={f} className="flex gap-2 text-sm">
+                <span className="mt-0.5 text-accent"><Check className="h-4 w-4" /></span>
+                {f}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="mt-3 text-center text-xs text-muted">
+          Want a custom service menu, a premium badge &amp; priority placement? Upgrade to{" "}
+          <span className="font-medium text-foreground">Premium (${TIERS.premium.price})</span>{" "}
+          anytime from your account after you&apos;re set up.
+        </p>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">

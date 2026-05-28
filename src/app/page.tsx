@@ -104,6 +104,9 @@ export default function Home() {
                 Explore services
               </Link>
             </div>
+            <p className="mt-3 text-sm text-muted">
+              $17 one-time to get listed · no monthly fees · keep 95% of every job
+            </p>
             <p className="mt-5 text-sm text-muted">
               Need something delivered?{" "}
               <Link href="/find-a-driver" className="font-medium text-accent underline-offset-4 hover:underline">
