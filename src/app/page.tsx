@@ -7,7 +7,7 @@ import Reveal from "@/components/Reveal";
 const STATS = [
   { value: "8", label: "Service types" },
   { value: "$40+/hr", label: "Top category" },
-  { value: "92%", label: "Earnings kept" },
+  { value: "95%", label: "Earnings kept" },
   { value: "24/7", label: "Work on your terms" },
 ];
 

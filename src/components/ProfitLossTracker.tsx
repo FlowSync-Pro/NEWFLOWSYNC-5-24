@@ -308,8 +308,7 @@ export default function ProfitLossTracker() {
       </div>
 
       <p className="mt-8 text-center text-xs text-muted">
-        Mockup — data is saved only in your browser. In the live app this syncs with your completed
-        FlowSync jobs automatically.
+        Your data is saved privately in your browser on this device.
       </p>
     </div>
   );

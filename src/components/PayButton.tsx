@@ -20,7 +20,7 @@ export default function PayButton({ bookingId, label }: { bookingId: string; lab
         window.location.href = data.url;
         return;
       }
-      setMsg(data.configured === false ? "Payments aren't enabled yet (demo)." : data.error ?? "Couldn't start payment.");
+      setMsg(data.configured === false ? "Payments are temporarily unavailable. Please try again later." : data.error ?? "Couldn't start payment.");
     } catch {
       setMsg("Something went wrong. Please try again.");
     } finally {

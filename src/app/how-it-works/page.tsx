@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     n: "01",
-    title: "Create your account",
-    body: "Enter a few details about you and your vehicle. We verify your identity and license so customers can trust you from day one.",
-    points: ["No interviews or résumé", "Quick identity & vehicle check", "Free to join"],
+    title: "Get listed for $17",
+    body: "Choose a plan and pay the one-time listing fee, then add a few details about you and your vehicle. We verify your identity and license so customers can trust you from day one.",
+    points: ["No interviews or résumé", "Quick identity & vehicle check", "$17 one-time — no monthly fees"],
   },
   {
     n: "02",

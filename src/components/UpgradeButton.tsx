@@ -26,7 +26,7 @@ export default function UpgradeButton({
         window.location.href = data.url;
         return;
       }
-      setMsg(data.configured === false ? "Payments aren't enabled yet (demo)." : data.error ?? "Couldn't start the upgrade.");
+      setMsg(data.configured === false ? "Payments are temporarily unavailable. Please try again later." : data.error ?? "Couldn't start the upgrade.");
     } catch {
       setMsg("Something went wrong. Please try again.");
     } finally {

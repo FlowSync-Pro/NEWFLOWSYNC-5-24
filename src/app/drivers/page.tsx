@@ -23,7 +23,7 @@ const COMPARE = [
 const FAQ = [
   {
     q: "How much does it cost to join?",
-    a: "Nothing to sign up. FlowSync takes a low flat fee per completed job instead of a large percentage commission, so the more you earn the more you keep.",
+    a: "Getting listed is a one-time $17 — no monthly fees. After that FlowSync takes just 5% per completed job instead of a large percentage commission, so the more you earn the more you keep.",
   },
   {
     q: "Can I offer more than one service?",
@@ -77,7 +77,7 @@ export default function DriversPage() {
       <section className="mx-auto max-w-7xl px-5 py-20">
         <div className="grid gap-5 sm:grid-cols-3">
           {[
-            { v: "92%", l: "of each fare stays with you on a typical job" },
+            { v: "95%", l: "of each fare stays with you on a typical job" },
             { v: "$40–75/hr", l: "earning range in moving & hauling" },
             { v: "Same day", l: "cash out on completed jobs" },
           ].map((x, i) => (

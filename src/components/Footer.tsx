@@ -56,7 +56,6 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-border pt-6 text-sm text-muted sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} FlowSync. A driver-first marketplace.</p>
-          <p className="text-xs">Mockup — for demonstration only.</p>
         </div>
       </div>
     </footer>
