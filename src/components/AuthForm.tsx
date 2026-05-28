@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { login, register, setPassword, requestPasswordReset, resetPasswordWithToken, type AuthState, type ForgotState } from "@/app/actions/auth";
-import { SERVICES } from "@/lib/services";
+import { useActionState } from "react";
+import { login, setPassword, requestPasswordReset, resetPasswordWithToken, type AuthState, type ForgotState } from "@/app/actions/auth";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition-colors focus:border-accent";
@@ -66,58 +65,16 @@ export function TokenResetForm({ token, email }: { token: string; email: string 
   );
 }
 
-function Register() {
-  const [state, action, pending] = useActionState<AuthState, FormData>(register, {});
-  return (
-    <form action={action} className="space-y-3">
-      <div className="rounded-xl border border-accent/30 bg-accent-soft p-3 text-xs text-muted">
-        <p className="font-semibold text-accent">How getting listed works</p>
-        <p className="mt-1 leading-relaxed">
-          Creating your account is step 1. To get <strong className="text-foreground">verified and listed</strong> in
-          the directory so customers can book you, there&apos;s a one-time <strong className="text-foreground">$17 listing fee</strong>.
-          You can <Link href="/pricing" className="text-accent underline underline-offset-2">pay now &amp; get listed</Link>, or
-          finish here and complete it next — you&apos;re verified once it&apos;s paid.
-        </p>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <input name="firstName" placeholder="First name" autoComplete="given-name" required className={inputCls} />
-        <input name="lastName" placeholder="Last name" autoComplete="family-name" required className={inputCls} />
-      </div>
-      <input name="email" type="email" placeholder="Email" autoComplete="email" required className={inputCls} />
-      <select name="primaryService" defaultValue="" required className={inputCls}>
-        <option value="" disabled>Main service…</option>
-        {SERVICES.map((s) => (
-          <option key={s.id} value={s.id}>{s.name}</option>
-        ))}
-      </select>
-      <input name="password" type="password" placeholder="Create a password (8+ characters)" autoComplete="new-password" required className={inputCls} />
-      {state.error && <p className="text-sm text-red-400">{state.error}</p>}
-      <button type="submit" disabled={pending} className="btn-primary w-full rounded-full px-6 py-3 text-sm disabled:opacity-60">
-        {pending ? "Creating account…" : "Create account"}
-      </button>
-      <p className="text-center text-xs text-muted">Free to start · $17 one-time to get verified &amp; listed</p>
-    </form>
-  );
-}
-
 export function AuthPanel() {
-  const [mode, setMode] = useState<"signin" | "register">("signin");
   return (
     <div>
-      <div className="mb-5 flex gap-1 rounded-full border border-border bg-surface-2 p-1">
-        {(["signin", "register"] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`flex-1 rounded-full px-4 py-2 text-sm transition-colors ${
-              mode === m ? "bg-accent text-[#04130a]" : "text-muted hover:text-foreground"
-            }`}
-          >
-            {m === "signin" ? "Sign in" : "Create account"}
-          </button>
-        ))}
-      </div>
-      {mode === "signin" ? <SignIn /> : <Register />}
+      <SignIn />
+      <p className="mt-5 border-t border-border pt-5 text-center text-sm text-muted">
+        New driver?{" "}
+        <Link href="/pricing" className="font-medium text-accent hover:underline">
+          Get listed for $17 →
+        </Link>
+      </p>
     </div>
   );
 }

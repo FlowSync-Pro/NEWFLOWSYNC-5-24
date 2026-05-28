@@ -97,7 +97,7 @@ export default function Home() {
               Pick your service, build a profile that fits, and keep more of what you earn.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/signup" className="btn-primary w-full rounded-full px-7 py-3.5 text-base sm:w-auto">
+              <Link href="/pricing" className="btn-primary w-full rounded-full px-7 py-3.5 text-base sm:w-auto">
                 Become a driver
               </Link>
               <Link href="/services" className="btn-ghost w-full rounded-full px-7 py-3.5 text-base sm:w-auto">
@@ -261,7 +261,7 @@ export default function Home() {
               <p className="mx-auto mt-4 max-w-xl text-muted">
                 Join FlowSync today and start earning across the delivery services that fit your life.
               </p>
-              <Link href="/signup" className="btn-primary mt-8 inline-flex rounded-full px-8 py-3.5 text-base">
+              <Link href="/pricing" className="btn-primary mt-8 inline-flex rounded-full px-8 py-3.5 text-base">
                 Start your driver profile
               </Link>
             </div>

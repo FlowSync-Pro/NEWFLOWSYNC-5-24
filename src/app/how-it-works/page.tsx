@@ -125,7 +125,7 @@ export default function HowItWorksPage() {
           <p className="mx-auto mt-4 max-w-xl text-muted">
             Run through the signup and watch your service-matched profile come together in real time.
           </p>
-          <Link href="/signup" className="btn-primary mt-8 inline-flex rounded-full px-8 py-3.5 text-base">
+          <Link href="/pricing" className="btn-primary mt-8 inline-flex rounded-full px-8 py-3.5 text-base">
             Become a driver
           </Link>
         </Reveal>

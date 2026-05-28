@@ -86,7 +86,7 @@ export default function ServicesPage() {
               <h3 className="text-xl font-bold">Not sure which to start with?</h3>
               <p className="mt-1 text-muted">Begin the signup and we&apos;ll recommend services that match your vehicle.</p>
             </div>
-            <Link href="/signup" className="btn-primary shrink-0 rounded-full px-7 py-3.5 text-sm">
+            <Link href="/pricing" className="btn-primary shrink-0 rounded-full px-7 py-3.5 text-sm">
               Become a driver
             </Link>
           </div>

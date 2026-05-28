@@ -63,7 +63,7 @@ export default function DriversPage() {
             into a real service business — across whichever deliveries you choose.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/signup" className="btn-primary w-full rounded-full px-8 py-3.5 text-base sm:w-auto">
+            <Link href="/pricing" className="btn-primary w-full rounded-full px-8 py-3.5 text-base sm:w-auto">
               Become a driver
             </Link>
             <Link href="/calculator" className="btn-ghost w-full rounded-full px-8 py-3.5 text-base sm:w-auto">
@@ -152,7 +152,7 @@ export default function DriversPage() {
               <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
                 Ready to earn on your terms?
               </h2>
-              <Link href="/signup" className="btn-primary mt-7 inline-flex rounded-full px-8 py-3.5 text-base">
+              <Link href="/pricing" className="btn-primary mt-7 inline-flex rounded-full px-8 py-3.5 text-base">
                 Start your driver profile
               </Link>
             </div>
