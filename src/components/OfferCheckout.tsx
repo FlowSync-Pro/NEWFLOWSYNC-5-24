@@ -155,7 +155,7 @@ export default function OfferCheckout() {
 
             <div className="mt-5 space-y-2 text-xs text-muted">
               <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> Only {PLATFORM_FEE_PERCENT}% per job — no monthly fees</p>
-              <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> Cancel your listing anytime</p>
+              <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> 14-day money-back guarantee</p>
             </div>
           </div>
           <p className="mt-4 text-center text-xs text-muted">Secure checkout powered by Stripe.</p>
