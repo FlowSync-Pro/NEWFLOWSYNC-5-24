@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { GUIDES } from "@/lib/guides";
 import { prisma } from "@/lib/db";
+import { allCityServiceRoutes } from "@/lib/locations";
+import { serviceFromEnum } from "@/lib/enums";
 
 // Generated on-demand (not at build) so it never needs the DB during `next build`
 // and always reflects currently listed drivers.
@@ -52,5 +54,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticEntries, ...driverEntries];
+  // City × service landing pages (the demand engine) — only real combos.
+  let cityEntries: MetadataRoute.Sitemap = [];
+  try {
+    const combos = await allCityServiceRoutes();
+    cityEntries = combos.map(({ serviceEnum, slug }) => ({
+      url: `${SITE_URL}/delivery/${serviceFromEnum(serviceEnum as never)}/${slug}`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    }));
+  } catch {
+    // No DB at build — skip; force-dynamic regenerates with data at runtime.
+  }
+
+  return [...staticEntries, ...driverEntries, ...cityEntries];
 }
