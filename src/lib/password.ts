@@ -18,7 +18,9 @@ export function verifyPassword(password: string, stored: string): boolean {
   return hashBuf.length === testBuf.length && timingSafeEqual(hashBuf, testBuf);
 }
 
-/** A short, human-friendly temporary password emailed after checkout. */
+/** A temporary password emailed after checkout. 12 bytes (~96 bits) of entropy
+ * so it resists brute-forcing even if the email is later exposed; rotated on
+ * first login via mustResetPassword. */
 export function generateTempPassword(): string {
-  return randomBytes(6).toString("base64url");
+  return randomBytes(12).toString("base64url");
 }

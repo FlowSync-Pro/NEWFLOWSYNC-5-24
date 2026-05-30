@@ -38,10 +38,13 @@ export async function completeDriverProfile(_prev: SetupState, formData: FormDat
   if (!SERVICE_IDS.includes(primaryService)) return { error: "Choose your main service." };
 
   const existing = await prisma.driverProfile.findUnique({ where: { userId: session.userId } });
-  if (!existing) {
-    await prisma.driverProfile.create({
-      data: { userId: session.userId, firstName, lastName, primaryService: serviceToEnum(primaryService) },
-    });
+  const data = { firstName, lastName, primaryService: serviceToEnum(primaryService) };
+  if (existing) {
+    // Profile already exists (e.g. revisiting setup) — apply the resubmitted
+    // values instead of silently discarding them.
+    await prisma.driverProfile.update({ where: { userId: session.userId }, data });
+  } else {
+    await prisma.driverProfile.create({ data: { userId: session.userId, ...data } });
   }
   redirect("/account");
 }

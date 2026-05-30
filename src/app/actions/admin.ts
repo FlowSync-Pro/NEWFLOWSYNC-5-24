@@ -111,7 +111,10 @@ export async function deleteDriver(driverProfileId: string): Promise<{ ok: boole
       // Deleting the user cascades the profile, its documents, and its services.
       prisma.user.delete({ where: { id: profile.userId } }),
     ]);
-  } catch {
+  } catch (e) {
+    // Most likely an FK constraint (e.g. the driver also has bookings as a
+    // customer, which have no cascade). Log the cause so it's diagnosable.
+    console.error(`deleteDriver failed for profile ${driverProfileId}:`, e);
     return { ok: false, error: "Could not delete this driver." };
   }
   revalidatePath("/admin");

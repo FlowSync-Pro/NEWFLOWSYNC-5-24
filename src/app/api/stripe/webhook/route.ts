@@ -106,13 +106,8 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
   const already = await prisma.payment.findUnique({ where: { stripeSessionId: session.id } });
   if (already) return;
 
-  const profile = await prisma.driverProfile.findUnique({
-    where: { userId },
-    include: { user: true },
-  });
-  if (!profile) return;
-
-  await prisma.driverProfile.update({ where: { id: profile.id }, data: { tier: "PREMIUM" } });
+  // Always record the payment first so a successful charge is never lost, even
+  // if the profile is missing (e.g. deleted between checkout start and webhook).
   await prisma.payment.create({
     data: {
       userId,
@@ -125,6 +120,18 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
       stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
     },
   });
+
+  const profile = await prisma.driverProfile.findUnique({
+    where: { userId },
+    include: { user: true },
+  });
+  if (!profile) {
+    // Payment recorded above; flag for manual follow-up rather than dropping it.
+    console.error(`fulfillUpgrade: paid upgrade for user ${userId} has no driver profile (session ${session.id})`);
+    return;
+  }
+
+  await prisma.driverProfile.update({ where: { id: profile.id }, data: { tier: "PREMIUM" } });
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
   await sendPremiumUpgradeEmail({
