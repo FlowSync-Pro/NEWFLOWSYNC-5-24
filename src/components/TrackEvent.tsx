@@ -19,11 +19,15 @@ export default function TrackEvent({
   useEffect(() => {
     const w = window as unknown as { fbq?: (...a: unknown[]) => void };
     if (!w.fbq) return;
-    const args: unknown[] = ["track", event];
-    if (value != null) args.push({ value, currency });
-    else if (eventId) args.push({});
-    if (eventId) args.push({ eventID: eventId });
-    w.fbq(...args);
+    const data: Record<string, unknown> = {};
+    if (value != null) {
+      data.value = value;
+      data.currency = currency;
+    }
+    if (eventId) {
+      data.eventID = eventId;
+    }
+    w.fbq("track", event, data);
   }, [event, value, currency, eventId]);
 
   return null;
