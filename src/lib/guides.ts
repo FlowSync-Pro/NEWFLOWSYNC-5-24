@@ -343,6 +343,57 @@ export const GUIDES: Guide[] = [
     ],
     cta: GET_LISTED_CTA,
   },
+  {
+    slug: "sedan-drivers-earn-with-dumpling",
+    category: "marketing",
+    title: "Sedan drivers: stack a grocery-delivery business with Dumpling.us",
+    excerpt:
+      "Got a sedan or SUV? Dumpling.us lets you run your own grocery-shopping and delivery business — free to join — and it stacks perfectly with your FlowSync listing.",
+    metaDescription:
+      "How sedan drivers can earn more by joining Dumpling.us — a free platform to run your own grocery delivery business — and stack it with a FlowSync directory listing.",
+    readMinutes: 5,
+    sections: [
+      {
+        heading: "Why Dumpling is a great fit for sedan drivers",
+        body: [
+          "You don't need a truck or van to earn well. Grocery and personal-shopping deliveries fit perfectly in a regular sedan or SUV — and that's exactly what Dumpling.us is built for.",
+          "Dumpling lets you run your own grocery-shopping and delivery business: you bring on your own customers, set your own schedule, and keep the relationship instead of being a faceless worker for a big app.",
+        ],
+        tip: "If you're already listed on FlowSync for grocery delivery, Dumpling is a natural second income stream using the same vehicle and the same skills.",
+      },
+      {
+        heading: "It's free to sign up",
+        body: [
+          "Creating a Dumpling account to start is free — there's no cost to set up your shopper profile and begin building your business. (Dumpling also offers a paid Pro plan with extra business tools, but you don't need it to get going.)",
+          "That means you can test grocery delivery as an income stream with zero upfront cost, then decide later whether the paid tier is worth it.",
+        ],
+        steps: [
+          "Go to dumpling.us and sign up for a free account.",
+          "Set up your shopper profile — your name, your area, and the stores you'll shop.",
+          "Invite your first customers (friends, family, neighbors) to book you for a grocery run.",
+          "Shop, deliver, and get paid directly — you own the customer, not an algorithm.",
+        ],
+      },
+      {
+        heading: "How Dumpling stacks with FlowSync",
+        body: [
+          "FlowSync gets you found: your directory listing puts you in front of local customers searching for a driver, and your fair-quote calculator and tools help you run every job like a pro.",
+          "Dumpling gives you a dedicated grocery-shopping toolset for the customers you bring on yourself. Run them side by side and you've got two ways to earn from one sedan — direct bookings through FlowSync, and grocery-shopping clients through Dumpling.",
+        ],
+        tip: "Slow grocery day on one platform? Take a job on the other. Diversifying who you earn from is how independent drivers stay booked all week.",
+      },
+      {
+        heading: "Make the most of both",
+        steps: [
+          "Use your FlowSync profile as your professional home base and share it with every customer.",
+          "Bring repeat grocery customers onto Dumpling so you keep the relationship and the schedule.",
+          "Track all of it — income, mileage, and expenses — in your FlowSync Profit & Loss tracker so you know your real take-home across both.",
+        ],
+        tip: "Customers trust drivers who look established. Linking a clean FlowSync profile makes it easy for a Dumpling customer to see you're a verified, professional driver.",
+      },
+    ],
+    cta: GET_LISTED_CTA,
+  },
 ];
 
 export function getGuide(slug: string): Guide | undefined {
