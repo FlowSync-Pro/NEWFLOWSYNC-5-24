@@ -4,15 +4,15 @@ import type { Metadata } from "next";
 import {
   CATEGORY_LABEL,
   getGuide,
-  GUIDES,
   guidesByCategory,
 } from "@/lib/guides";
 import { SITE_URL } from "@/lib/site";
+import { hasGuideAccess } from "@/lib/access";
 import JsonLd, { breadcrumbLd } from "@/components/JsonLd";
 
-export function generateStaticParams() {
-  return GUIDES.map((g) => ({ slug: g.slug }));
-}
+// Guides are a paid member benefit — access depends on the signed-in user, so
+// the page can't be statically prerendered.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -38,6 +38,10 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
   const guide = getGuide(slug);
   if (!guide) notFound();
 
+  const unlocked = await hasGuideAccess();
+  // Non-members see the first section as a free preview; the rest is locked.
+  const visibleSections = unlocked ? guide.sections : guide.sections.slice(0, 1);
+
   const related = guidesByCategory(guide.category)
     .filter((g) => g.slug !== guide.slug)
     .slice(0, 3);
@@ -51,6 +55,14 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
     author: { "@type": "Organization", name: "FlowSync" },
     publisher: { "@type": "Organization", name: "FlowSync" },
     mainEntityOfPage: `${SITE_URL}/grow/${guide.slug}`,
+    // Tell Google this is paywalled member content (avoids cloaking penalties):
+    // the preview is free, the locked sections are not.
+    isAccessibleForFree: false,
+    hasPart: {
+      "@type": "WebPageElement",
+      isAccessibleForFree: false,
+      cssSelector: ".locked-content",
+    },
   };
 
   return (
@@ -86,7 +98,7 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
         </header>
 
         <div className="mt-10 space-y-10">
-          {guide.sections.map((s) => (
+          {visibleSections.map((s) => (
             <section key={s.heading}>
               <h2 className="text-xl font-bold tracking-tight">{s.heading}</h2>
               {s.body?.map((p, i) => (
@@ -114,7 +126,33 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
           ))}
         </div>
 
-        {guide.cta && (
+        {!unlocked && (
+          <div className="locked-content relative mt-6">
+            {/* Fade the preview into the paywall */}
+            <div className="pointer-events-none absolute -top-24 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-background" />
+            <div className="rounded-2xl border border-accent/40 bg-surface p-8 text-center">
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6"><rect x="4" y="11" width="16" height="9" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" strokeLinecap="round" /></svg>
+              </span>
+              <h2 className="mt-4 text-xl font-bold tracking-tight">The rest of this guide is for FlowSync members</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm text-muted">
+                Get listed for a one-time $17 and unlock every guide in the library —
+                including the full DOT &amp; EIN walkthrough, business-setup, insurance,
+                and local-marketing playbooks. You also get your directory listing and tools.
+              </p>
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link href="/pricing" className="btn-primary rounded-full px-7 py-3 text-sm">
+                  Get listed &amp; unlock all guides — $17
+                </Link>
+                <Link href="/signin" className="btn-ghost rounded-full px-6 py-3 text-sm">
+                  Already a member? Sign in
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {unlocked && guide.cta && (
           <div className="mt-12 flex flex-col items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-7 text-center sm:flex-row sm:text-left">
             <p className="text-sm text-muted">{guide.cta.note}</p>
             <Link href={guide.cta.href} className="btn-primary shrink-0 rounded-full px-6 py-3 text-sm">

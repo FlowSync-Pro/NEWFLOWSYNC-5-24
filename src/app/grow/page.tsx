@@ -7,7 +7,7 @@ import { SITE_URL } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Grow your delivery business — guides & playbooks",
   description:
-    "Free guides to build your delivery business the right way: get your DOT & EIN, choose a business structure, get insured, and market on Nextdoor, Yelp, Thumbtack, Craigslist, and Indeed.",
+    "Member guides to build your delivery business the right way: get your DOT & EIN, choose a business structure, get insured, and market on Nextdoor, Yelp, Thumbtack, Craigslist, and Indeed. Included with your $17 FlowSync listing.",
   alternates: { canonical: `${SITE_URL}/grow` },
 };
 
@@ -32,6 +32,10 @@ export default function GrowPage() {
           <p className="mx-auto mt-5 max-w-2xl text-muted">
             Practical playbooks to set your foundation and market your services locally, so you keep
             more of what you earn and avoid the mistakes most drivers make.
+          </p>
+          <p className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-4 py-1.5 text-xs font-medium text-accent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><rect x="4" y="11" width="16" height="9" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" strokeLinecap="round" /></svg>
+            Included free with your $17 FlowSync listing
           </p>
         </div>
       </section>
