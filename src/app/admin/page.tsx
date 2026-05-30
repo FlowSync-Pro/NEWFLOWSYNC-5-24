@@ -8,6 +8,7 @@ import { serviceFromEnum } from "@/lib/enums";
 import { getService } from "@/lib/services";
 import { money } from "@/lib/trips";
 import AdminDrivers, { type AdminDriverRow } from "@/components/AdminDrivers";
+import AdminAddDriver from "@/components/AdminAddDriver";
 
 export const dynamic = "force-dynamic";
 
@@ -133,7 +134,10 @@ export default async function AdminPage() {
         </div>
 
         {/* Drivers */}
-        <h2 className="mt-8 text-sm font-semibold uppercase tracking-widest text-accent">Drivers</h2>
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">Drivers</h2>
+          <AdminAddDriver />
+        </div>
         <div className="mt-3">
           <AdminDrivers drivers={drivers} />
         </div>
