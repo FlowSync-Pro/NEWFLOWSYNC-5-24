@@ -4,6 +4,7 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
+import { attributeReferral } from "@/lib/referrals";
 import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendPremiumUpgradeEmail, sendPnlProEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
@@ -257,4 +258,7 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
       stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
     },
   });
+
+  // Credit the referrer (if this driver came through a referral link).
+  if (md.ref) await attributeReferral(user.id, md.ref);
 }

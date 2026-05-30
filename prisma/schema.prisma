@@ -95,6 +95,11 @@ model User {
   // days: string[] (YYYY-MM-DD daily check-ins for the habit streak) }.
   roadmapData Json?
 
+  // Referral program: each user's own shareable code, and the code they signed
+  // up under (only set once they've paid, so it counts real referrals).
+  referralCode   String? @unique
+  referredByCode String?
+
   driverProfile DriverProfile?
   payments      Payment[]
   bookings      Booking[]      @relation("CustomerBookings")

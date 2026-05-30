@@ -110,6 +110,7 @@ export async function POST(req: Request) {
   const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
   const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
   const primaryService = typeof body.primaryService === "string" ? body.primaryService : "";
+  const ref = typeof body.ref === "string" ? body.ref.trim().slice(0, 16) : "";
   const tierId: TierId = body.tier === "premium" ? "premium" : "standard";
   const tier = TIERS[tierId];
 
@@ -128,7 +129,7 @@ export async function POST(req: Request) {
       quantity: 1,
     })),
     customer_email: email || undefined,
-    metadata: { type: "listing", tier: tierId, bumps: bumps.join(","), firstName, lastName, primaryService },
+    metadata: { type: "listing", tier: tierId, bumps: bumps.join(","), firstName, lastName, primaryService, ref },
     success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/pricing?checkout=cancelled`,
   });

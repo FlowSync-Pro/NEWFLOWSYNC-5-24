@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { currentStreak, parseProgress, todayKey } from "@/lib/roadmap";
+import { referralStats, REWARD_THRESHOLD } from "@/lib/referrals";
+import { SITE_URL } from "@/lib/site";
 import RoadmapTracker from "@/components/RoadmapTracker";
+import ReferralCard from "@/components/ReferralCard";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +28,8 @@ export default async function RoadmapPage() {
   if (!profile) redirect("/account/setup");
 
   const progress = parseProgress(user?.roadmapData);
+  const ref = await referralStats(session.userId);
+  const shareBase = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
 
   return (
     <div className="relative">
@@ -36,6 +41,16 @@ export default async function RoadmapPage() {
           streak={currentStreak(progress.days)}
           checkedInToday={progress.days.includes(todayKey())}
         />
+        <div className="mx-auto max-w-3xl px-5 pb-12">
+          <ReferralCard
+            code={ref.code}
+            referred={ref.referred}
+            remaining={ref.remaining}
+            rewarded={ref.rewarded}
+            threshold={REWARD_THRESHOLD}
+            shareBase={shareBase}
+          />
+        </div>
       </div>
     </div>
   );

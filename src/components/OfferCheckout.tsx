@@ -42,10 +42,17 @@ function ActivityTicker({ recent }: { recent: SocialProof["recent"] }) {
   );
 }
 
-export default function OfferCheckout({ proof }: { proof: SocialProof }) {
+export default function OfferCheckout({ proof, referralCode = "" }: { proof: SocialProof; referralCode?: string }) {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Persist a referral code so it survives navigation away from ?ref=… and back.
+  useEffect(() => {
+    if (referralCode) {
+      try { localStorage.setItem("fs_ref", referralCode); } catch {}
+    }
+  }, [referralCode]);
 
   const tier = TIERS.standard;
   const toggle = (id: string) => setSelected((s) => ({ ...s, [id]: !s[id] }));
@@ -55,10 +62,12 @@ export default function OfferCheckout({ proof }: { proof: SocialProof }) {
     setLoading(true);
     try {
       const bumps = BUMPS.filter((b) => selected[b.id]).map((b) => b.id);
+      let ref = referralCode;
+      try { ref = ref || localStorage.getItem("fs_ref") || ""; } catch {}
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tier: "standard", bumps }),
+        body: JSON.stringify({ tier: "standard", bumps, ref }),
       });
       const data = await res.json();
       if (data.url) {

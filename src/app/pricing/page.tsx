@@ -40,14 +40,16 @@ const productLd = {
   ],
 };
 
-export default async function PricingPage() {
+export default async function PricingPage({ searchParams }: PageProps<"/pricing">) {
+  const sp = await searchParams;
+  const ref = typeof sp.ref === "string" ? sp.ref : Array.isArray(sp.ref) ? sp.ref[0] : "";
   const proof = await getSocialProof();
   return (
     <div className="relative">
       <JsonLd data={productLd} />
       <div className="glow-radial pointer-events-none absolute inset-0 h-80" />
       <div className="relative">
-        <OfferCheckout proof={proof} />
+        <OfferCheckout proof={proof} referralCode={ref} />
       </div>
     </div>
   );
