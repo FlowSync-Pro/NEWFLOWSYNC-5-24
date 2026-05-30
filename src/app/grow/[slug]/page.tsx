@@ -39,8 +39,10 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
   if (!guide) notFound();
 
   const unlocked = await hasGuideAccess();
-  // Non-members see the first section as a free preview; the rest is locked.
-  const visibleSections = unlocked ? guide.sections : guide.sections.slice(0, 1);
+  // Non-members see NO body — only the title + excerpt + paywall card. The
+  // first section of most guides contains the most valuable info (e.g. the
+  // free EIN walkthrough), so even a one-section preview gives the product away.
+  const visibleSections = unlocked ? guide.sections : [];
 
   const related = guidesByCategory(guide.category)
     .filter((g) => g.slug !== guide.slug)
