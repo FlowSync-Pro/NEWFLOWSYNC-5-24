@@ -66,6 +66,19 @@ export interface ProfileInput {
   externalWebsiteUrl?: string;
 }
 
+/** Accept only http(s) URLs; reject javascript:/data: and other schemes that
+ * would become an XSS vector when rendered as an <a href> on the public profile. */
+function safeWebsiteUrl(raw?: string): string | null {
+  const trimmed = raw?.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Update the signed-in driver's profile. The profile row is created at registration. */
 export async function saveDriverProfile(input: ProfileInput): Promise<{ ok: boolean }> {
   const session = await getSession();
@@ -88,7 +101,7 @@ export async function saveDriverProfile(input: ProfileInput): Promise<{ ok: bool
     vehicleYear: input.vehicleYear,
     additionalServices: input.additionalServices?.map(serviceToEnum),
     serviceDetails: input.serviceDetails as Prisma.InputJsonValue | undefined,
-    externalWebsiteUrl: input.externalWebsiteUrl?.trim() || null,
+    externalWebsiteUrl: safeWebsiteUrl(input.externalWebsiteUrl),
   };
 
   await prisma.driverProfile.update({ where: { userId: session.userId }, data });

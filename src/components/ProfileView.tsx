@@ -15,6 +15,18 @@ function initials(first: string, last: string) {
   return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || "FS";
 }
 
+/** Render only safe http(s) links — guards against legacy rows that may hold a
+ * javascript:/data: URL saved before server-side validation existed. */
+function safeHref(raw?: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function Stars({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5 text-accent">
@@ -138,11 +150,11 @@ export default function ProfileView({
                   </div>
                 </div>
               )}
-              {premium && profile.externalWebsiteUrl && (
+              {premium && safeHref(profile.externalWebsiteUrl) && (
                 <div className="mt-5">
                   <p className="text-xs uppercase tracking-widest text-muted">Website</p>
-                  <a href={profile.externalWebsiteUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline">
-                    {profile.externalWebsiteUrl.replace(/^https?:\/\//, "")}
+                  <a href={safeHref(profile.externalWebsiteUrl)!} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline">
+                    {profile.externalWebsiteUrl!.replace(/^https?:\/\//, "")}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M7 17 17 7M9 7h8v8" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </a>
                 </div>

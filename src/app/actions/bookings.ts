@@ -31,12 +31,15 @@ export async function requestBooking(_prev: RequestState, formData: FormData): P
   });
   if (!driver) return { error: "That driver is no longer available." };
 
-  // Lightweight customer record (keyed by email) to own the booking.
-  const customer = await prisma.user.upsert({
-    where: { email },
-    update: { name },
-    create: { email, name, role: "CUSTOMER" },
-  });
+  // Lightweight customer record (keyed by email) to own the booking. Never
+  // mutate an existing driver/admin account that happens to share this email —
+  // only refresh the name on an existing CUSTOMER record.
+  const existing = await prisma.user.findUnique({ where: { email } });
+  const customer = existing
+    ? existing.role === "CUSTOMER"
+      ? await prisma.user.update({ where: { email }, data: { name } })
+      : existing
+    : await prisma.user.create({ data: { email, name, role: "CUSTOMER" } });
 
   await prisma.booking.create({
     data: { customerId: customer.id, driverProfileId, service: driver.primaryService, details, status: "REQUESTED" },
@@ -66,6 +69,11 @@ export async function sendQuote(bookingId: string, amountDollars: number): Promi
     include: { driverProfile: { include: { user: true } }, customer: true },
   });
   if (!booking || booking.driverProfile.userId !== session.userId) return { ok: false, error: "Booking not found." };
+  // Only quote requests that haven't been paid yet. Re-quoting a PAID booking
+  // would reset it to QUOTED and let the customer be charged a second time.
+  if (booking.status !== "REQUESTED" && booking.status !== "QUOTED") {
+    return { ok: false, error: "This booking can no longer be quoted." };
+  }
 
   const amountCents = Math.round(amountDollars * 100);
   await prisma.booking.update({ where: { id: bookingId }, data: { quoteAmount: amountCents, status: "QUOTED" } });

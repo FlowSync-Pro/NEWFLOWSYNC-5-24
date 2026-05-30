@@ -9,8 +9,8 @@ import ProfileView from "@/components/ProfileView";
 import RequestQuoteButton from "@/components/RequestQuoteButton";
 
 async function fetchProfile(id: string) {
-  return prisma.driverProfile.findUnique({
-    where: { id },
+  return prisma.driverProfile.findFirst({
+    where: { id, verified: true },
     include: { documents: true, services: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
   });
 }
