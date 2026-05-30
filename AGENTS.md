@@ -22,3 +22,15 @@ Key conventions already chosen (don't undo without reason):
 - DB access stays in server actions / route handlers / `force-dynamic` pages so `next build`
   never needs a database.
 - Deploy target is **flowsyncdriver.com** (singular) — never the existing `flowsyncdrivers.com`.
+
+# Deploy discipline (standing instruction from the owner)
+
+The owner wants every finished change to reach production so old code/env never
+ships by accident. On every work session, the agent must:
+1. Commit + push to the working branch.
+2. Run the exact Vercel build locally first — `npx prisma migrate deploy && next build`
+   — so a broken build is never pushed.
+3. End the session by reminding the owner to deploy, and LOUDLY flag when the
+   change includes new migrations or env vars (the risky deploys).
+The agent cannot trigger Vercel directly from the sandbox (no token/CLI/link),
+so deployment is owner-initiated via the Vercel dashboard / GitHub merge.
