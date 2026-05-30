@@ -13,7 +13,7 @@ import {
 } from "@/lib/profile";
 import { getService } from "@/lib/services";
 import { isPremiumTier } from "@/lib/pricing";
-import { fileToScaledDataUrl } from "@/lib/image";
+import { fileToScaledDataUrl, fileToSquareDataUrl } from "@/lib/image";
 import UpgradeButton from "./UpgradeButton";
 import { saveDriverProfile, type ProfileInput } from "@/app/actions/profile";
 import { saveDocument, removeDocument } from "@/app/actions/documents";
@@ -30,12 +30,14 @@ function DocCard({
   required,
   value,
   onChange,
+  square,
 }: {
   label: string;
   description: string;
   required: boolean;
   value?: string;
   onChange: (dataUrl: string | null) => void;
+  square?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -43,7 +45,8 @@ function DocCard({
   const handleFile = async (file?: File) => {
     if (!file) return;
     setBusy(true);
-    const url = await fileToScaledDataUrl(file);
+    // Profile photos are square-cropped so they fill the avatar frame correctly.
+    const url = square ? await fileToSquareDataUrl(file) : await fileToScaledDataUrl(file);
     setBusy(false);
     onChange(url);
   };
@@ -52,8 +55,10 @@ function DocCard({
     <div className="card overflow-hidden">
       <div className="relative flex h-36 items-center justify-center bg-surface-2">
         {value ? (
+          // Square (profile) photos show full/contained so the driver sees exactly
+          // what customers will; other docs fill the wide preview.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={value} alt={label} className="h-full w-full object-cover" />
+          <img src={value} alt={label} className={`h-full w-full ${square ? "object-contain" : "object-cover"}`} />
         ) : (
           <span className="text-xs text-muted">{busy ? "Processing…" : "No file uploaded"}</span>
         )}
@@ -253,6 +258,7 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
               required={doc.required}
               value={profile.documents?.[doc.key]}
               onChange={(url) => setDoc(doc.key, url)}
+              square={doc.key === "profilePhoto"}
             />
           ))}
         </div>
