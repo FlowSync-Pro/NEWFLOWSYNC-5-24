@@ -88,6 +88,23 @@ export function getBump(id: string): Bump | undefined {
 }
 
 /**
+ * Value stack shown on checkout. Every item is really included with the $17
+ * Standard listing — the "value" figures anchor what each piece would cost on
+ * its own, so $17 reads as the steal it is. Keep these honest/defensible.
+ */
+export const VALUE_STACK: { label: string; value: number }[] = [
+  { label: "Driver directory listing — get found by local customers", value: 97 },
+  { label: "DOT & EIN setup guide (skip the $300+ filing services)", value: 27 },
+  { label: "Fair-quote calculator to price every job", value: 39 },
+  { label: "Profit & Loss tracker for your business", value: 47 },
+];
+
+export const VALUE_STACK_TOTAL = VALUE_STACK.reduce((s, i) => s + i.value, 0);
+
+/** Days a driver can request a full refund — surfaced as the money-back guarantee. */
+export const GUARANTEE_DAYS = 30;
+
+/**
  * P&L Tracker Pro — the recurring upsell that replaces the old one-time $47 tracker.
  * The free tracker stays free (lead magnet + SEO); Pro adds cloud-save so a driver's
  * books follow them across devices and never get lost. Sold post-purchase with a free

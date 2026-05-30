@@ -3,6 +3,9 @@ import OfferCheckout from "@/components/OfferCheckout";
 import JsonLd from "@/components/JsonLd";
 import { BUMPS, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
+import { getSocialProof } from "@/lib/social-proof";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Pricing — get listed for $17",
@@ -37,13 +40,14 @@ const productLd = {
   ],
 };
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const proof = await getSocialProof();
   return (
     <div className="relative">
       <JsonLd data={productLd} />
       <div className="glow-radial pointer-events-none absolute inset-0 h-80" />
       <div className="relative">
-        <OfferCheckout />
+        <OfferCheckout proof={proof} />
       </div>
     </div>
   );
