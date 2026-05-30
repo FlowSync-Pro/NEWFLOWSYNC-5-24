@@ -4,7 +4,7 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
-import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendPremiumUpgradeEmail } from "@/lib/email";
+import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendPremiumUpgradeEmail, sendPnlProEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
 
@@ -33,10 +33,69 @@ export async function POST(req: Request) {
     const session = event.data.object;
     if (session.metadata?.type === "booking") await fulfillBooking(session);
     else if (session.metadata?.type === "upgrade") await fulfillUpgrade(session);
+    else if (session.metadata?.type === "pnl-sub") await fulfillPnlSubscription(session);
     else await fulfillCheckout(session);
+  } else if (
+    event.type === "customer.subscription.updated" ||
+    event.type === "customer.subscription.deleted"
+  ) {
+    await syncPnlSubscription(event.data.object as Stripe.Subscription);
   }
 
   return NextResponse.json({ received: true });
+}
+
+// Reads `current_period_end` defensively — its exact location shifts across Stripe
+// API versions, so we never hard-depend on the field type.
+function subPeriodEnd(sub: Stripe.Subscription): Date | null {
+  const ts = (sub as unknown as { current_period_end?: number }).current_period_end;
+  return typeof ts === "number" ? new Date(ts * 1000) : null;
+}
+
+// First payment/trial start for P&L Tracker Pro → record the subscription on the user.
+async function fulfillPnlSubscription(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId;
+  if (!userId) return;
+
+  const subId = typeof session.subscription === "string" ? session.subscription : null;
+  let status = "trialing";
+  let periodEnd: Date | null = null;
+
+  const stripe = getStripe();
+  if (stripe && subId) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(subId);
+      status = sub.status;
+      periodEnd = subPeriodEnd(sub);
+    } catch {
+      // Keep the optimistic "trialing" default if the lookup fails.
+    }
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { pnlSubId: subId, pnlSubStatus: status, pnlSubCurrentPeriodEnd: periodEnd },
+  });
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user) {
+    const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+    await sendPnlProEmail({
+      to: user.email,
+      firstName: user.name?.split(" ")[0] || "there",
+      trackerUrl: `${base}/tools/profit-loss`,
+    });
+  }
+}
+
+// Keep the user's entitlement in sync as the subscription trials → renews → cancels.
+async function syncPnlSubscription(sub: Stripe.Subscription) {
+  const existing = await prisma.user.findFirst({ where: { pnlSubId: sub.id } });
+  if (!existing) return;
+  await prisma.user.update({
+    where: { id: existing.id },
+    data: { pnlSubStatus: sub.status, pnlSubCurrentPeriodEnd: subPeriodEnd(sub) },
+  });
 }
 
 async function fulfillUpgrade(session: Stripe.Checkout.Session) {
