@@ -55,7 +55,7 @@ export default function ProfitLossTracker({ cloud = false }: { cloud?: boolean }
           if (hasUserInteracted.current) return;
           // Use the account copy when it exists; otherwise fall back to whatever is
           // already in localStorage (e.g. data entered before subscribing).
-          if (d?.entitled && Array.isArray(d.txs) && d.txs.length > 0) setTxs(d.txs as Tx[]);
+          if (d?.entitled && Array.isArray(d.txs)) setTxs(d.txs as Tx[]);
           else setTxs(loadTransactions());
         })
         .catch(() => { if (active && !hasUserInteracted.current) setTxs(loadTransactions()); });
