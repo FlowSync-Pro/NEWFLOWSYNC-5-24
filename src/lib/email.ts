@@ -147,6 +147,19 @@ export async function sendPremiumUpgradeEmail(opts: {
   return send(opts.to, "You've been upgraded to FlowSync Premium", shell("Welcome to Premium", body));
 }
 
+export async function sendPnlProEmail(opts: {
+  to: string;
+  firstName: string;
+  trackerUrl: string;
+}) {
+  const body = `
+    <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName} — your <strong style="color:#25e07a">P&amp;L Tracker Pro</strong> is on, and your first month is <strong style="color:#e7ecef">free</strong>.</p>
+    <p style="color:#aebac1;line-height:1.6">Your numbers now save to your FlowSync account, so your books follow you on any device — and you can pull a tax-ready export anytime.</p>
+    <p style="color:#7c8a92;font-size:13px">We'll remind you before your first $17 charge. Cancel anytime from your account.</p>
+    <p style="margin-top:8px">${button(opts.trackerUrl, "Open your tracker")}</p>`;
+  return send(opts.to, "Your P&L Tracker Pro is on — first month free", shell("You're on Pro", body));
+}
+
 export async function sendPasswordResetEmail(opts: {
   to: string;
   firstName: string;

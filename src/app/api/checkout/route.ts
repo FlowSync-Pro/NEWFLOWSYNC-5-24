@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { getBump, isPremiumTier, TIERS, type TierId } from "@/lib/pricing";
+import { getBump, isPremiumTier, PNL_PRO, TIERS, type TierId } from "@/lib/pricing";
+import { pnlProActive } from "@/lib/subscription";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,43 @@ export async function POST(req: Request) {
       cancel_url: `${base}/account/services`,
     });
     return NextResponse.json({ url: upgrade.url });
+  }
+
+  // P&L Tracker Pro: a signed-in driver starts the $17/mo subscription (1st month free).
+  // Subscription mode + a trial collects a card up front by default (card required).
+  if (body.intent === "pnl-subscribe") {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Please sign in to subscribe." }, { status: 401 });
+    const user = await prisma.user.findUnique({ where: { id: session.userId } });
+    if (!user) return NextResponse.json({ error: "Account not found." }, { status: 400 });
+    if (pnlProActive(user.pnlSubStatus)) {
+      return NextResponse.json({ error: "You already have P&L Tracker Pro." }, { status: 400 });
+    }
+
+    // Use a real Price if one is configured; otherwise build the recurring price inline.
+    const priceId = process.env.STRIPE_PRICE_PNL_MONTHLY;
+    const sub = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [
+        priceId
+          ? { price: priceId, quantity: 1 }
+          : {
+              price_data: {
+                currency: "usd",
+                unit_amount: PNL_PRO.price * 100,
+                recurring: { interval: "month" },
+                product_data: { name: PNL_PRO.name },
+              },
+              quantity: 1,
+            },
+      ],
+      subscription_data: { trial_period_days: PNL_PRO.trialDays },
+      customer_email: user.email,
+      metadata: { type: "pnl-sub", userId: user.id },
+      success_url: `${base}/tools/profit-loss?pro=active`,
+      cancel_url: `${base}/account?pro=cancelled`,
+    });
+    return NextResponse.json({ url: sub.url });
   }
 
   // Booking payment: customer pays a driver's quote.
@@ -91,7 +129,7 @@ export async function POST(req: Request) {
     })),
     customer_email: email || undefined,
     metadata: { type: "listing", tier: tierId, bumps: bumps.join(","), firstName, lastName, primaryService },
-    success_url: `${base}/signin?checkout=success`,
+    success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/pricing?checkout=cancelled`,
   });
 

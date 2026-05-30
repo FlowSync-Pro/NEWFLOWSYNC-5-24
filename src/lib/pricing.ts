@@ -92,22 +92,31 @@ export const BUMPS: Bump[] = [
     ],
     badge: "Most popular",
   },
-  {
-    id: "pnl-tracker",
-    price: 47,
-    name: "Profit & Loss Tracker",
-    tagline: "Know exactly what's coming in and going out.",
-    description:
-      "A simple tool to track income vs. expenses every week and month, so you always know your real take-home and your business's progress.",
-    features: [
-      "Weekly & monthly income vs. expenses",
-      "See your true take-home pay",
-      "Mileage & tax-ready exports",
-      "Spot trends and grow profit",
-    ],
-  },
+  // The Profit & Loss Tracker is no longer a one-time bump — it's now the recurring
+  // P&L Tracker Pro upsell (see PNL_PRO below), sold after checkout with a free month.
 ];
 
 export function getBump(id: string): Bump | undefined {
   return BUMPS.find((b) => b.id === id);
 }
+
+/**
+ * P&L Tracker Pro — the recurring upsell that replaces the old one-time $47 tracker.
+ * The free tracker stays free (lead magnet + SEO); Pro adds cloud-save so a driver's
+ * books follow them across devices and never get lost. Sold post-purchase with a free
+ * first month (card required), so it converts when trust is highest.
+ */
+export const PNL_PRO = {
+  id: "pnl-pro",
+  price: 17,
+  interval: "month" as const,
+  trialDays: 30,
+  name: "P&L Tracker Pro",
+  tagline: "Your books, saved to your account — first month free.",
+  features: [
+    "Everything in the free tracker",
+    "Saved to your FlowSync account — pick up on any device",
+    "Automatic cloud backup so you never lose your numbers",
+    "Tax-ready CSV exports, anytime",
+  ],
+};

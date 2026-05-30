@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   byCategory,
   EXPENSE_CATEGORIES,
@@ -26,9 +26,13 @@ const PERIODS: { id: Period; label: string }[] = [
   { id: "all", label: "All time" },
 ];
 
-export default function ProfitLossTracker() {
+// `cloud` is true for P&L Tracker Pro subscribers: their data loads from and saves to
+// their FlowSync account so it follows them across devices. Everyone else uses
+// localStorage exactly as before.
+export default function ProfitLossTracker({ cloud = false }: { cloud?: boolean } = {}) {
   const [txs, setTxs] = useState<Tx[] | null>(null);
   const [period, setPeriod] = useState<Period>("month");
+  const hasUserInteracted = useRef(false);
 
   // new-transaction form
   const [type, setType] = useState<TxType>("income");
@@ -38,9 +42,28 @@ export default function ProfitLossTracker() {
   const [note, setNote] = useState("");
 
   useEffect(() => {
+    if (cloud) {
+      let active = true;
+      hasUserInteracted.current = false;
+      fetch("/api/pnl")
+        .then((r) => r.json())
+        .then((d) => {
+          if (!active) return;
+          // Don't overwrite state if user has already interacted with the component.
+          // This prevents losing user data when the initial fetch completes after
+          // the user has added/modified transactions.
+          if (hasUserInteracted.current) return;
+          // Use the account copy when it exists; otherwise fall back to whatever is
+          // already in localStorage (e.g. data entered before subscribing).
+          if (d?.entitled && Array.isArray(d.txs)) setTxs(d.txs as Tx[]);
+          else setTxs(loadTransactions());
+        })
+        .catch(() => { if (active && !hasUserInteracted.current) setTxs(loadTransactions()); });
+      return () => { active = false; };
+    }
     const raf = requestAnimationFrame(() => setTxs(loadTransactions()));
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [cloud]);
 
   const filtered = useMemo(
     () => (txs ?? []).filter((t) => inPeriod(t.date, period)),
@@ -53,9 +76,20 @@ export default function ProfitLossTracker() {
 
   if (!txs) return <div className="py-24 text-center text-muted">Loading tracker…</div>;
 
+  const saveCloud = (next: Tx[]) => {
+    if (!cloud) return;
+    fetch("/api/pnl", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ txs: next }),
+    }).catch(() => {});
+  };
+
   const update = (next: Tx[]) => {
+    hasUserInteracted.current = true;
     setTxs(next);
     saveTransactions(next);
+    saveCloud(next);
   };
 
   const switchType = (t: TxType) => {
@@ -99,7 +133,14 @@ export default function ProfitLossTracker() {
     <div className="mx-auto max-w-6xl px-5 py-12">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Profit &amp; Loss tracker</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Profit &amp; Loss tracker</h1>
+            {cloud && (
+              <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
+                Pro · saved to your account
+              </span>
+            )}
+          </div>
           <p className="mt-2 text-muted">Know exactly what&apos;s coming in and going out of your business.</p>
         </div>
         <div className="flex gap-1 rounded-full border border-border bg-surface p-1">
@@ -221,7 +262,7 @@ export default function ProfitLossTracker() {
               Load sample data
             </button>
             <button
-              onClick={() => { resetTransactions(); setTxs([]); }}
+              onClick={() => { resetTransactions(); setTxs([]); saveCloud([]); }}
               className="text-muted hover:underline"
             >
               Clear all

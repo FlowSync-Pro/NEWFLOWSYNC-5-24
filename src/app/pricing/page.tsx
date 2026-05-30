@@ -7,7 +7,7 @@ import { SITE_URL } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Pricing — get listed for $17",
   description:
-    "Get listed in the FlowSync driver directory for a one-time $17 and keep 95% of every job. Optional DOT & EIN guide and Profit & Loss tracker add-ons. Upgrade to Premium anytime from your account.",
+    "Get listed in the FlowSync driver directory for a one-time $17 and keep 95% of every job. Standard ($17) for direct bookings, or Premium ($97) to build your own service menu with custom pricing. Optional DOT & EIN guide add-on. Upgrade to Premium anytime from your account.",
   alternates: { canonical: `${SITE_URL}/pricing` },
 };
 

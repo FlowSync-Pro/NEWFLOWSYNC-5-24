@@ -84,6 +84,13 @@ model User {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
+  // P&L Tracker Pro — $17/mo subscription (first month free). Status mirrors Stripe
+  // ("trialing"/"active" grant access). pnlData is the cloud-saved tracker (Pro perk).
+  pnlSubStatus           String?
+  pnlSubId               String?   @unique
+  pnlSubCurrentPeriodEnd DateTime?
+  pnlData                Json?
+
   driverProfile DriverProfile?
   payments      Payment[]
   bookings      Booking[]      @relation("CustomerBookings")
