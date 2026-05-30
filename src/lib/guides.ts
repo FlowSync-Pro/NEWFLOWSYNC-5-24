@@ -24,9 +24,9 @@ export const CATEGORY_LABEL: Record<GuideCategory, string> = {
 };
 
 const DOT_EIN_CTA = {
-  label: "Get the $27 DOT & EIN guide",
+  label: "Get listed for $17",
   href: "/pricing",
-  note: "Want the exact forms, screenshots, and a checklist? Add the step-by-step DOT & EIN guide at checkout.",
+  note: "Get listed for a one-time $17 — the full DOT & EIN setup guide is included, and you keep 95% of every job.",
 };
 
 const GET_LISTED_CTA = {
