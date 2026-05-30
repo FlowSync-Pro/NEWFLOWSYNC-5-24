@@ -6,8 +6,9 @@ import { getAdminUserId } from "@/lib/admin";
 import { dbToAppProfile } from "@/lib/profileMap";
 import AccountEditor from "@/components/AccountEditor";
 import TrackEvent from "@/components/TrackEvent";
-import PnlUpsell from "@/components/PnlUpsell";
-import { pnlProActive } from "@/lib/subscription";
+// NOTE: P&L Tracker Pro ($17/mo) is on standby — the tracker is free for now.
+// The subscription plumbing (PnlUpsell, /api/checkout pnl-subscribe, webhook,
+// pnlProActive) is intact; re-add <PnlUpsell /> below to switch it back on.
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +30,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   if (!db) redirect("/account/setup");
 
   const isAdmin = !!(await getAdminUserId());
-  const user = await prisma.user.findUnique({ where: { id: session.userId } });
-  const showPnlUpsell = !pnlProActive(user?.pnlSubStatus);
   const justRegistered = (await searchParams).registered === "1";
 
   return (
@@ -38,11 +37,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       {justRegistered && <TrackEvent event="CompleteRegistration" />}
       <div className="glow-radial pointer-events-none absolute inset-0 h-72" />
       <div className="relative">
-        {showPnlUpsell && (
-          <div className="mx-auto max-w-5xl px-5 pt-10">
-            <PnlUpsell />
-          </div>
-        )}
         <AccountEditor initial={dbToAppProfile(db)} isAdmin={isAdmin} />
       </div>
     </div>
