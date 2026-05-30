@@ -48,6 +48,7 @@ export const TIERS: Record<TierId, Tier> = {
       "Direct customer bookings — keep 95%",
       "Service-matched profile page",
       "Fair-quote calculator",
+      "DOT & EIN setup guide included (get them free)",
       "Set your own rates and schedule",
     ],
   },
@@ -76,25 +77,11 @@ export function isPremiumTier(tier?: string | null): boolean {
   return (tier ?? "").toUpperCase() === "PREMIUM";
 }
 
-export const BUMPS: Bump[] = [
-  {
-    id: "dot-ein-guide",
-    price: 27,
-    name: "Get Your DOT & EIN — Free",
-    tagline: "Step-by-step guide to set your business foundation.",
-    description:
-      "The exact steps to get your USDOT number and EIN at no cost — and skip the $300+ filing services that charge for free government forms.",
-    features: [
-      "Get your EIN free (IRS walkthrough)",
-      "Get your USDOT number the right way",
-      "Checklist + templates included",
-      "Avoid the costly mistakes new drivers make",
-    ],
-    badge: "Most popular",
-  },
-  // The Profit & Loss Tracker is no longer a one-time bump — it's now the recurring
-  // P&L Tracker Pro upsell (see PNL_PRO below), sold after checkout with a free month.
-];
+// No paid add-ons at checkout right now. The DOT & EIN guide is now bundled into
+// the $17 Standard listing (see TIERS.standard features); the Profit & Loss Tracker
+// is the recurring P&L Tracker Pro upsell (PNL_PRO below), currently on standby.
+// Kept as an empty list so the checkout/webhook bump plumbing stays intact.
+export const BUMPS: Bump[] = [];
 
 export function getBump(id: string): Bump | undefined {
   return BUMPS.find((b) => b.id === id);

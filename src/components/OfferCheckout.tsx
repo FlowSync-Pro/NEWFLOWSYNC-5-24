@@ -93,8 +93,9 @@ export default function OfferCheckout() {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">
-        {/* Bumps */}
+      <div className={`mt-8 ${BUMPS.length > 0 ? "grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start" : "mx-auto max-w-md"}`}>
+        {/* Optional paid add-ons (none right now — DOT & EIN is bundled into Standard) */}
+        {BUMPS.length > 0 && (
         <div>
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-accent">Power up your launch</p>
           <div className="space-y-4">
@@ -127,9 +128,10 @@ export default function OfferCheckout() {
             })}
           </div>
         </div>
+        )}
 
         {/* Order summary */}
-        <aside className="lg:sticky lg:top-24">
+        <aside className={BUMPS.length > 0 ? "lg:sticky lg:top-24" : ""}>
           <div className="card p-7">
             <h2 className="text-lg font-semibold">Order summary</h2>
             <div className="mt-5 space-y-3">
