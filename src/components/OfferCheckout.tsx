@@ -141,7 +141,7 @@ export default function OfferCheckout() {
               ))}
             </div>
             <div className="mt-5 flex items-center justify-between border-t border-border pt-5">
-              <span className="font-semibold">Total due today</span>
+              <span className="font-semibold">One-time payment</span>
               <span className="text-2xl font-bold text-accent">${total}</span>
             </div>
 
