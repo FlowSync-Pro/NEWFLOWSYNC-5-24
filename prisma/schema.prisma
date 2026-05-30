@@ -91,6 +91,10 @@ model User {
   pnlSubCurrentPeriodEnd DateTime?
   pnlData                Json?
 
+  // Driver Roadmap progress: { tasks: string[] (completed task ids),
+  // days: string[] (YYYY-MM-DD daily check-ins for the habit streak) }.
+  roadmapData Json?
+
   driverProfile DriverProfile?
   payments      Payment[]
   bookings      Booking[]      @relation("CustomerBookings")
