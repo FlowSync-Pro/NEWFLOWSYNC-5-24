@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     n: "01",
-    title: "Create your account",
-    body: "Enter a few details about you and your vehicle. We verify your identity and license so customers can trust you from day one.",
-    points: ["No interviews or résumé", "Quick identity & vehicle check", "Free to join"],
+    title: "Get listed for $17",
+    body: "Choose a plan and pay the one-time listing fee, then add a few details about you and your vehicle. We verify your identity and license so customers can trust you from day one.",
+    points: ["No interviews or résumé", "Quick identity & vehicle check", "$17 one-time — no monthly fees"],
   },
   {
     n: "02",
@@ -125,7 +125,7 @@ export default function HowItWorksPage() {
           <p className="mx-auto mt-4 max-w-xl text-muted">
             Run through the signup and watch your service-matched profile come together in real time.
           </p>
-          <Link href="/signup" className="btn-primary mt-8 inline-flex rounded-full px-8 py-3.5 text-base">
+          <Link href="/pricing" className="btn-primary mt-8 inline-flex rounded-full px-8 py-3.5 text-base">
             Become a driver
           </Link>
         </Reveal>

@@ -1,21 +1,7 @@
-import { Suspense } from "react";
-import type { Metadata } from "next";
-import SignupFlow from "@/components/SignupFlow";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Become a driver — FlowSync",
-  description: "Sign up, pick your service, and build a profile that matches the work you do.",
-};
-
+// Account creation now happens through paid checkout (/pricing). Any old
+// "free signup" links/bookmarks land here and are sent to pricing.
 export default function SignupPage() {
-  return (
-    <div className="relative">
-      <div className="glow-radial pointer-events-none absolute inset-0 h-80" />
-      <div className="relative">
-        <Suspense fallback={<div className="py-24 text-center text-muted">Loading…</div>}>
-          <SignupFlow />
-        </Suspense>
-      </div>
-    </div>
-  );
+  redirect("/pricing");
 }

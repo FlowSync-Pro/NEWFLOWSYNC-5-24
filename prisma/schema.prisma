@@ -137,12 +137,58 @@ model DriverProfile {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  documents Document[]
-  bookings  Booking[]
-  services  DriverService[]
+  documents   Document[]
+  bookings    Booking[]
+  services    DriverService[]
+  trips       Trip[]
+  inspections Inspection[]
 
   @@index([primaryService])
   @@index([city])
+}
+
+// A completed route/trip with operating numbers for day-to-day P&L tracking.
+model Trip {
+  id              String        @id @default(cuid())
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id], onDelete: Cascade)
+
+  date           DateTime @default(now())
+  pickupAddress  String
+  dropoffAddress String
+
+  earningsCents      Int   @default(0) // what the trip paid
+  paidMiles          Float @default(0) // loaded miles
+  deadheadMiles      Float @default(0) // empty/unpaid miles
+  fuelCents          Int   @default(0)
+  tollsCents         Int   @default(0)
+  otherExpensesCents Int   @default(0) // personal/other operating expenses
+  durationMinutes    Int   @default(0)
+  notes              String?
+  // Proof-of-delivery / record photos (Blob URLs or inline data URLs).
+  photos             String[] @default([])
+
+  createdAt DateTime @default(now())
+
+  @@index([driverProfileId, date])
+}
+
+// Start-of-day pre-trip inspection.
+model Inspection {
+  id              String        @id @default(cuid())
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id], onDelete: Cascade)
+
+  date     DateTime @default(now())
+  odometer Int?
+  passed   Boolean  @default(true)
+  // Per-item pass/fail, keyed by item id (tires, brakes, lights, ...).
+  items    Json     @default("{}")
+  notes    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([driverProfileId, date])
 }
 
 // Premium "My Services": drivers build their own service menu with custom prices.

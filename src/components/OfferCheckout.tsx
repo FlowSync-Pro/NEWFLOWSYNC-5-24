@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BUMPS, PLATFORM_FEE_PERCENT, TIERS, type TierId } from "@/lib/pricing";
-import { SERVICES } from "@/lib/services";
+import { BUMPS, PLATFORM_FEE_PERCENT, TIERS } from "@/lib/pricing";
 
 function Check({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -13,20 +11,13 @@ function Check({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-const fieldCls =
-  "w-full rounded-xl border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none transition-colors focus:border-accent";
-
-export default function OfferCheckout({ initialTier = "standard" }: { initialTier?: TierId }) {
-  const [tierId, setTierId] = useState<TierId>(initialTier);
+export default function OfferCheckout() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [details, setDetails] = useState({ firstName: "", lastName: "", email: "", primaryService: "" });
 
-  const tier = TIERS[tierId];
+  const tier = TIERS.standard;
   const toggle = (id: string) => setSelected((s) => ({ ...s, [id]: !s[id] }));
-  const setField = (key: keyof typeof details, value: string) => setDetails((d) => ({ ...d, [key]: value }));
 
   async function handleCheckout() {
     setError(null);
@@ -36,14 +27,14 @@ export default function OfferCheckout({ initialTier = "standard" }: { initialTie
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tier: tierId, bumps, ...details }),
+        body: JSON.stringify({ tier: "standard", bumps }),
       });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
         return;
       }
-      setDone(true);
+      setError("Checkout is temporarily unavailable. Please try again in a moment.");
     } catch {
       setError("Something went wrong starting checkout. Please try again.");
     } finally {
@@ -68,54 +59,38 @@ export default function OfferCheckout({ initialTier = "standard" }: { initialTie
           Get listed. Get booked. <span className="text-accent">Keep 95%.</span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-muted">
-          Pick a plan, get in the directory, and start taking direct bookings. We only take{" "}
+          Get in the directory and start taking direct bookings. We only take{" "}
           {PLATFORM_FEE_PERCENT}% — you set the price and keep the rest.
         </p>
       </div>
 
-      {/* Tier selector */}
-      <div className="mt-10 grid gap-4 sm:grid-cols-2">
-        {(["standard", "premium"] as TierId[]).map((id) => {
-          const t = TIERS[id];
-          const active = tierId === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTierId(id)}
-              className={`relative rounded-2xl border p-6 text-left transition-colors ${
-                active ? "border-accent bg-accent-soft" : "border-border bg-surface hover:border-accent/50"
-              } ${t.highlight ? "ring-1 ring-accent/30" : ""}`}
-            >
-              {t.highlight && (
-                <span className="absolute -top-3 right-5 rounded-full bg-accent px-3 py-1 text-[11px] font-bold text-[#04130a]">
-                  ★ Most popular
-                </span>
-              )}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${active ? "border-accent bg-accent text-[#04130a]" : "border-border"}`}>
-                    {active && <Check className="h-3.5 w-3.5" />}
-                  </span>
-                  <span className="text-lg font-bold">{t.name}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-2xl font-extrabold text-accent">${t.price}</span>
-                  <span className="block text-xs text-muted">one-time</span>
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-muted">{t.tagline}</p>
-              <ul className="mt-4 space-y-2">
-                {t.features.map((f) => (
-                  <li key={f} className="flex gap-2 text-sm">
-                    <span className="mt-0.5 text-accent"><Check className="h-4 w-4" /></span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </button>
-          );
-        })}
+      {/* Standard offer */}
+      <div className="mx-auto mt-10 max-w-2xl">
+        <div className="rounded-2xl border border-accent bg-accent-soft p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-lg font-bold">{tier.name} listing</span>
+              <p className="mt-1 text-sm text-muted">{tier.tagline}</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <span className="text-3xl font-extrabold text-accent">${tier.price}</span>
+              <span className="block text-xs text-muted">one-time</span>
+            </div>
+          </div>
+          <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+            {tier.features.map((f) => (
+              <li key={f} className="flex gap-2 text-sm">
+                <span className="mt-0.5 text-accent"><Check className="h-4 w-4" /></span>
+                {f}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="mt-3 text-center text-xs text-muted">
+          Want a custom service menu, a premium badge &amp; priority placement? Upgrade to{" "}
+          <span className="font-medium text-foreground">Premium (${TIERS.premium.price})</span>{" "}
+          anytime from your account after you&apos;re set up.
+        </p>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">
@@ -170,40 +145,18 @@ export default function OfferCheckout({ initialTier = "standard" }: { initialTie
               <span className="text-2xl font-bold text-accent">${total}</span>
             </div>
 
-            {done ? (
-              <div className="mt-6 rounded-xl border border-accent/40 bg-accent-soft p-4 text-sm">
-                <p className="font-semibold text-accent">You&apos;re all set (demo).</p>
-                <p className="mt-1 text-muted">
-                  In the live version, secure Stripe checkout runs here, then we email your sign-in details.
-                </p>
-                <Link href="/signin" className="btn-ghost mt-4 inline-flex rounded-full px-5 py-2.5 text-sm">Go to sign in</Link>
-              </div>
-            ) : (
-              <>
-                <div className="mt-6 space-y-2.5">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <input className={fieldCls} placeholder="First name" value={details.firstName} onChange={(e) => setField("firstName", e.target.value)} />
-                    <input className={fieldCls} placeholder="Last name" value={details.lastName} onChange={(e) => setField("lastName", e.target.value)} />
-                  </div>
-                  <input className={fieldCls} type="email" placeholder="Email" value={details.email} onChange={(e) => setField("email", e.target.value)} />
-                  <select className={fieldCls} value={details.primaryService} onChange={(e) => setField("primaryService", e.target.value)}>
-                    <option value="">Main service…</option>
-                    {SERVICES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </div>
-                {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-                <button type="button" onClick={handleCheckout} disabled={loading} className="btn-primary mt-3 w-full rounded-full px-6 py-3.5 text-base disabled:opacity-60">
-                  {loading ? "Starting checkout…" : `Complete checkout — $${total}`}
-                </button>
-              </>
-            )}
+            {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+            <button type="button" onClick={handleCheckout} disabled={loading} className="btn-primary mt-6 w-full rounded-full px-6 py-3.5 text-base disabled:opacity-60">
+              {loading ? "Starting checkout…" : `Continue to secure checkout — $${total}`}
+            </button>
+            <p className="mt-2 text-center text-xs text-muted">You&apos;ll set up your name and service right after payment.</p>
 
             <div className="mt-5 space-y-2 text-xs text-muted">
               <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> Only {PLATFORM_FEE_PERCENT}% per job — no monthly fees</p>
               <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> Cancel your listing anytime</p>
             </div>
           </div>
-          <p className="mt-4 text-center text-xs text-muted">Mockup-safe — no charge unless Stripe is configured.</p>
+          <p className="mt-4 text-center text-xs text-muted">Secure checkout powered by Stripe.</p>
         </aside>
       </div>
     </div>

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import OfferCheckout from "@/components/OfferCheckout";
 import JsonLd from "@/components/JsonLd";
-import { BUMPS, TIERS, type TierId } from "@/lib/pricing";
+import { BUMPS, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Pricing — Standard $17 or Premium $97",
+  title: "Pricing — get listed for $17",
   description:
-    "Get listed in the FlowSync driver directory and keep 95% of every job. Standard ($17) for direct bookings, or Premium ($97) to build your own service menu with custom pricing. Optional DOT & EIN guide add-on.",
+    "Get listed in the FlowSync driver directory for a one-time $17 and keep 95% of every job. Standard ($17) for direct bookings, or Premium ($97) to build your own service menu with custom pricing. Optional DOT & EIN guide add-on. Upgrade to Premium anytime from your account.",
   alternates: { canonical: `${SITE_URL}/pricing` },
 };
 
@@ -37,17 +37,13 @@ const productLd = {
   ],
 };
 
-export default async function PricingPage({ searchParams }: PageProps<"/pricing">) {
-  const sp = await searchParams;
-  const raw = Array.isArray(sp.tier) ? sp.tier[0] : sp.tier;
-  const initialTier: TierId = raw === "premium" ? "premium" : "standard";
-
+export default function PricingPage() {
   return (
     <div className="relative">
       <JsonLd data={productLd} />
       <div className="glow-radial pointer-events-none absolute inset-0 h-80" />
       <div className="relative">
-        <OfferCheckout initialTier={initialTier} />
+        <OfferCheckout />
       </div>
     </div>
   );

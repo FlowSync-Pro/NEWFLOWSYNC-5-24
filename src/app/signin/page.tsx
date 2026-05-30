@@ -5,7 +5,7 @@ import { getStripe } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in or create your FlowSync driver account.",
+  description: "Sign in to your FlowSync driver account.",
   robots: { index: false },
 };
 
@@ -39,7 +39,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
         {paid ? (
           <p className="mt-2 text-center text-accent">Payment received! Check your email for your temporary password, then sign in below.</p>
         ) : (
-          <p className="mt-2 text-center text-muted">Sign in or create an account to manage your profile and documents.</p>
+          <p className="mt-2 text-center text-muted">Sign in to manage your profile, documents, and bookings.</p>
         )}
         <div className="card mt-8 p-7">
           <AuthPanel />

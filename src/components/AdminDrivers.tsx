@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { approveDriver, rejectDriver, setDriverTier } from "@/app/actions/admin";
+import { approveDriver, rejectDriver, setDriverTier, adminResetDriverPassword, deleteDriver } from "@/app/actions/admin";
 
 export interface AdminDoc {
   kind: string;
@@ -18,6 +19,8 @@ export interface AdminDriverRow {
   city: string;
   verified: boolean;
   tier: string;
+  paid: boolean;
+  trips: number;
   createdAt: string;
   documents: AdminDoc[];
 }
@@ -33,10 +36,26 @@ const DOC_LABEL: Record<string, string> = {
 function DriverCard({ driver }: { driver: AdminDriverRow }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [tempPw, setTempPw] = useState<string | null>(null);
 
   const act = async (fn: (id: string) => Promise<{ ok: boolean }>) => {
     setBusy(true);
     await fn(driver.id);
+    setBusy(false);
+    router.refresh();
+  };
+
+  const resetPassword = async () => {
+    setBusy(true);
+    const res = await adminResetDriverPassword(driver.id);
+    setBusy(false);
+    if (res.tempPassword) setTempPw(res.tempPassword);
+  };
+
+  const remove = async () => {
+    if (!confirm(`Delete ${driver.name || "this driver"}? This permanently removes their account, profile, and documents. This can't be undone.`)) return;
+    setBusy(true);
+    await deleteDriver(driver.id);
     setBusy(false);
     router.refresh();
   };
@@ -57,19 +76,26 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${premium ? "bg-amber-400/20 text-amber-300" : "bg-surface-2 text-muted"}`}>
               {premium ? "★ Premium" : "Standard"}
             </span>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${driver.paid ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted"}`}>
+              {driver.paid ? "Paid" : "Unpaid"}
+            </span>
           </div>
           <p className="text-xs text-muted">{driver.email} · {driver.service} · {driver.city || "—"}</p>
           <p className="mt-1 text-xs text-muted">
-            License {hasLicense ? "✓" : "✗"} · Insurance {hasInsurance ? "✓" : "✗"}
+            License {hasLicense ? "✓" : "✗"} · Insurance {hasInsurance ? "✓" : "✗"} · {driver.trips} trip{driver.trips === 1 ? "" : "s"} logged
           </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => act(approveDriver)} disabled={busy || driver.verified} className="btn-primary rounded-full px-5 py-2 text-sm disabled:opacity-50">
-            Approve
-          </button>
-          <button onClick={() => act(rejectDriver)} disabled={busy} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground disabled:opacity-50">
-            {driver.verified ? "Revoke" : "Reject"}
-          </button>
+        <div className="flex flex-wrap gap-2">
+          {!driver.verified && (
+            <>
+              <button onClick={() => act(approveDriver)} disabled={busy} className="btn-primary rounded-full px-5 py-2 text-sm disabled:opacity-50">
+                Approve
+              </button>
+              <button onClick={() => act(rejectDriver)} disabled={busy} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground disabled:opacity-50">
+                Reject
+              </button>
+            </>
+          )}
           <button
             onClick={() => act((id) => setDriverTier(id, premium ? "STANDARD" : "PREMIUM"))}
             disabled={busy}
@@ -77,8 +103,25 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
           >
             {premium ? "Set Standard" : "★ Upgrade to Premium"}
           </button>
+          <button onClick={resetPassword} disabled={busy} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground disabled:opacity-50">
+            Reset password
+          </button>
+          <button onClick={remove} disabled={busy} className="rounded-full border border-red-500/40 px-5 py-2 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50">
+            Delete
+          </button>
+          <Link href={`/admin/drivers/${driver.id}`} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground">
+            View ops
+          </Link>
         </div>
       </div>
+
+      {tempPw && (
+        <div className="mt-4 rounded-xl border border-accent/40 bg-accent-soft p-4 text-sm">
+          <p className="font-semibold text-accent">Temporary password created</p>
+          <p className="mt-1 text-muted">Send this to {driver.name || "the driver"} — they&apos;ll set their own password on first sign-in. We also emailed it.</p>
+          <code className="mt-2 inline-block select-all rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-base text-foreground">{tempPw}</code>
+        </div>
+      )}
 
       {driver.documents.length > 0 ? (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -99,28 +142,42 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
   );
 }
 
+type Tab = "review" | "unpaid" | "verified" | "all";
+
 export default function AdminDrivers({ drivers }: { drivers: AdminDriverRow[] }) {
-  const [tab, setTab] = useState<"pending" | "all">("pending");
-  const pending = drivers.filter((d) => !d.verified);
-  const shown = tab === "pending" ? pending : drivers;
+  const [tab, setTab] = useState<Tab>("review");
+
+  const buckets: Record<Tab, AdminDriverRow[]> = {
+    review: drivers.filter((d) => !d.verified && d.paid),
+    unpaid: drivers.filter((d) => !d.verified && !d.paid),
+    verified: drivers.filter((d) => d.verified),
+    all: drivers,
+  };
+  const labels: Record<Tab, string> = {
+    review: `Paid · to verify (${buckets.review.length})`,
+    unpaid: `Applied · unpaid (${buckets.unpaid.length})`,
+    verified: `Verified (${buckets.verified.length})`,
+    all: `All (${buckets.all.length})`,
+  };
+  const shown = buckets[tab];
 
   return (
     <div>
-      <div className="mb-5 flex gap-1 rounded-full border border-border bg-surface p-1 w-fit">
-        {([["pending", `Pending (${pending.length})`], ["all", `All (${drivers.length})`]] as const).map(([id, label]) => (
+      <div className="mb-5 flex flex-wrap gap-1 rounded-full border border-border bg-surface p-1 w-fit">
+        {(["review", "unpaid", "verified", "all"] as Tab[]).map((id) => (
           <button
             key={id}
             onClick={() => setTab(id)}
             className={`rounded-full px-4 py-2 text-sm transition-colors ${tab === id ? "bg-accent text-[#04130a]" : "text-muted hover:text-foreground"}`}
           >
-            {label}
+            {labels[id]}
           </button>
         ))}
       </div>
 
       {shown.length === 0 ? (
         <div className="card p-10 text-center text-muted">
-          {tab === "pending" ? "Nothing waiting for review." : "No drivers yet."}
+          {tab === "review" ? "No paid drivers waiting for verification." : tab === "unpaid" ? "No unpaid applicants." : tab === "verified" ? "No verified drivers yet." : "No drivers yet."}
         </div>
       ) : (
         <div className="space-y-4">

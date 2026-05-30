@@ -60,7 +60,7 @@ export default function Navbar() {
           <Link href="/signin" className="text-sm text-muted transition-colors hover:text-foreground">
             Sign in
           </Link>
-          <Link href="/signup" className="btn-primary rounded-full px-5 py-2 text-sm">
+          <Link href="/pricing" className="btn-primary rounded-full px-5 py-2 text-sm">
             Become a driver
           </Link>
         </div>
@@ -112,7 +112,7 @@ export default function Navbar() {
               Sign in
             </Link>
             <Link
-              href="/signup"
+              href="/pricing"
               onClick={() => setOpen(false)}
               className="btn-primary mt-2 rounded-full px-5 py-3 text-center text-sm"
             >

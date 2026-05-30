@@ -7,7 +7,7 @@ import Reveal from "@/components/Reveal";
 const STATS = [
   { value: "8", label: "Service types" },
   { value: "$40+/hr", label: "Top category" },
-  { value: "92%", label: "Earnings kept" },
+  { value: "95%", label: "Earnings kept" },
   { value: "24/7", label: "Work on your terms" },
 ];
 
@@ -97,13 +97,16 @@ export default function Home() {
               Pick your service, build a profile that fits, and keep more of what you earn.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/signup" className="btn-primary w-full rounded-full px-7 py-3.5 text-base sm:w-auto">
+              <Link href="/pricing" className="btn-primary w-full rounded-full px-7 py-3.5 text-base sm:w-auto">
                 Become a driver
               </Link>
               <Link href="/services" className="btn-ghost w-full rounded-full px-7 py-3.5 text-base sm:w-auto">
                 Explore services
               </Link>
             </div>
+            <p className="mt-3 text-sm text-muted">
+              $17 one-time to get listed · no monthly fees · keep 95% of every job
+            </p>
             <p className="mt-5 text-sm text-muted">
               Need something delivered?{" "}
               <Link href="/find-a-driver" className="font-medium text-accent underline-offset-4 hover:underline">
@@ -261,7 +264,7 @@ export default function Home() {
               <p className="mx-auto mt-4 max-w-xl text-muted">
                 Join FlowSync today and start earning across the delivery services that fit your life.
               </p>
-              <Link href="/signup" className="btn-primary mt-8 inline-flex rounded-full px-8 py-3.5 text-base">
+              <Link href="/pricing" className="btn-primary mt-8 inline-flex rounded-full px-8 py-3.5 text-base">
                 Start your driver profile
               </Link>
             </div>

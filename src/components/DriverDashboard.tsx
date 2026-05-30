@@ -265,7 +265,7 @@ export default function DriverDashboard() {
             }}
             className="text-xs text-muted underline-offset-2 hover:underline"
           >
-            Reset demo
+            Reset
           </button>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -293,8 +293,7 @@ export default function DriverDashboard() {
       </section>
 
       <p className="mt-8 text-center text-xs text-muted">
-        Mockup — progress is stored only in your browser. In the live app this tracks your real
-        completed jobs and earnings.
+        This is a personal goal tracker — your progress is stored privately in your browser on this device.
       </p>
     </div>
   );

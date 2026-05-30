@@ -1,13 +1,16 @@
 "use server";
 
+import { randomBytes, createHash } from "node:crypto";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { createSession, destroySession, getSession } from "@/lib/session";
 import { generateTempPassword, hashPassword, verifyPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
+
+const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 export interface RegisterInput {
   email: string;
@@ -117,5 +120,54 @@ export async function setPassword(_prev: AuthState, formData: FormData): Promise
     data: { hashedPassword: hashPassword(password), mustResetPassword: false },
   });
   await createSession({ ...session, mustResetPassword: false });
+  redirect("/account");
+}
+
+export interface ForgotState {
+  error?: string;
+  sent?: boolean;
+}
+
+/** Step 1: email a reset link. Always reports success (no account enumeration). */
+export async function requestPasswordReset(_prev: ForgotState, formData: FormData): Promise<ForgotState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!email) return { error: "Enter your email." };
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user) {
+    await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+    const raw = randomBytes(32).toString("base64url");
+    await prisma.verificationToken.create({
+      data: { identifier: email, token: sha256(raw), expires: new Date(Date.now() + 60 * 60 * 1000) },
+    });
+    const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+    const resetUrl = `${base}/reset-password?token=${raw}&email=${encodeURIComponent(email)}`;
+    await sendPasswordResetEmail({ to: email, firstName: user.name?.split(" ")[0] || "there", resetUrl });
+  }
+  return { sent: true };
+}
+
+/** Step 2: validate the token and set the new password. */
+export async function resetPasswordWithToken(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const token = String(formData.get("token") ?? "");
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+  if (password.length < 8) return { error: "Use at least 8 characters." };
+  if (password !== confirm) return { error: "Passwords don't match." };
+
+  const vt = token ? await prisma.verificationToken.findUnique({ where: { token: sha256(token) } }) : null;
+  if (!vt || vt.identifier !== email || vt.expires < new Date()) {
+    return { error: "This reset link is invalid or has expired. Request a new one." };
+  }
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return { error: "Account not found." };
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { hashedPassword: hashPassword(password), mustResetPassword: false },
+  });
+  await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+  await createSession({ userId: user.id, role: user.role, mustResetPassword: false });
   redirect("/account");
 }
