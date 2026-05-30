@@ -25,7 +25,10 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "not subscribed" }, { status: 403 });
   }
   const body = await req.json().catch(() => null);
-  const txs = Array.isArray(body?.txs) ? body.txs : [];
+  if (!body || !Array.isArray(body.txs)) {
+    return NextResponse.json({ error: "invalid request body" }, { status: 400 });
+  }
+  const txs = body.txs;
   await prisma.user.update({ where: { id: user.id }, data: { pnlData: txs } });
   return NextResponse.json({ ok: true });
 }
