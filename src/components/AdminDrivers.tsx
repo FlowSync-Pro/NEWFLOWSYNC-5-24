@@ -11,6 +11,8 @@ export interface AdminDoc {
   status: string;
 }
 
+export type EngagementStatus = "active" | "cooling" | "cold" | "dormant";
+
 export interface AdminDriverRow {
   id: string;
   name: string;
@@ -23,6 +25,10 @@ export interface AdminDriverRow {
   trips: number;
   createdAt: string;
   documents: AdminDoc[];
+  streak: number;
+  lastActiveDays: number | null;
+  launchPct: number;
+  engagement: EngagementStatus;
 }
 
 const DOC_LABEL: Record<string, string> = {
@@ -32,6 +38,24 @@ const DOC_LABEL: Record<string, string> = {
   INSURANCE: "Insurance",
   DRIVING_RECORD: "Driving record",
 };
+
+const ENGAGEMENT_BADGE: Record<EngagementStatus, { label: string; cls: string }> = {
+  active: { label: "🔥 Active", cls: "bg-accent text-[#04130a]" },
+  cooling: { label: "Cooling", cls: "bg-amber-400/20 text-amber-300" },
+  cold: { label: "Cold", cls: "bg-red-500/20 text-red-400" },
+  dormant: { label: "Never active", cls: "bg-surface-2 text-muted" },
+};
+
+function engagementDetail(d: AdminDriverRow): string {
+  const last =
+    d.lastActiveDays === null
+      ? "no check-ins yet"
+      : d.lastActiveDays === 0
+        ? "active today"
+        : `last active ${d.lastActiveDays}d ago`;
+  const streak = d.streak > 0 ? ` · ${d.streak}d streak` : "";
+  return `${last}${streak} · setup ${d.launchPct}%`;
+}
 
 function DriverCard({ driver }: { driver: AdminDriverRow }) {
   const router = useRouter();
@@ -79,11 +103,19 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${driver.paid ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted"}`}>
               {driver.paid ? "Paid" : "Unpaid"}
             </span>
+            {driver.verified && (
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${ENGAGEMENT_BADGE[driver.engagement].cls}`}>
+                {ENGAGEMENT_BADGE[driver.engagement].label}
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted">{driver.email} · {driver.service} · {driver.city || "—"}</p>
           <p className="mt-1 text-xs text-muted">
             License {hasLicense ? "✓" : "✗"} · Insurance {hasInsurance ? "✓" : "✗"} · {driver.trips} trip{driver.trips === 1 ? "" : "s"} logged
           </p>
+          {driver.verified && (
+            <p className="mt-1 text-xs text-muted">{engagementDetail(driver)}</p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           {!driver.verified && (
@@ -142,7 +174,7 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
   );
 }
 
-type Tab = "review" | "unpaid" | "verified" | "all";
+type Tab = "review" | "unpaid" | "verified" | "cold" | "all";
 
 export default function AdminDrivers({ drivers }: { drivers: AdminDriverRow[] }) {
   const [tab, setTab] = useState<Tab>("review");
@@ -151,12 +183,17 @@ export default function AdminDrivers({ drivers }: { drivers: AdminDriverRow[] })
     review: drivers.filter((d) => !d.verified && d.paid),
     unpaid: drivers.filter((d) => !d.verified && !d.paid),
     verified: drivers.filter((d) => d.verified),
+    // Retention outreach: verified drivers drifting away or never started.
+    cold: drivers
+      .filter((d) => d.verified && (d.engagement === "cooling" || d.engagement === "cold" || d.engagement === "dormant"))
+      .sort((a, b) => (b.lastActiveDays ?? 9999) - (a.lastActiveDays ?? 9999)),
     all: drivers,
   };
   const labels: Record<Tab, string> = {
     review: `Paid · to verify (${buckets.review.length})`,
     unpaid: `Applied · unpaid (${buckets.unpaid.length})`,
     verified: `Verified (${buckets.verified.length})`,
+    cold: `Reach out (${buckets.cold.length})`,
     all: `All (${buckets.all.length})`,
   };
   const shown = buckets[tab];
@@ -164,7 +201,7 @@ export default function AdminDrivers({ drivers }: { drivers: AdminDriverRow[] })
   return (
     <div>
       <div className="mb-5 flex flex-wrap gap-1 rounded-full border border-border bg-surface p-1 w-fit">
-        {(["review", "unpaid", "verified", "all"] as Tab[]).map((id) => (
+        {(["review", "unpaid", "verified", "cold", "all"] as Tab[]).map((id) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -177,7 +214,7 @@ export default function AdminDrivers({ drivers }: { drivers: AdminDriverRow[] })
 
       {shown.length === 0 ? (
         <div className="card p-10 text-center text-muted">
-          {tab === "review" ? "No paid drivers waiting for verification." : tab === "unpaid" ? "No unpaid applicants." : tab === "verified" ? "No verified drivers yet." : "No drivers yet."}
+          {tab === "review" ? "No paid drivers waiting for verification." : tab === "unpaid" ? "No unpaid applicants." : tab === "verified" ? "No verified drivers yet." : tab === "cold" ? "🎉 No one's going cold — every verified driver is engaged." : "No drivers yet."}
         </div>
       ) : (
         <div className="space-y-4">

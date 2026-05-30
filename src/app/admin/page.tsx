@@ -7,6 +7,7 @@ import { getAdminUserId } from "@/lib/admin";
 import { serviceFromEnum } from "@/lib/enums";
 import { getService } from "@/lib/services";
 import { money } from "@/lib/trips";
+import { engagementFrom, parseProgress } from "@/lib/roadmap";
 import AdminDrivers, { type AdminDriverRow } from "@/components/AdminDrivers";
 import AdminAddDriver from "@/components/AdminAddDriver";
 
@@ -80,19 +81,26 @@ export default async function AdminPage() {
 
   const paidUserIds = new Set(paidPayments.map((p) => p.userId));
 
-  const drivers: AdminDriverRow[] = rows.map((p) => ({
-    id: p.id,
-    name: `${p.firstName} ${p.lastName}`.trim(),
-    email: p.user.email,
-    service: getService(serviceFromEnum(p.primaryService))?.name ?? "—",
-    city: p.city ?? "",
-    verified: p.verified,
-    tier: p.tier,
-    paid: paidUserIds.has(p.userId),
-    trips: p._count.trips,
-    createdAt: p.createdAt.toISOString(),
-    documents: p.documents.map((d) => ({ kind: d.kind, url: d.blobUrl, status: d.status })),
-  }));
+  const drivers: AdminDriverRow[] = rows.map((p) => {
+    const eng = engagementFrom(parseProgress(p.user.roadmapData));
+    return {
+      id: p.id,
+      name: `${p.firstName} ${p.lastName}`.trim(),
+      email: p.user.email,
+      service: getService(serviceFromEnum(p.primaryService))?.name ?? "—",
+      city: p.city ?? "",
+      verified: p.verified,
+      tier: p.tier,
+      paid: paidUserIds.has(p.userId),
+      trips: p._count.trips,
+      createdAt: p.createdAt.toISOString(),
+      documents: p.documents.map((d) => ({ kind: d.kind, url: d.blobUrl, status: d.status })),
+      streak: eng.streak,
+      lastActiveDays: eng.lastActiveDays,
+      launchPct: eng.launchPct,
+      engagement: eng.status,
+    };
+  });
 
   // Pipeline
   const paidPending = drivers.filter((d) => !d.verified && d.paid).length;
@@ -100,6 +108,12 @@ export default async function AdminPage() {
   const verified = drivers.filter((d) => d.verified).length;
   const premium = drivers.filter((d) => d.tier === "PREMIUM").length;
   const totalTrips = drivers.reduce((n, d) => n + d.trips, 0);
+
+  // Engagement (retention triage) — only meaningful among verified drivers.
+  const verifiedDrivers = drivers.filter((d) => d.verified);
+  const active = verifiedDrivers.filter((d) => d.engagement === "active").length;
+  const cooling = verifiedDrivers.filter((d) => d.engagement === "cooling").length;
+  const coldOrDormant = verifiedDrivers.filter((d) => d.engagement === "cold" || d.engagement === "dormant").length;
 
   return (
     <div className="relative">
@@ -131,6 +145,14 @@ export default async function AdminPage() {
           <PipeStat label="Premium" value={premium} />
           <PipeStat label="Drivers" value={drivers.length} />
           <PipeStat label="Trips logged" value={totalTrips} />
+        </div>
+
+        {/* Engagement — who to reach out to */}
+        <h2 className="mt-8 text-sm font-semibold uppercase tracking-widest text-accent">Engagement (verified drivers)</h2>
+        <div className="mt-3 grid grid-cols-3 gap-3">
+          <PipeStat label="Active (last 3 days)" value={active} tone="ok" />
+          <PipeStat label="Cooling (4–10 days)" value={cooling} tone="warn" />
+          <PipeStat label="Cold / never active" value={coldOrDormant} />
         </div>
 
         {/* Drivers */}

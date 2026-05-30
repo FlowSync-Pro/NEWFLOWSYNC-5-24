@@ -90,3 +90,39 @@ export function launchPercent(tasks: string[]): number {
   const done = LAUNCH_IDS.filter((id) => tasks.includes(id)).length;
   return Math.round((done / LAUNCH_IDS.length) * 100);
 }
+
+export type EngagementStatus = "active" | "cooling" | "cold" | "dormant";
+
+export interface Engagement {
+  streak: number;
+  /** Days since the driver's most recent daily check-in; null if they never have. */
+  lastActiveDays: number | null;
+  launchPct: number;
+  status: EngagementStatus;
+}
+
+const dateKeyToDays = (key: string): number => {
+  const then = new Date(`${key}T00:00:00Z`).getTime();
+  return Math.floor((Date.now() - then) / 86_400_000);
+};
+
+/**
+ * Summarize a driver's engagement for retention triage:
+ *  - active:  checked in within the last 3 days
+ *  - cooling: 4–10 days since last check-in (good outreach window)
+ *  - cold:    11+ days since last check-in (was engaged, now drifting)
+ *  - dormant: never logged a single day of activity
+ */
+export function engagementFrom(progress: RoadmapProgress): Engagement {
+  const streak = currentStreak(progress.days);
+  const launchPct = launchPercent(progress.tasks);
+
+  if (progress.days.length === 0) {
+    return { streak, lastActiveDays: null, launchPct, status: "dormant" };
+  }
+  const latest = progress.days.reduce((a, b) => (a > b ? a : b));
+  const lastActiveDays = Math.max(0, dateKeyToDays(latest));
+  const status: EngagementStatus =
+    lastActiveDays <= 3 ? "active" : lastActiveDays <= 10 ? "cooling" : "cold";
+  return { streak, lastActiveDays, launchPct, status };
+}
