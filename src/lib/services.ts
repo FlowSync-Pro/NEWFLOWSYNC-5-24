@@ -368,6 +368,7 @@ export const SERVICES: Service[] = [
   },
 ];
 
-export function getService(id: string): Service | undefined {
+export function getService(id: string | null | undefined): Service | undefined {
+  if (!id) return undefined;
   return SERVICES.find((s) => s.id === id);
 }

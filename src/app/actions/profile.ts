@@ -33,12 +33,17 @@ export async function completeDriverProfile(_prev: SetupState, formData: FormDat
 
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
-  const primaryService = String(formData.get("primaryService") ?? "") as ServiceId;
+  const rawService = String(formData.get("primaryService") ?? "");
   if (!firstName || !lastName) return { error: "Enter your first and last name." };
-  if (!SERVICE_IDS.includes(primaryService)) return { error: "Choose your main service." };
+
+  // "undecided" (or anything not in our list) means the driver wants to pick
+  // their main service later. Stored as null; they get a nudge on /account.
+  const primaryService = SERVICE_IDS.includes(rawService as ServiceId)
+    ? serviceToEnum(rawService as ServiceId)
+    : null;
 
   const existing = await prisma.driverProfile.findUnique({ where: { userId: session.userId } });
-  const data = { firstName, lastName, primaryService: serviceToEnum(primaryService) };
+  const data = { firstName, lastName, primaryService };
   if (existing) {
     // Profile already exists (e.g. revisiting setup) — apply the resubmitted
     // values instead of silently discarding them.
@@ -64,6 +69,8 @@ export interface ProfileInput {
   vehicleType?: string;
   vehicleMakeModel?: string;
   vehicleYear?: string;
+  /** A driver who skipped this at setup can pick (or change) it later. */
+  primaryService?: ServiceId | null;
   additionalServices?: ServiceId[];
   serviceDetails?: Record<string, string | string[]>;
   externalWebsiteUrl?: string;
@@ -102,6 +109,14 @@ export async function saveDriverProfile(input: ProfileInput): Promise<{ ok: bool
     vehicleType: input.vehicleType,
     vehicleMakeModel: input.vehicleMakeModel,
     vehicleYear: input.vehicleYear,
+    // primaryService is only touched if explicitly provided: undefined leaves
+    // it alone; an explicit ServiceId sets it; null clears it back to undecided.
+    primaryService:
+      input.primaryService === undefined
+        ? undefined
+        : input.primaryService === null
+          ? null
+          : serviceToEnum(input.primaryService),
     additionalServices: input.additionalServices?.map(serviceToEnum),
     serviceDetails: input.serviceDetails as Prisma.InputJsonValue | undefined,
     externalWebsiteUrl: safeWebsiteUrl(input.externalWebsiteUrl),

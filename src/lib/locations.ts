@@ -62,6 +62,7 @@ export async function allCityServiceRoutes(): Promise<{ serviceEnum: string; slu
   const seen = new Set<string>();
   const out: { serviceEnum: string; slug: string }[] = [];
   for (const r of rows) {
+    if (!r.primaryService) continue;
     const slug = citySlug(r.city ?? "");
     if (!slug) continue;
     const key = `${r.primaryService}:${slug}`;

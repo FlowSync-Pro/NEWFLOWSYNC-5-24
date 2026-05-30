@@ -14,23 +14,29 @@ export const metadata: Metadata = {
 };
 
 export default async function FindADriverPage() {
-  // Only admin-verified drivers are shown publicly.
+  // Public directory shows only verified drivers who've picked a primary service.
+  // Drivers who skipped service selection at setup aren't listed until they pick one.
   const rows = await prisma.driverProfile.findMany({
-    where: { verified: true },
+    where: { verified: true, primaryService: { not: null } },
     include: { documents: true },
     orderBy: { createdAt: "desc" },
   });
 
-  const drivers: DirectoryCard[] = rows.map((db) => ({
-    id: db.id,
-    name: `${db.firstName} ${db.lastName}`.trim(),
-    service: serviceFromEnum(db.primaryService),
-    city: db.city ?? "",
-    rate: db.hourlyRate ?? null,
-    verified: db.verified,
-    headline: db.headline ?? "",
-    photoUrl: db.documents.find((d) => docKeyFromKind(d.kind) === "profilePhoto")?.blobUrl,
-  }));
+  const drivers: DirectoryCard[] = [];
+  for (const db of rows) {
+    const service = serviceFromEnum(db.primaryService);
+    if (!service) continue;
+    drivers.push({
+      id: db.id,
+      name: `${db.firstName} ${db.lastName}`.trim(),
+      service,
+      city: db.city ?? "",
+      rate: db.hourlyRate ?? null,
+      verified: db.verified,
+      headline: db.headline ?? "",
+      photoUrl: db.documents.find((d) => docKeyFromKind(d.kind) === "profilePhoto")?.blobUrl,
+    });
+  }
 
   return (
     <div className="relative">

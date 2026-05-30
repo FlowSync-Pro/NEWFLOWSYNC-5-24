@@ -7,8 +7,9 @@ export interface DriverProfile {
   email: string;
   phone: string;
   city: string;
-  // service
-  primaryService: ServiceId;
+  // service — optional so drivers can defer the decision at setup. Drivers
+  // without a primaryService aren't publicly listed until they pick one.
+  primaryService?: ServiceId;
   additionalServices: ServiceId[];
   // vehicle
   vehicleType: string;

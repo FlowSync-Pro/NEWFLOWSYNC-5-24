@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import {
   DOCUMENTS,
@@ -11,7 +12,7 @@ import {
   type DocKey,
   type DriverProfile,
 } from "@/lib/profile";
-import { getService } from "@/lib/services";
+import { getService, SERVICES, type ServiceId } from "@/lib/services";
 import { isPremiumTier } from "@/lib/pricing";
 import { fileToScaledDataUrl, fileToSquareDataUrl } from "@/lib/image";
 import UpgradeButton from "./UpgradeButton";
@@ -94,6 +95,7 @@ function DocCard({
 }
 
 export default function AccountEditor({ initial, isAdmin = false }: { initial: DriverProfile; isAdmin?: boolean }) {
+  const router = useRouter();
   const [profile, setProfile] = useState<DriverProfile>(initial);
   const [savedAt, setSavedAt] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -216,6 +218,40 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
           </button>
         </div>
       </div>
+
+      {/* "Pick your service" nudge — shown when the driver skipped service
+          selection at setup. Optional friction-free way to fill it in here. */}
+      {!primary && (
+        <section className="card mt-8 border-accent/40 bg-accent-soft p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-accent">Pick your main service</h2>
+              <p className="mt-1 text-sm text-muted">
+                You skipped this at signup — no worries. Pick one whenever you&apos;re ready
+                and you&apos;ll be listed in the directory + city pages for that service.
+              </p>
+            </div>
+            <select
+              defaultValue=""
+              onChange={async (e) => {
+                const id = e.target.value as ServiceId;
+                if (!id) return;
+                set("primaryService", id);
+                // Save immediately so they don't have to scroll for the Save button.
+                await saveDriverProfile({ primaryService: id });
+                flash();
+                router.refresh();
+              }}
+              className="rounded-xl border border-border bg-surface px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
+            >
+              <option value="" disabled>Choose a service…</option>
+              {SERVICES.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+        </section>
+      )}
 
       {/* Verification */}
       <section className="card mt-8 p-7">

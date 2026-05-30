@@ -9,8 +9,10 @@ import ProfileView from "@/components/ProfileView";
 import RequestQuoteButton from "@/components/RequestQuoteButton";
 
 async function fetchProfile(id: string) {
+  // Verified + has chosen a primary service (otherwise the profile has no
+  // service category to render publicly — they're listed as soon as they pick).
   return prisma.driverProfile.findFirst({
-    where: { id, verified: true },
+    where: { id, verified: true, primaryService: { not: null } },
     include: { documents: true, services: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
   });
 }

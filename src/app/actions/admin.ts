@@ -142,12 +142,17 @@ export async function adminCreateDriver(_prev: CreateDriverState, formData: Form
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const primaryService = String(formData.get("primaryService") ?? "") as ServiceId;
+  const rawService = String(formData.get("primaryService") ?? "");
   const tier = String(formData.get("tier") ?? "STANDARD") === "PREMIUM" ? "PREMIUM" : "STANDARD";
 
   if (!firstName || !lastName || !email) return { error: "First name, last name, and email are required." };
   if (!email.includes("@")) return { error: "Enter a valid email." };
-  if (!getService(primaryService)) return { error: "Choose a main service." };
+
+  // "undecided" (or any non-listed value) means the driver hasn't picked yet —
+  // create the account anyway; they pick the service from their account later.
+  const primaryService = getService(rawService)
+    ? serviceToEnum(rawService as ServiceId)
+    : null;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "An account with that email already exists." };
@@ -165,7 +170,7 @@ export async function adminCreateDriver(_prev: CreateDriverState, formData: Form
         create: {
           firstName,
           lastName,
-          primaryService: serviceToEnum(primaryService),
+          primaryService,
           tier,
           verified: true,
           listedAt: new Date(),

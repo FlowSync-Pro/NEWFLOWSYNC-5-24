@@ -30,6 +30,9 @@ export async function requestBooking(_prev: RequestState, formData: FormData): P
     include: { user: true },
   });
   if (!driver) return { error: "That driver is no longer available." };
+  // Drivers who haven't picked a primary service aren't bookable (the public
+  // profile won't render either) — guard here in case the URL is hit directly.
+  if (!driver.primaryService) return { error: "That driver isn't accepting bookings yet." };
 
   // Lightweight customer record (keyed by email) to own the booking. Never
   // mutate an existing driver/admin account that happens to share this email —

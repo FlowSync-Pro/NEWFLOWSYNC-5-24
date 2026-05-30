@@ -15,12 +15,13 @@ export default function SetupForm({ defaultFirst = "", defaultLast = "" }: { def
         <input name="firstName" defaultValue={defaultFirst} placeholder="First name" required className={inputCls} />
         <input name="lastName" defaultValue={defaultLast} placeholder="Last name" required className={inputCls} />
       </div>
-      <select name="primaryService" defaultValue="" required className={inputCls}>
-        <option value="" disabled>Your main service…</option>
+      <select name="primaryService" defaultValue="undecided" required className={inputCls}>
+        <option value="undecided">I&apos;m not sure yet — I&apos;ll pick later</option>
         {SERVICES.map((s) => (
           <option key={s.id} value={s.id}>{s.name}</option>
         ))}
       </select>
+      <p className="text-xs text-muted">You can always change this from your account.</p>
       {state.error && <p className="text-sm text-red-400">{state.error}</p>}
       <button type="submit" disabled={pending} className="btn-primary w-full rounded-full px-6 py-3 text-sm disabled:opacity-60">
         {pending ? "Setting up…" : "Continue"}

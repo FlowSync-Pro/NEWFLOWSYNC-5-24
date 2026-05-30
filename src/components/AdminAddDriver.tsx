@@ -55,8 +55,8 @@ export default function AdminAddDriver() {
           </div>
           <input name="email" type="email" placeholder="Email" required className={fieldCls} />
           <div className="grid grid-cols-2 gap-3">
-            <select name="primaryService" defaultValue="" required className={fieldCls}>
-              <option value="" disabled>Main service…</option>
+            <select name="primaryService" defaultValue="undecided" className={fieldCls}>
+              <option value="undecided">Not sure yet — driver can pick later</option>
               {SERVICES.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}

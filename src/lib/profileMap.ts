@@ -14,7 +14,9 @@ export function dbToAppProfile(db: DbProfile & { documents: Document[] }): Drive
     phone: db.phone ?? "",
     city: db.city ?? "",
     primaryService: serviceFromEnum(db.primaryService),
-    additionalServices: db.additionalServices.map(serviceFromEnum),
+    // additionalServices values are never null (the array can be empty but each
+    // entry is a real enum), so the strict overload of serviceFromEnum applies.
+    additionalServices: db.additionalServices.map((e) => serviceFromEnum(e)),
     vehicleType: db.vehicleType ?? "",
     vehicleMakeModel: db.vehicleMakeModel ?? "",
     vehicleYear: db.vehicleYear ?? "",

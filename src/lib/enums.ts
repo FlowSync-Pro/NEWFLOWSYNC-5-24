@@ -24,8 +24,12 @@ export function serviceToEnum(id: ServiceId): ServiceType {
   return TO_ENUM[id];
 }
 
-export function serviceFromEnum(e: ServiceType): ServiceId {
-  return FROM_ENUM[e];
+// Overloads so callers that pass a non-null enum still get a non-null ServiceId,
+// but callers passing the now-nullable DriverProfile.primaryService get undefined.
+export function serviceFromEnum(e: ServiceType): ServiceId;
+export function serviceFromEnum(e: ServiceType | null | undefined): ServiceId | undefined;
+export function serviceFromEnum(e: ServiceType | null | undefined): ServiceId | undefined {
+  return e ? FROM_ENUM[e] : undefined;
 }
 
 export const DOC_KIND: Record<DocKey, DocKind> = {

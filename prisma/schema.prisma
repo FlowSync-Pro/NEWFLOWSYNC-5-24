@@ -119,7 +119,10 @@ model DriverProfile {
   phone     String?
   city      String?
 
-  primaryService     ServiceType
+  // The driver's main service. Optional so a driver can defer the decision
+  // at setup and pick it later from their account — keeps the signup flow
+  // frictionless. Drivers without a primaryService aren't publicly listed.
+  primaryService     ServiceType?
   additionalServices ServiceType[]
 
   headline        String?

@@ -52,16 +52,22 @@ export default async function CityServicePage({ params }: PageProps<"/delivery/[
   // No real drivers here yet → don't publish a thin page.
   if (matched.length === 0) notFound();
 
-  const drivers: DirectoryCard[] = matched.map((db) => ({
-    id: db.id,
-    name: `${db.firstName} ${db.lastName}`.trim(),
-    service: serviceFromEnum(db.primaryService),
-    city: db.city ?? "",
-    rate: db.hourlyRate ?? null,
-    verified: db.verified,
-    headline: db.headline ?? "",
-    photoUrl: db.documents.find((d) => docKeyFromKind(d.kind) === "profilePhoto")?.blobUrl,
-  }));
+  const drivers: DirectoryCard[] = [];
+  for (const db of matched) {
+    // primaryService is guaranteed by the query above, but narrow for the type.
+    const service = serviceFromEnum(db.primaryService);
+    if (!service) continue;
+    drivers.push({
+      id: db.id,
+      name: `${db.firstName} ${db.lastName}`.trim(),
+      service,
+      city: db.city ?? "",
+      rate: db.hourlyRate ?? null,
+      verified: db.verified,
+      headline: db.headline ?? "",
+      photoUrl: db.documents.find((d) => docKeyFromKind(d.kind) === "profilePhoto")?.blobUrl,
+    });
+  }
 
   const ld = {
     "@context": "https://schema.org",
