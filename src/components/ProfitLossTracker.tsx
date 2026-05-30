@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   byCategory,
   EXPENSE_CATEGORIES,
@@ -32,6 +32,7 @@ const PERIODS: { id: Period; label: string }[] = [
 export default function ProfitLossTracker({ cloud = false }: { cloud?: boolean } = {}) {
   const [txs, setTxs] = useState<Tx[] | null>(null);
   const [period, setPeriod] = useState<Period>("month");
+  const hasUserInteracted = useRef(false);
 
   // new-transaction form
   const [type, setType] = useState<TxType>("income");
@@ -43,16 +44,21 @@ export default function ProfitLossTracker({ cloud = false }: { cloud?: boolean }
   useEffect(() => {
     if (cloud) {
       let active = true;
+      hasUserInteracted.current = false;
       fetch("/api/pnl")
         .then((r) => r.json())
         .then((d) => {
           if (!active) return;
+          // Don't overwrite state if user has already interacted with the component.
+          // This prevents losing user data when the initial fetch completes after
+          // the user has added/modified transactions.
+          if (hasUserInteracted.current) return;
           // Use the account copy when it exists; otherwise fall back to whatever is
           // already in localStorage (e.g. data entered before subscribing).
           if (d?.entitled && Array.isArray(d.txs) && d.txs.length > 0) setTxs(d.txs as Tx[]);
           else setTxs(loadTransactions());
         })
-        .catch(() => { if (active) setTxs(loadTransactions()); });
+        .catch(() => { if (active && !hasUserInteracted.current) setTxs(loadTransactions()); });
       return () => { active = false; };
     }
     const raf = requestAnimationFrame(() => setTxs(loadTransactions()));
@@ -80,6 +86,7 @@ export default function ProfitLossTracker({ cloud = false }: { cloud?: boolean }
   };
 
   const update = (next: Tx[]) => {
+    hasUserInteracted.current = true;
     setTxs(next);
     saveTransactions(next);
     saveCloud(next);
