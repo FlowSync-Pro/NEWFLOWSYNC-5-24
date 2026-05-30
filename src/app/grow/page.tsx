@@ -11,10 +11,11 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/grow` },
 };
 
-const ORDER: GuideCategory[] = ["foundation", "marketing"];
+const ORDER: GuideCategory[] = ["foundation", "money", "marketing"];
 
 const INTRO: Record<GuideCategory, string> = {
   foundation: "Set your business up the right way — the steps the gig apps never teach you.",
+  money: "Keep more of what you earn — taxes, write-offs, pricing, and the reviews that grow your income.",
   marketing: "Get your own customers in your city, so you're never dependent on one app.",
 };
 

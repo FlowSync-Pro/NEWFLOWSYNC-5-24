@@ -1,4 +1,4 @@
-export type GuideCategory = "foundation" | "marketing";
+export type GuideCategory = "foundation" | "money" | "marketing";
 
 export interface GuideSection {
   heading: string;
@@ -20,6 +20,7 @@ export interface Guide {
 
 export const CATEGORY_LABEL: Record<GuideCategory, string> = {
   foundation: "Business foundation",
+  money: "Money & taxes",
   marketing: "Marketing your business",
 };
 
@@ -33,6 +34,12 @@ const GET_LISTED_CTA = {
   label: "Get listed for $17",
   href: "/pricing",
   note: "List your profile in the FlowSync directory and take direct bookings — you keep 95%.",
+};
+
+const PNL_CTA = {
+  label: "Track it with your P&L tool",
+  href: "/tools/profit-loss",
+  note: "Your FlowSync Profit & Loss tracker does this math for you — log income and expenses and see your real take-home.",
 };
 
 export const GUIDES: Guide[] = [
@@ -179,6 +186,161 @@ export const GUIDES: Guide[] = [
           "Never setting a goal — drivers who track a monthly target earn measurably more.",
         ],
         tip: "Fixing just the pricing and direct-customer mistakes can double your effective hourly pay.",
+      },
+    ],
+    cta: GET_LISTED_CTA,
+  },
+  {
+    slug: "quarterly-taxes-for-delivery-drivers",
+    category: "money",
+    title: "Quarterly taxes for 1099 delivery drivers, made simple",
+    excerpt:
+      "As an independent driver, no one withholds taxes for you. Here's how estimated quarterly taxes work — and how to never get a surprise bill.",
+    metaDescription:
+      "A plain-English guide to estimated quarterly taxes for 1099 delivery and gig drivers: who owes, the four deadlines, how much to set aside, and how to pay.",
+    readMinutes: 6,
+    sections: [
+      {
+        heading: "Why you owe quarterly taxes",
+        body: [
+          "When you drive as an independent contractor (1099), taxes aren't taken out of your pay. The IRS still wants its share throughout the year, so you pay it yourself in four estimated installments.",
+          "This covers both income tax and self-employment tax (Social Security + Medicare, about 15.3%). Most drivers are caught off guard by the self-employment portion.",
+        ],
+        tip: "A safe rule of thumb: set aside 25–30% of your net profit (after expenses) in a separate account for taxes as you earn.",
+      },
+      {
+        heading: "The four deadlines",
+        body: [
+          "Estimated taxes are due roughly four times a year — mid-April, mid-June, mid-September, and mid-January of the following year.",
+          "Miss one and the IRS can charge a small underpayment penalty, so mark them on your calendar.",
+        ],
+      },
+      {
+        heading: "How to estimate and pay",
+        steps: [
+          "Total your income, then subtract your business expenses (mileage, fuel, tolls, supplies) to get your net profit.",
+          "Set aside ~25–30% of that profit for taxes.",
+          "Pay online through IRS Direct Pay or the EFTPS system each quarter — keep the confirmation.",
+          "Track everything as you go so tax time is just adding up numbers you already have.",
+        ],
+        tip: "This is not formal tax advice — a quick session with a tax pro in year one pays for itself. But knowing the basics keeps you from a painful April surprise.",
+      },
+    ],
+    cta: PNL_CTA,
+  },
+  {
+    slug: "mileage-deduction-and-write-offs",
+    category: "money",
+    title: "The mileage deduction and write-offs that save drivers thousands",
+    excerpt:
+      "Every business mile you drive can lower your taxes. Here are the deductions delivery drivers most often miss — and how to track them.",
+    metaDescription:
+      "A guide to tax write-offs for delivery drivers: the standard mileage deduction, what counts as a business mile, and the expenses you can legally deduct.",
+    readMinutes: 5,
+    sections: [
+      {
+        heading: "The mileage deduction is your biggest win",
+        body: [
+          "The IRS lets you deduct a set amount for every business mile you drive (the standard mileage rate). For an active driver that can add up to thousands of dollars off your taxable income.",
+          "A business mile is any mile driven for work — driving to a pickup, between jobs, and on a delivery. Your commute from home to your first job generally doesn't count, so know the difference.",
+        ],
+        tip: "You usually choose between the standard mileage rate OR actual vehicle expenses — not both. For most drivers with an older car, the mileage rate wins.",
+      },
+      {
+        heading: "Other write-offs drivers forget",
+        steps: [
+          "Phone and data plan (the business-use percentage).",
+          "Hot bags, dollies, moving blankets, straps, and supplies.",
+          "Tolls and parking paid on the job.",
+          "A percentage of car washes, maintenance, and your insurance if you use actual expenses.",
+          "Fees and commissions you pay to platforms.",
+        ],
+      },
+      {
+        heading: "Track it or lose it",
+        body: [
+          "The deduction is only as good as your records. If you can't show the miles and expenses, you can't safely claim them.",
+          "Log every trip's miles and costs the day you drive — reconstructing it at tax time is where drivers leave money on the table.",
+        ],
+        tip: "Your FlowSync trip tracker records loaded and deadhead miles per trip, and the P&L tool totals your deductible expenses for you.",
+      },
+    ],
+    cta: PNL_CTA,
+  },
+  {
+    slug: "price-your-jobs-for-profit",
+    category: "money",
+    title: "How to price your jobs so you actually profit",
+    excerpt:
+      "Most drivers underprice, burn out, and quit. Here's how to set rates that cover your costs and pay you what you're worth.",
+    metaDescription:
+      "Learn how delivery drivers should price jobs: cover mileage and time, account for deadhead miles, and set rates that leave real profit after expenses.",
+    readMinutes: 5,
+    sections: [
+      {
+        heading: "Price the whole job, not just the drop-off",
+        body: [
+          "The most common mistake is quoting only for the delivery itself. You also drive to the pickup and back home empty — those 'deadhead' miles cost you fuel and time with no pay attached unless you build them into your rate.",
+          "Add up your time, all your miles (loaded and deadhead), fuel, tolls, and wear on the vehicle before you quote.",
+        ],
+      },
+      {
+        heading: "Build in profit, not just break-even",
+        body: [
+          "Covering costs isn't a business — it's a job that's slowly wearing out your car. Add a profit margin on top so each job moves you forward.",
+          "Know your floor: the minimum you'll accept for a job. Below it, politely pass. Drivers who hold their floor earn more than drivers who chase every cheap job.",
+        ],
+        tip: "Use the FlowSync fair-quote calculator to price every job in seconds so you're never guessing.",
+      },
+      {
+        heading: "Raise rates as your reviews grow",
+        body: [
+          "When you have reviews and repeat customers, you've earned the right to charge more. Reputation is leverage — use it.",
+          "You don't compete on being the cheapest. You compete on being reliable, professional, and easy to book again.",
+        ],
+        tip: "A driver with 20 five-star reviews can charge noticeably more than a brand-new one for the exact same job.",
+      },
+    ],
+    cta: {
+      label: "Open the quote calculator",
+      href: "/calculator",
+      note: "Price any job fairly in seconds with the FlowSync calculator — then keep 95% of it.",
+    },
+  },
+  {
+    slug: "get-your-first-10-reviews",
+    category: "money",
+    title: "Get your first 10 reviews (and why they 10x your bookings)",
+    excerpt:
+      "Reviews are the single biggest driver of new bookings. Here's a simple system to earn your first ten and keep them coming.",
+    metaDescription:
+      "How delivery drivers can get their first reviews: when to ask, how to ask, and why a handful of five-star ratings dramatically increases bookings.",
+    readMinutes: 4,
+    sections: [
+      {
+        heading: "Why reviews matter more than anything",
+        body: [
+          "Customers choosing a driver they've never met rely on social proof. A profile with even a handful of five-star reviews gets booked far more often than an empty one — often several times more.",
+          "Reviews compound: more reviews → more bookings → more reviews. The first ten are the hardest and the most valuable.",
+        ],
+      },
+      {
+        heading: "A simple system to earn them",
+        steps: [
+          "Do the job a little better than expected — communicate ETA, handle items with care, send a quick 'delivered!' note.",
+          "Ask every happy customer in the moment: 'If you were happy with today, a quick review really helps my small business.'",
+          "Make it easy — hand them the direct link to your FlowSync profile.",
+          "Start with friends, family, and neighbors for your very first jobs and first reviews.",
+        ],
+        tip: "The best time to ask is right after a smooth delivery, while the customer is still smiling. Don't wait.",
+      },
+      {
+        heading: "Turn reviews into repeat business",
+        body: [
+          "A customer who leaves a review is telling you they'd book you again. Save their info and check in before the next holiday, move, or big grocery week.",
+          "Ten reviews and a few repeat customers is the difference between quitting in a month and building a real business.",
+        ],
+        tip: "Keep your FlowSync profile sharp — a clear photo, services, and rates — so every review lands on a profile that converts.",
       },
     ],
     cta: GET_LISTED_CTA,
