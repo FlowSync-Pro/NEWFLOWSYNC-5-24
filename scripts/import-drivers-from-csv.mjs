@@ -75,6 +75,13 @@ const ADMINS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
+// Manual skip list — comma-separated emails that shouldn't get imported (e.g.
+// drivers you're handling personally, or anyone who paid but you don't want
+// auto-emailed). Distinct from ADMIN_EMAILS so the skip counter stays meaningful.
+const EXCLUDED = (process.env.EXCLUDE_EMAILS ?? "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
 const SIGNOFF = process.env.SIGNOFF_NAME ?? "FlowSync";
 
 const prisma = new PrismaClient({
@@ -111,6 +118,41 @@ function parseCsv(text) {
   return rows;
 }
 
+// Conservative auto-fix for the most common email typos. Only well-known
+// provider domains — never touches less-common TLDs that could be intentional.
+const DOMAIN_FIXES = {
+  "gnail.com": "gmail.com",
+  "gmial.com": "gmail.com",
+  "gmai.com": "gmail.com",
+  "gmaill.com": "gmail.com",
+  "gmail.co": "gmail.com", // .co alone for gmail is always a typo
+  "gmail.cm": "gmail.com",
+  "gmail.con": "gmail.com",
+  "yahooo.com": "yahoo.com",
+  "yhaoo.com": "yahoo.com",
+  "yaho.com": "yahoo.com",
+  "yahoo.con": "yahoo.com",
+  "hotmial.com": "hotmail.com",
+  "hotmail.con": "hotmail.com",
+  "outlok.com": "outlook.com",
+  "outlook.con": "outlook.com",
+  "icould.com": "icloud.com",
+  "icloud.con": "icloud.com",
+};
+
+function fixEmail(raw) {
+  const email = (raw ?? "").trim().toLowerCase();
+  if (!email) return { email, fixed: false };
+  const at = email.lastIndexOf("@");
+  if (at === -1) return { email, fixed: false };
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  if (DOMAIN_FIXES[domain]) {
+    return { email: `${local}@${DOMAIN_FIXES[domain]}`, fixed: true, original: email };
+  }
+  return { email, fixed: false };
+}
+
 function loadCsv(path) {
   const text = readFileSync(path, "utf8");
   const rows = parseCsv(text).filter((r) => r.some((c) => c && c.trim().length));
@@ -129,13 +171,14 @@ function loadCsv(path) {
 
   const records = [];
   const skipped = { refunded: 0, neverPaid: 0, testEmail: 0, noEmail: 0 };
+  const typoFixes = []; // { original, fixed }
   const num = (s) => {
     const n = parseFloat((s ?? "").trim());
     return Number.isFinite(n) ? n : 0;
   };
   for (let r = 1; r < rows.length; r++) {
     const cols = rows[r];
-    const email = (cols[emailIdx] ?? "").trim();
+    const { email, fixed, original } = fixEmail(cols[emailIdx]);
     const name = nameIdx >= 0 ? (cols[nameIdx] ?? "").trim() : "";
     if (!email) { skipped.noEmail++; continue; }
     // Skip Stripe test emails and other obvious test patterns.
@@ -154,9 +197,10 @@ function loadCsv(path) {
         continue;
       }
     }
+    if (fixed) typoFixes.push({ original, fixed: email });
     records.push({ email, name });
   }
-  return { records, skipped };
+  return { records, skipped, typoFixes };
 }
 
 function hashPassword(pw) {
@@ -235,7 +279,7 @@ async function main() {
   if (LIMIT) console.log(`Limit: first ${LIMIT} rows`);
   console.log("");
 
-  const { records, skipped } = loadCsv(FILE);
+  const { records, skipped, typoFixes } = loadCsv(FILE);
   console.log(`Eligible rows (paid, real email): ${records.length}`);
   if (skipped.refunded || skipped.neverPaid || skipped.testEmail || skipped.noEmail) {
     console.log(`Pre-filtered out of the CSV:`);
@@ -244,11 +288,21 @@ async function main() {
     if (skipped.testEmail) console.log(`  test emails: ${skipped.testEmail}`);
     if (skipped.noEmail) console.log(`  blank email: ${skipped.noEmail}`);
   }
+  if (typoFixes.length) {
+    console.log(`Auto-fixed ${typoFixes.length} typo email domain${typoFixes.length === 1 ? "" : "s"}:`);
+    for (const t of typoFixes) {
+      // Redact local-part: only show the @domain change.
+      const od = t.original.split("@")[1];
+      const fd = t.fixed.split("@")[1];
+      console.log(`  @${od} -> @${fd}`);
+    }
+  }
 
   let toCreate = 0;
   let created = 0;
   let skippedExisting = 0;
   let skippedAdmin = 0;
+  let skippedExcluded = 0;
   let failed = 0;
   const previews = [];
   const start = Date.now();
@@ -260,6 +314,7 @@ async function main() {
 
     const email = rec.email.toLowerCase();
     if (ADMINS.includes(email)) { skippedAdmin++; continue; }
+    if (EXCLUDED.includes(email)) { skippedExcluded++; continue; }
 
     const existing = await prisma.user.findUnique({
       where: { email },
@@ -324,6 +379,7 @@ async function main() {
   console.log("\n--- Summary ---");
   console.log(`Rows processed:    ${seen}`);
   console.log(`Admin (skipped):   ${skippedAdmin}`);
+  if (skippedExcluded) console.log(`Excluded list:     ${skippedExcluded}`);
   console.log(`Already in new DB: ${skippedExisting}`);
   if (APPLY) {
     console.log(`Created:           ${created}`);
