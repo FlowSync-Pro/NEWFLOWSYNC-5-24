@@ -1,14 +1,21 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { CATEGORY_LABEL, guidesByCategory, type GuideCategory } from "@/lib/guides";
 import Reveal from "@/components/Reveal";
 import { SITE_URL } from "@/lib/site";
+import { getSession } from "@/lib/session";
+import { hasGuideAccess } from "@/lib/access";
+
+// Member resources — only signed-in paid drivers (and admins) see the library.
+// Reached from inside the driver dashboard, not the public nav.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Grow your delivery business — guides & playbooks",
-  description:
-    "Member guides to build your delivery business the right way: get your DOT & EIN, choose a business structure, get insured, and market on Nextdoor, Yelp, Thumbtack, Craigslist, and Indeed. Included with your $17 FlowSync listing.",
+  title: "Resources — grow your delivery business",
+  description: "Member guides to build your delivery business.",
   alternates: { canonical: `${SITE_URL}/grow` },
+  robots: { index: false },
 };
 
 const ORDER: GuideCategory[] = ["foundation", "money", "marketing"];
@@ -19,7 +26,12 @@ const INTRO: Record<GuideCategory, string> = {
   marketing: "Get your own customers in your city, so you're never dependent on one app.",
 };
 
-export default function GrowPage() {
+export default async function GrowPage() {
+  // Gate the whole library: sign in required, and a paid listing to view it.
+  const session = await getSession();
+  if (!session) redirect("/signin");
+  if (!(await hasGuideAccess())) redirect("/pricing");
+
   return (
     <div>
       <section className="relative overflow-hidden border-b border-border">

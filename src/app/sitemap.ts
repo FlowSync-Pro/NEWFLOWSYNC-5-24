@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
-import { GUIDES } from "@/lib/guides";
 import { prisma } from "@/lib/db";
 import { allCityServiceRoutes } from "@/lib/locations";
 import { serviceFromEnum } from "@/lib/enums";
@@ -30,12 +29,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/services",
     "/drivers",
     "/how-it-works",
-    "/grow",
     "/pricing",
     "/calculator",
     "/tools/profit-loss",
     "/signup",
-    ...GUIDES.map((g) => `/grow/${g.slug}`),
   ];
   const lastModified = new Date();
 
@@ -43,7 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${SITE_URL}${route}`,
     lastModified,
     changeFrequency: "weekly",
-    priority: route === "" ? 1 : route.startsWith("/grow/") ? 0.6 : 0.7,
+    priority: route === "" ? 1 : 0.7,
   }));
 
   const drivers = await listedDrivers();

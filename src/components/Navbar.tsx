@@ -9,7 +9,6 @@ const LINKS = [
   { href: "/find-a-driver", label: "Find a Driver" },
   { href: "/services", label: "Services" },
   { href: "/drivers", label: "For Drivers" },
-  { href: "/grow", label: "Grow" },
   { href: "/pricing", label: "Pricing" },
 ];
 
