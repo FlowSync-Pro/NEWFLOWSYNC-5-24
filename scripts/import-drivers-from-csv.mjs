@@ -121,16 +121,42 @@ function loadCsv(path) {
   const nameIdx = ["name", "customer name", "full name", "fullname"]
     .map((n) => headers.indexOf(n))
     .find((i) => i !== -1) ?? -1;
+  // Optional Stripe columns we use to filter out refunds/disputes/never-paid.
+  // When absent, no spend-based filtering is applied (graceful degradation).
+  const spendIdx = headers.indexOf("total spend");
+  const refundedIdx = headers.indexOf("refunded volume");
+  const disputeIdx = headers.indexOf("dispute losses");
 
   const records = [];
+  const skipped = { refunded: 0, neverPaid: 0, testEmail: 0, noEmail: 0 };
+  const num = (s) => {
+    const n = parseFloat((s ?? "").trim());
+    return Number.isFinite(n) ? n : 0;
+  };
   for (let r = 1; r < rows.length; r++) {
     const cols = rows[r];
     const email = (cols[emailIdx] ?? "").trim();
     const name = nameIdx >= 0 ? (cols[nameIdx] ?? "").trim() : "";
-    if (!email) continue;
+    if (!email) { skipped.noEmail++; continue; }
+    // Skip Stripe test emails and other obvious test patterns.
+    if (/@example\.com$/i.test(email) || /\+test@/i.test(email)) {
+      skipped.testEmail++; continue;
+    }
+    // Spend filtering — only if the Stripe columns are present.
+    if (spendIdx !== -1) {
+      const spend = num(cols[spendIdx]);
+      const refunded = refundedIdx !== -1 ? num(cols[refundedIdx]) : 0;
+      const dispute = disputeIdx !== -1 ? num(cols[disputeIdx]) : 0;
+      const net = spend - refunded - dispute;
+      if (net <= 0) {
+        if (refunded > 0 || dispute > 0) skipped.refunded++;
+        else skipped.neverPaid++;
+        continue;
+      }
+    }
     records.push({ email, name });
   }
-  return records;
+  return { records, skipped };
 }
 
 function hashPassword(pw) {
@@ -209,8 +235,15 @@ async function main() {
   if (LIMIT) console.log(`Limit: first ${LIMIT} rows`);
   console.log("");
 
-  const records = loadCsv(FILE);
-  console.log(`Rows with email: ${records.length}`);
+  const { records, skipped } = loadCsv(FILE);
+  console.log(`Eligible rows (paid, real email): ${records.length}`);
+  if (skipped.refunded || skipped.neverPaid || skipped.testEmail || skipped.noEmail) {
+    console.log(`Pre-filtered out of the CSV:`);
+    if (skipped.refunded) console.log(`  refunded/disputed: ${skipped.refunded}`);
+    if (skipped.neverPaid) console.log(`  never actually paid: ${skipped.neverPaid}`);
+    if (skipped.testEmail) console.log(`  test emails: ${skipped.testEmail}`);
+    if (skipped.noEmail) console.log(`  blank email: ${skipped.noEmail}`);
+  }
 
   let toCreate = 0;
   let created = 0;
