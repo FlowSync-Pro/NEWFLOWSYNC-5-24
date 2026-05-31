@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import { SERVICES } from "@/lib/services";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 export default function Footer() {
   return (
@@ -17,6 +18,12 @@ export default function Footer() {
             <p className="mt-4 max-w-xs text-sm text-muted">
               The driver-owned platform for every kind of delivery and errand. Pick your service,
               build your business, keep more of what you earn.
+            </p>
+            <p className="mt-4 text-sm text-muted">
+              Questions?{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-accent hover:underline">
+                {SUPPORT_EMAIL}
+              </a>
             </p>
           </div>
 
@@ -41,21 +48,23 @@ export default function Footer() {
               <li><Link href="/pricing" className="hover:text-foreground">Pricing</Link></li>
               <li><Link href="/calculator" className="hover:text-foreground">Quote calculator</Link></li>
               <li><Link href="/tools/profit-loss" className="hover:text-foreground">P&amp;L tracker</Link></li>
-              <li><Link href="/pricing" className="hover:text-foreground">Become a driver</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold">Get started</h4>
-            <p className="mt-4 text-sm text-muted">Ready to drive on your terms?</p>
-            <Link href="/pricing" className="btn-primary mt-3 inline-flex rounded-full px-5 py-2.5 text-sm">
-              Become a driver
-            </Link>
+            <h4 className="text-sm font-semibold">Support &amp; legal</h4>
+            <ul className="mt-4 space-y-2.5 text-sm text-muted">
+              <li><a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-foreground">Contact support</a></li>
+              <li><Link href="/refund-policy" className="hover:text-foreground">Refund policy</Link></li>
+              <li><Link href="/privacy" className="hover:text-foreground">Privacy policy</Link></li>
+              <li><Link href="/terms" className="hover:text-foreground">Terms of service</Link></li>
+            </ul>
           </div>
         </div>
 
         <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-border pt-6 text-sm text-muted sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} FlowSync. A driver-first marketplace.</p>
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-foreground">{SUPPORT_EMAIL}</a>
         </div>
       </div>
     </footer>

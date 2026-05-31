@@ -9,6 +9,7 @@ import {
   VALUE_STACK,
   VALUE_STACK_TOTAL,
 } from "@/lib/pricing";
+import { SUPPORT_EMAIL } from "@/lib/site";
 import type { SocialProof } from "@/lib/social-proof";
 
 function Check({ className = "h-4 w-4" }: { className?: string }) {
@@ -232,8 +233,9 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
             <div className="mt-5 rounded-xl border border-accent/40 bg-accent-soft p-4 text-center">
               <p className="text-sm font-bold text-accent">The {GUARANTEE_DAYS}-Day &ldquo;Get Booked&rdquo; Guarantee</p>
               <p className="mt-1 text-xs text-muted">
-                List risk-free. If you don&apos;t love FlowSync within {GUARANTEE_DAYS} days, email us for a
-                full refund — no questions, no hard feelings. The risk is entirely on us.
+                List risk-free. If you don&apos;t love FlowSync within {GUARANTEE_DAYS} days, email{" "}
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-accent hover:underline">{SUPPORT_EMAIL}</a>{" "}
+                for a full refund — no questions, no hard feelings. The risk is entirely on us.
               </p>
             </div>
 

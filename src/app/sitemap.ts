@@ -33,6 +33,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/calculator",
     "/tools/profit-loss",
     "/signup",
+    "/refund-policy",
+    "/privacy",
+    "/terms",
   ];
   const lastModified = new Date();
 
