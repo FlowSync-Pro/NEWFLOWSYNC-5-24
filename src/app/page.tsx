@@ -53,24 +53,18 @@ const PERKS = [
   },
 ];
 
-const TESTIMONIALS = [
+const PROMISES = [
   {
-    quote:
-      "I started with grocery runs and added moving jobs on weekends. FlowSync is the first app where I actually feel like the business is mine.",
-    name: "Marcus T.",
-    role: "Grocery + Moving · Atlanta",
+    title: "Your profile, your reputation",
+    body: "A clean, professional listing customers can find and book — built around the services you actually offer.",
   },
   {
-    quote:
-      "The pharmacy profile made me look legit from day one — certifications front and center. Customers request me by name now.",
-    name: "Priya R.",
-    role: "Pharmacy Delivery · Austin",
+    title: "Keep 95% of every job",
+    body: "A flat 5% platform fee instead of the 20–40% the big apps take. You set your rates; the money is yours.",
   },
   {
-    quote:
-      "Box truck sitting idle used to cost me money. Now I haul and move through FlowSync and keep almost everything I earn.",
-    name: "Devon K.",
-    role: "Moving & Hauling · Phoenix",
+    title: "Tools to run it like a business",
+    body: "A fair-quote calculator, trip + mileage tracking, a profit & loss tool, and step-by-step guides — included.",
   },
 ];
 
@@ -221,31 +215,25 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* What you get */}
       <section className="border-t border-border bg-surface/30">
         <div className="mx-auto max-w-7xl px-5 py-20">
           <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Drivers are building real businesses.</h2>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Built to help you build a real business.</h2>
+            <p className="mt-4 text-muted">No commission games, no faceless algorithm — just the tools and the platform to earn on your own terms.</p>
           </Reveal>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {TESTIMONIALS.map((t, i) => (
-              <Reveal key={t.name} delay={i * 80}>
-                <figure className="card flex h-full flex-col p-7">
-                  <div className="flex gap-1 text-accent">
-                    {Array.from({ length: 5 }).map((_, idx) => (
-                      <svg key={idx} viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                        <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L10 15l-5.2 2.6 1-5.8L1.5 7.7l5.9-.9z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <blockquote className="mt-4 flex-1 text-pretty text-sm leading-relaxed text-foreground/90">
-                    “{t.quote}”
-                  </blockquote>
-                  <figcaption className="mt-5 border-t border-border pt-4">
-                    <p className="text-sm font-semibold">{t.name}</p>
-                    <p className="text-xs text-muted">{t.role}</p>
-                  </figcaption>
-                </figure>
+            {PROMISES.map((p, i) => (
+              <Reveal key={p.title} delay={i * 80}>
+                <div className="card flex h-full flex-col p-7">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                      <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <h3 className="mt-4 font-semibold">{p.title}</h3>
+                  <p className="mt-2 text-sm text-muted">{p.body}</p>
+                </div>
               </Reveal>
             ))}
           </div>

@@ -27,23 +27,6 @@ function safeHref(raw?: string | null): string | null {
   }
 }
 
-function Stars({ rating }: { rating: number }) {
-  return (
-    <div className="flex gap-0.5 text-accent">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <svg key={i} viewBox="0 0 20 20" fill={i < Math.round(rating) ? "currentColor" : "none"} stroke="currentColor" className="h-4 w-4">
-          <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L10 15l-5.2 2.6 1-5.8L1.5 7.7l5.9-.9z" strokeWidth="1" />
-        </svg>
-      ))}
-    </div>
-  );
-}
-
-const MOCK_REVIEWS = [
-  { name: "Sarah M.", text: "On time, super friendly, and handled everything with care. Booking again!", days: 2 },
-  { name: "James L.", text: "Communication was great and the whole thing was effortless. Highly recommend.", days: 9 },
-  { name: "Ana P.", text: "Professional from start to finish. Exactly what I needed.", days: 21 },
-];
 
 export default function ProfileView({
   profile,
@@ -61,16 +44,16 @@ export default function ProfileView({
   const premium = isPremiumTier(profile.tier);
   const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-  const years = Number(profile.yearsExperience) || 2;
-  const jobs = 180 + years * 215;
-  const rating = 4.9;
+  const years = Number(profile.yearsExperience) || 0;
   const fullName = `${profile.firstName} ${profile.lastName}`.trim() || "Driver";
 
+  // No fabricated stats. Show only what the driver has actually provided; the
+  // rest reads as "new driver" until real booking/review data exists.
   const stats = [
     { label: "Rate", value: profile.hourlyRate ? `$${profile.hourlyRate}/hr` : "—" },
-    { label: "Jobs done", value: jobs.toLocaleString() },
-    { label: "On-time", value: "98%" },
-    { label: "Responds", value: "< 10 min" },
+    { label: "Experience", value: years > 0 ? `${years} yr${years === 1 ? "" : "s"}` : "New" },
+    { label: "Service area", value: profile.serviceRadius || profile.city || "Local" },
+    { label: "Reviews", value: "New" },
   ];
 
   return (
@@ -114,9 +97,8 @@ export default function ProfileView({
               </div>
               <p className="mt-0.5 text-muted">{profile.headline || primary.profileHeadline}</p>
               <div className="mt-1.5 flex items-center gap-3 text-sm text-muted">
-                <Stars rating={rating} />
-                <span>{rating} · {jobs.toLocaleString()} jobs</span>
-                <span className="hidden sm:inline">· {profile.city || "Local area"}</span>
+                <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs">New driver</span>
+                <span className="hidden sm:inline">{profile.city || "Local area"}</span>
               </div>
             </div>
           </div>
@@ -213,24 +195,12 @@ export default function ProfileView({
             </section>
 
             <section className="card p-7">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Reviews</h2>
-                <div className="flex items-center gap-2 text-sm">
-                  <Stars rating={rating} />
-                  <span className="text-muted">{rating}</span>
-                </div>
-              </div>
-              <div className="mt-5 space-y-4">
-                {MOCK_REVIEWS.map((r) => (
-                  <div key={r.name} className="rounded-xl border border-border bg-surface-2 p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold">{r.name}</p>
-                      <span className="text-xs text-muted">{r.days}d ago</span>
-                    </div>
-                    <Stars rating={5} />
-                    <p className="mt-2 text-sm text-muted">{r.text}</p>
-                  </div>
-                ))}
+              <h2 className="text-lg font-semibold">Reviews</h2>
+              <div className="mt-5 rounded-xl border border-dashed border-border bg-surface-2 p-6 text-center">
+                <p className="text-sm font-medium">No reviews yet</p>
+                <p className="mt-1 text-sm text-muted">
+                  Be the first to book {profile.firstName} — your honest review helps the whole community.
+                </p>
               </div>
             </section>
           </div>
