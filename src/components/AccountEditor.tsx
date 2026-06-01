@@ -206,7 +206,7 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
           {error && <span className="text-sm text-red-400">{error}</span>}
           {isAdmin && <Link href="/admin" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Admin</Link>}
           {!premium && <UpgradeButton label="★ Upgrade to Premium" className="rounded-full bg-amber-400/20 px-5 py-2.5 text-sm font-medium text-amber-300 transition-colors hover:bg-amber-400/30" />}
-          <Link href="/account/roadmap" className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-[#04130a] transition-opacity hover:opacity-90">Roadmap</Link>
+          <Link href="/account" className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-[#04130a] transition-opacity hover:opacity-90">Roadmap</Link>
           <Link href="/account/trips" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Operations</Link>
           <Link href="/account/services" className="btn-ghost rounded-full px-5 py-2.5 text-sm">My Services</Link>
           <Link href="/grow" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Resources</Link>

@@ -16,7 +16,7 @@ async function saveProgress(userId: string, progress: RoadmapProgress): Promise<
     where: { id: userId },
     data: { roadmapData: progress as unknown as Prisma.InputJsonValue },
   });
-  revalidatePath("/account/roadmap");
+  revalidatePath("/account");
 }
 
 /** Toggle a launch-checklist or milestone task on/off. */
