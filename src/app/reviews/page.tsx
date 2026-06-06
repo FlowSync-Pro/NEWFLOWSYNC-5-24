@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { listPublicReviews, reviewSummary } from "@/lib/reviews";
 import { SITE_URL } from "@/lib/site";
 
@@ -26,6 +27,9 @@ function Stars({ rating, size = "h-5 w-5" }: { rating: number; size?: string }) 
 
 export default async function ReviewsPage() {
   const [reviews, summary] = await Promise.all([listPublicReviews(), reviewSummary()]);
+  // Hide the page entirely until we have real reviews. Empty state would look
+  // worse than the page not existing yet.
+  if (reviews.length === 0) notFound();
 
   return (
     <div className="relative">
@@ -51,40 +55,26 @@ export default async function ReviewsPage() {
       </section>
 
       <div className="relative mx-auto max-w-5xl px-5 py-12">
-        {reviews.length === 0 ? (
-          <div className="card mx-auto max-w-xl p-10 text-center">
-            <p className="text-base font-medium">No reviews yet.</p>
-            <p className="mt-2 text-sm text-muted">
-              We just opened up driver reviews — the first ones are on their way through approval. Check back soon.
-            </p>
-            <Link href="/pricing" className="btn-primary mt-6 inline-flex rounded-full px-7 py-3 text-sm">
-              Get listed for $17
-            </Link>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {reviews.map((r) => (
-                <figure key={r.id} className="card flex h-full flex-col p-6">
-                  <Stars rating={r.rating} />
-                  <blockquote className="mt-4 flex-1 text-pretty text-sm leading-relaxed">
-                    &ldquo;{r.text}&rdquo;
-                  </blockquote>
-                  <figcaption className="mt-5 border-t border-border pt-4">
-                    <p className="text-sm font-semibold">{r.displayName}</p>
-                    {r.city && <p className="text-xs text-muted">{r.city}</p>}
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-            <div className="mt-12 text-center">
-              <p className="text-muted">Ready to join them?</p>
-              <Link href="/pricing" className="btn-primary mt-4 inline-flex rounded-full px-7 py-3 text-sm">
-                Get listed for $17
-              </Link>
-            </div>
-          </>
-        )}
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {reviews.map((r) => (
+            <figure key={r.id} className="card flex h-full flex-col p-6">
+              <Stars rating={r.rating} />
+              <blockquote className="mt-4 flex-1 text-pretty text-sm leading-relaxed">
+                &ldquo;{r.text}&rdquo;
+              </blockquote>
+              <figcaption className="mt-5 border-t border-border pt-4">
+                <p className="text-sm font-semibold">{r.displayName}</p>
+                {r.city && <p className="text-xs text-muted">{r.city}</p>}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+        <div className="mt-12 text-center">
+          <p className="text-muted">Ready to join them?</p>
+          <Link href="/pricing" className="btn-primary mt-4 inline-flex rounded-full px-7 py-3 text-sm">
+            Get listed for $17
+          </Link>
+        </div>
       </div>
     </div>
   );

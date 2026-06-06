@@ -33,7 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/calculator",
     "/tools/profit-loss",
     "/signup",
-    "/reviews",
+    // /reviews is intentionally NOT in the sitemap — the route 404s until
+    // there are approved reviews. Re-add once it consistently has content.
     "/refund-policy",
     "/privacy",
     "/terms",
