@@ -41,6 +41,60 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: upgrade.url });
   }
 
+  // Post-payment one-time offer: a driver who just paid $17 takes the $97
+  // Premium upgrade. No sign-in required — we identify them via the just-
+  // completed listing Stripe session id.
+  if (body.intent === "oto-upgrade" && typeof body.session_id === "string" && body.session_id) {
+    // Verify the original listing session is real and paid.
+    let original: import("stripe").default.Checkout.Session;
+    try {
+      original = await stripe.checkout.sessions.retrieve(body.session_id);
+    } catch {
+      return NextResponse.json({ error: "Invalid checkout session." }, { status: 400 });
+    }
+    if (original.payment_status !== "paid" || original.metadata?.type !== "listing") {
+      return NextResponse.json({ error: "Original payment not found." }, { status: 400 });
+    }
+    const email = (original.customer_details?.email ?? "").toLowerCase();
+    if (!email) return NextResponse.json({ error: "Could not identify your account." }, { status: 400 });
+
+    // The listing webhook is async — give it a moment to create the user.
+    let user = await prisma.user.findUnique({ where: { email }, include: { driverProfile: true } });
+    for (let i = 0; i < 5 && !user; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      user = await prisma.user.findUnique({ where: { email }, include: { driverProfile: true } });
+    }
+    if (!user) {
+      return NextResponse.json(
+        { error: "Your account is still being set up. Please try again in a moment from your account." },
+        { status: 503 },
+      );
+    }
+    if (user.driverProfile && isPremiumTier(user.driverProfile.tier)) {
+      return NextResponse.json({ error: "You're already on Premium." }, { status: 400 });
+    }
+
+    const oto = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          price_data: { currency: "usd", unit_amount: TIERS.premium.price * 100, product_data: { name: "FlowSync Premium upgrade" } },
+          quantity: 1,
+        },
+      ],
+      customer_email: email,
+      // Reuses the existing fulfillUpgrade webhook handler.
+      metadata: { type: "upgrade", userId: user.id, source: "oto" },
+      // Use the NEW upgrade session id (Stripe substitutes it) so signin
+      // fires Purchase($97) with a distinct Meta eventID. The original $17
+      // Purchase fires on /welcome/premium-offer with its own eventID. Two
+      // events, two values, full attribution.
+      success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&upgraded=1`,
+      cancel_url: `${base}/welcome/premium-offer?session_id=${encodeURIComponent(body.session_id)}`,
+    });
+    return NextResponse.json({ url: oto.url });
+  }
+
   // P&L Tracker Pro: a signed-in driver starts the $17/mo subscription (1st month free).
   // Subscription mode + a trial collects a card up front by default (card required).
   if (body.intent === "pnl-subscribe") {
@@ -130,7 +184,9 @@ export async function POST(req: Request) {
     })),
     customer_email: email || undefined,
     metadata: { type: "listing", tier: tierId, bumps: bumps.join(","), firstName, lastName, primaryService, ref },
-    success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+    // Send paid drivers to a dedicated post-payment Premium upsell before they
+    // see their welcome email. They can take it or skip to sign in.
+    success_url: `${base}/welcome/premium-offer?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/pricing?checkout=cancelled`,
   });
 
