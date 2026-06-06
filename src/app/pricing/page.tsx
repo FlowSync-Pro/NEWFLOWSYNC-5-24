@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import OfferCheckout from "@/components/OfferCheckout";
 import JsonLd from "@/components/JsonLd";
 import ReviewStrip from "@/components/ReviewStrip";
+import TrustBlock from "@/components/TrustBlock";
 import { BUMPS, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import { getSocialProof } from "@/lib/social-proof";
@@ -51,6 +52,11 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
       <div className="glow-radial pointer-events-none absolute inset-0 h-80" />
       <div className="relative">
         <OfferCheckout proof={proof} referralCode={ref} />
+        {/* Dense, specific anti-scam signals right after the offer — last
+            push for skeptical-buyer trust before they leave the page. */}
+        <div className="px-5">
+          <TrustBlock />
+        </div>
         {/* Real driver reviews (admin-approved) — renders nothing until at
             least a few approved reviews exist, so it doesn't look sparse. */}
         <div className="px-5 pb-16">
