@@ -41,7 +41,10 @@ export const TIERS: Record<TierId, Tier> = {
   standard: {
     id: "standard",
     price: 17,
-    name: "Standard",
+    // Display name only — the internal id stays "standard" and the DB enum
+    // stays STANDARD (id and enum are stable contracts). "Verified" pairs with
+    // Premium without sounding like a baseline/lesser tier.
+    name: "Verified",
     tagline: "Get listed and take direct bookings.",
     features: [
       "Listed in the FlowSync driver directory",
@@ -59,7 +62,7 @@ export const TIERS: Record<TierId, Tier> = {
     tagline: "Run your business your way — build your own service menu.",
     highlight: true,
     features: [
-      "Everything in Standard",
+      "Everything in Verified",
       "★ My Services — build your own menu with custom pricing",
       "Premium badge & elevated profile styling",
       "Add your own external website link",

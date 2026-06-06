@@ -29,7 +29,7 @@ const COMPARE: { label: string; standard: string | boolean; premium: string | bo
   { label: "DOT & EIN setup guide", standard: true, premium: true },
   { label: "Roadmap, member resources, referral program", standard: true, premium: true },
   { label: "★ Premium badge on your public profile", standard: false, premium: true },
-  { label: "Featured placement above Standard drivers in the directory", standard: false, premium: true },
+  { label: "Featured placement above other drivers in the directory", standard: false, premium: true },
   { label: "Build a custom service menu with your own prices", standard: false, premium: true },
   { label: "Link your external website on your profile", standard: false, premium: true },
 ];
@@ -97,7 +97,7 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
         <div className="card mt-8 overflow-hidden p-0">
           <div className="grid grid-cols-[1fr_auto_auto] gap-x-5 px-5 py-4 text-xs font-semibold uppercase tracking-widest">
             <div className="text-muted">&nbsp;</div>
-            <div className="text-center text-muted">Standard</div>
+            <div className="text-center text-muted">Verified</div>
             <div className="rounded-t-md bg-accent px-3 text-center text-[#04130a]">Premium</div>
           </div>
           {COMPARE.map((row, i) => (

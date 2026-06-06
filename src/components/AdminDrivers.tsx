@@ -98,7 +98,7 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
               {driver.verified ? "Verified" : "Pending"}
             </span>
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${premium ? "bg-amber-400/20 text-amber-300" : "bg-surface-2 text-muted"}`}>
-              {premium ? "★ Premium" : "Standard"}
+              {premium ? "★ Premium" : "Verified"}
             </span>
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${driver.paid ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted"}`}>
               {driver.paid ? "Paid" : "Unpaid"}
@@ -133,7 +133,7 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
             disabled={busy}
             className={`rounded-full px-5 py-2 text-sm disabled:opacity-50 ${premium ? "border border-border text-muted hover:text-foreground" : "bg-amber-400/20 text-amber-300 hover:bg-amber-400/30"}`}
           >
-            {premium ? "Set Standard" : "★ Upgrade to Premium"}
+            {premium ? "Set Verified" : "★ Upgrade to Premium"}
           </button>
           <button onClick={resetPassword} disabled={busy} className="rounded-full border border-border px-5 py-2 text-sm text-muted hover:text-foreground disabled:opacity-50">
             Reset password

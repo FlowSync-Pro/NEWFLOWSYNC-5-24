@@ -58,7 +58,7 @@ export default async function MyServicesPage({ searchParams }: PageProps<"/accou
               <div className="flex flex-col items-start justify-between gap-4 p-7 sm:flex-row sm:items-center">
                 <div>
                   <p className="text-3xl font-extrabold text-accent">${TIERS.premium.price}<span className="text-base font-medium text-muted"> one-time</span></p>
-                  <p className="text-sm text-muted">Upgrade from Standard anytime.</p>
+                  <p className="text-sm text-muted">Upgrade from Verified anytime.</p>
                 </div>
                 <UpgradeButton label={`Upgrade to Premium — $${TIERS.premium.price}`} />
               </div>
