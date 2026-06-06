@@ -58,7 +58,14 @@ export default function ProfileView({
 
   return (
     <div className="pb-12">
-      <div className="relative h-44 overflow-hidden border-b border-border bg-surface sm:h-52">
+      {/* Featured banner for Premium drivers — visible "this driver is
+          Premium" signal beyond the small badge inline below. */}
+      {premium && (
+        <div className="border-b border-amber-400/30 bg-gradient-to-r from-amber-400/10 via-amber-400/[0.06] to-transparent px-5 py-2 text-center text-xs font-medium text-amber-300">
+          ★ Featured FlowSync driver
+        </div>
+      )}
+      <div className={`relative h-44 overflow-hidden border-b sm:h-52 ${premium ? "border-amber-400/30 bg-gradient-to-b from-amber-400/[0.08] to-surface" : "border-border bg-surface"}`}>
         <div className="glow-radial absolute inset-0" />
         <div className="grid-bg absolute inset-0" />
         <div className="absolute right-6 top-6 hidden items-center gap-2 rounded-full border border-border bg-background/60 px-3 py-1.5 text-xs text-accent backdrop-blur sm:flex">

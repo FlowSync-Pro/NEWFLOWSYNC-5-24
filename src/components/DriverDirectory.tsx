@@ -14,6 +14,9 @@ export interface DirectoryCard {
   verified: boolean;
   headline: string;
   photoUrl?: string;
+  /** "PREMIUM" drivers are featured at the top of the directory with a
+   * distinctive amber treatment. Anything else is treated as Standard. */
+  tier?: string;
 }
 
 function initials(name: string) {
@@ -36,6 +39,9 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
       return matchService && matchQuery;
     });
   }, [drivers, query, filter]);
+
+  const featured = results.filter((d) => (d.tier ?? "").toUpperCase() === "PREMIUM");
+  const standard = results.filter((d) => (d.tier ?? "").toUpperCase() !== "PREMIUM");
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-12">
@@ -87,45 +93,32 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
         </div>
       </div>
 
-      <p className="mt-8 text-sm text-muted">{results.length} drivers available</p>
-      <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {results.map((d) => {
-          const svc = getService(d.service);
-          return (
-            <Link key={d.id} href={`/d/${d.id}`} className="card card-hover flex flex-col p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-surface-2 text-sm font-bold text-accent">
-                    {d.photoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={d.photoUrl} alt={d.name} className="h-full w-full object-cover" />
-                    ) : (
-                      initials(d.name)
-                    )}
-                  </span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">{d.name}</p>
-                      {d.verified && (
-                        <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent">Verified</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted">{d.city}</p>
-                  </div>
-                </div>
-                <span className="text-accent"><ServiceIcon id={d.service} className="h-5 w-5" /></span>
-              </div>
+      <p className="mt-8 text-sm text-muted">{results.length} driver{results.length === 1 ? "" : "s"} available</p>
 
-              <p className="mt-3 flex-1 text-sm text-muted">{d.headline || svc?.profileHeadline}</p>
+      {/* Featured (Premium) drivers — visually distinct so customers see the
+          difference and Standard drivers see what an upgrade looks like. */}
+      {featured.length > 0 && (
+        <div className="mt-6">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="rounded-full bg-amber-400/20 px-2.5 py-1 text-[11px] font-bold text-amber-300">★ Featured</span>
+            <p className="text-xs text-muted">Premium drivers · listed first</p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((d) => <DriverCardItem key={d.id} d={d} featured />)}
+          </div>
+        </div>
+      )}
 
-              <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                <span className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted">{svc?.short}</span>
-                {d.rate ? <span className="text-sm font-semibold text-accent">${d.rate}/hr</span> : <span className="text-xs text-muted">View profile</span>}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      {standard.length > 0 && (
+        <div className={featured.length > 0 ? "mt-10" : "mt-4"}>
+          {featured.length > 0 && (
+            <p className="mb-3 text-xs uppercase tracking-widest text-muted">More drivers</p>
+          )}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {standard.map((d) => <DriverCardItem key={d.id} d={d} />)}
+          </div>
+        </div>
+      )}
 
       {results.length === 0 && (
         <div className="card mt-6 p-10 text-center text-muted">
@@ -133,5 +126,53 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
         </div>
       )}
     </div>
+  );
+}
+
+function DriverCardItem({ d, featured = false }: { d: DirectoryCard; featured?: boolean }) {
+  const svc = getService(d.service);
+  const cardCls = featured
+    ? "card card-hover flex flex-col p-6 border-amber-400/40 bg-gradient-to-b from-amber-400/[0.04] to-transparent hover:border-amber-400/60"
+    : "card card-hover flex flex-col p-6";
+  return (
+    <Link href={`/d/${d.id}`} className={cardCls}>
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <span className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl text-sm font-bold ${featured ? "bg-amber-400/10 text-amber-300 ring-1 ring-amber-400/30" : "bg-surface-2 text-accent"}`}>
+            {d.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={d.photoUrl} alt={d.name} className="h-full w-full object-cover" />
+            ) : (
+              initials(d.name)
+            )}
+          </span>
+          <div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <p className="font-semibold">{d.name}</p>
+              {featured ? (
+                <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">★ Featured</span>
+              ) : (
+                d.verified && (
+                  <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent">Verified</span>
+                )
+              )}
+            </div>
+            <p className="text-xs text-muted">{d.city}</p>
+          </div>
+        </div>
+        <span className={featured ? "text-amber-300" : "text-accent"}><ServiceIcon id={d.service} className="h-5 w-5" /></span>
+      </div>
+
+      <p className="mt-3 flex-1 text-sm text-muted">{d.headline || svc?.profileHeadline}</p>
+
+      <div className={`mt-4 flex items-center justify-between border-t ${featured ? "border-amber-400/20" : "border-border"} pt-4`}>
+        <span className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted">{svc?.short}</span>
+        {d.rate ? (
+          <span className={`text-sm font-semibold ${featured ? "text-amber-300" : "text-accent"}`}>${d.rate}/hr</span>
+        ) : (
+          <span className="text-xs text-muted">View profile</span>
+        )}
+      </div>
+    </Link>
   );
 }

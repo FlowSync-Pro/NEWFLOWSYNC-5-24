@@ -20,7 +20,9 @@ async function load(serviceId: ServiceId, citySlugParam: string) {
   const rows = await prisma.driverProfile.findMany({
     where: { verified: true, primaryService: serviceToEnum(serviceId), city: { not: null } },
     include: { documents: true },
-    orderBy: { createdAt: "desc" },
+    // Premium first, then newest — the directory groups them into a
+    // "Featured" section above the rest.
+    orderBy: [{ tier: "desc" }, { createdAt: "desc" }],
   });
   const matched = rows.filter((r) => citySlug(r.city ?? "") === citySlugParam);
   const cityName = matched[0]?.city ? cityDisplay(matched[0].city) : cityDisplay(citySlugParam.replace(/-/g, " "));
@@ -66,6 +68,7 @@ export default async function CityServicePage({ params }: PageProps<"/delivery/[
       verified: db.verified,
       headline: db.headline ?? "",
       photoUrl: db.documents.find((d) => docKeyFromKind(d.kind) === "profilePhoto")?.blobUrl,
+      tier: db.tier,
     });
   }
 

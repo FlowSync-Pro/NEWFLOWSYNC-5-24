@@ -19,7 +19,9 @@ export default async function FindADriverPage() {
   const rows = await prisma.driverProfile.findMany({
     where: { verified: true, primaryService: { not: null } },
     include: { documents: true },
-    orderBy: { createdAt: "desc" },
+    // Premium first, then newest. The component also re-groups Premium into
+    // a "Featured" section visually; ordering here keeps SSR snapshot tidy.
+    orderBy: [{ tier: "desc" }, { createdAt: "desc" }],
   });
 
   const drivers: DirectoryCard[] = [];
@@ -35,6 +37,7 @@ export default async function FindADriverPage() {
       verified: db.verified,
       headline: db.headline ?? "",
       photoUrl: db.documents.find((d) => docKeyFromKind(d.kind) === "profilePhoto")?.blobUrl,
+      tier: db.tier,
     });
   }
 
