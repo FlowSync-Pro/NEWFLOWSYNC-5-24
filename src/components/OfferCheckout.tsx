@@ -229,13 +229,15 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
             </button>
             <p className="mt-2 text-center text-xs text-muted">You&apos;ll set up your name and service right after payment.</p>
 
-            {/* Risk reversal — the named, loud money-back guarantee */}
+            {/* Risk reversal — money-back if not happy. Phrased honestly so we
+                aren't implicitly promising bookings (driver outcomes aren't
+                ours to guarantee). */}
             <div className="mt-5 rounded-xl border border-accent/40 bg-accent-soft p-4 text-center">
-              <p className="text-sm font-bold text-accent">The {GUARANTEE_DAYS}-Day &ldquo;Get Booked&rdquo; Guarantee</p>
+              <p className="text-sm font-bold text-accent">{GUARANTEE_DAYS}-Day Money-Back Guarantee</p>
               <p className="mt-1 text-xs text-muted">
-                List risk-free. If you don&apos;t love FlowSync within {GUARANTEE_DAYS} days, email{" "}
+                Try FlowSync risk-free. If you&apos;re not happy with your listing in {GUARANTEE_DAYS} days, email{" "}
                 <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-accent hover:underline">{SUPPORT_EMAIL}</a>{" "}
-                for a full refund — no questions, no hard feelings. The risk is entirely on us.
+                for a full refund — no questions, no hard feelings.
               </p>
             </div>
 
