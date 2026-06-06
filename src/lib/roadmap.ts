@@ -26,6 +26,7 @@ export const LAUNCH_CHECKLIST: RoadmapTask[] = [
   { id: "documents", label: "Upload your license & documents", detail: "Get verified so customers trust you from day one.", href: "/account" },
   { id: "services", label: "List your services", detail: "Pick every service you can offer to get found for more jobs.", href: "/account/services" },
   { id: "first-customers", label: "Invite your first customers", detail: "Share your profile with friends, family, and neighbors.", href: "/account" },
+  { id: "share-experience", label: "Share your signup experience", detail: "Help other drivers decide — your review goes on the public reviews page.", href: "/account/share-experience" },
   { id: "first-review", label: "Earn your first review", detail: "Ask a happy customer for a quick rating — reviews drive bookings.", href: "/grow/get-your-first-10-reviews" },
 ];
 

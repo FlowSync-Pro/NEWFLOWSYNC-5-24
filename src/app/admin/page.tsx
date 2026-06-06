@@ -79,6 +79,7 @@ export default async function AdminPage() {
     prisma.payment.findMany({ where: { status: "PAID" }, select: { userId: true } }),
   ]);
 
+  const pendingReviewCount = await prisma.review.count({ where: { status: "PENDING" } });
   const paidUserIds = new Set(paidPayments.map((p) => p.userId));
 
   const drivers: AdminDriverRow[] = rows.map((p) => {
@@ -124,7 +125,14 @@ export default async function AdminPage() {
             <h1 className="text-3xl font-bold tracking-tight">Admin dashboard</h1>
             <p className="mt-1 text-muted">Sales, your driver pipeline, and verification.</p>
           </div>
-          <Link href="/find-a-driver" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Directory</Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/admin/reviews" className="btn-ghost rounded-full px-5 py-2.5 text-sm">
+              Reviews{pendingReviewCount > 0 && (
+                <span className="ml-2 rounded-full bg-amber-400/20 px-2 py-0.5 text-[11px] font-bold text-amber-300">{pendingReviewCount} pending</span>
+              )}
+            </Link>
+            <Link href="/find-a-driver" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Directory</Link>
+          </div>
         </div>
 
         {/* Sales */}

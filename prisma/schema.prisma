@@ -95,6 +95,9 @@ model User {
   // days: string[] (YYYY-MM-DD daily check-ins for the habit streak) }.
   roadmapData Json?
 
+  // Driver review of the FlowSync signup experience (one per driver).
+  review Review?
+
   // Referral program: each user's own shareable code, and the code they signed
   // up under (only set once they've paid, so it counts real referrals).
   referralCode   String? @unique
@@ -309,4 +312,33 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// ---- Driver reviews of the FlowSync signup experience ----
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Review {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rating Int    // 1-5
+  text   String
+
+  status ReviewStatus @default(PENDING)
+
+  // Snapshotted display fields so public attribution doesn't change if the
+  // driver later edits their profile.
+  displayName String?
+  city        String?
+
+  createdAt  DateTime  @default(now())
+  approvedAt DateTime?
+
+  @@index([status, approvedAt])
 }
