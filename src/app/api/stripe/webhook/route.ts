@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
 import { attributeReferral } from "@/lib/referrals";
+import { sendCapiPurchase } from "@/lib/meta-capi";
 import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendPremiumUpgradeEmail, sendPnlProEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
@@ -140,6 +141,19 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     firstName: profile.firstName,
     servicesUrl: `${base}/account/services`,
   });
+
+  // Server-side Purchase event to Meta (CAPI). Same event_id as the browser
+  // pixel that fires on /signin?checkout=success&upgraded=1 -> Meta dedupes
+  // into one Purchase per upgrade.
+  await sendCapiPurchase({
+    eventId: session.id,
+    email: profile.user.email,
+    value: (session.amount_total ?? 9700) / 100,
+    currency: session.currency ?? "usd",
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    sourceUrl: `${base}/welcome/premium-offer`,
+  });
 }
 
 async function fulfillBooking(session: Stripe.Checkout.Session) {
@@ -261,4 +275,16 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
 
   // Credit the referrer (if this driver came through a referral link).
   if (md.ref) await attributeReferral(user.id, md.ref);
+
+  // Server-side Purchase event to Meta (CAPI). Same event_id as the browser
+  // pixel that fires on /welcome/premium-offer -> Meta dedupes into one event.
+  await sendCapiPurchase({
+    eventId: session.id,
+    email,
+    value: (session.amount_total ?? 0) / 100,
+    currency: session.currency ?? "usd",
+    firstName: md.firstName || undefined,
+    lastName: md.lastName || undefined,
+    sourceUrl: `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/welcome/premium-offer`,
+  });
 }
