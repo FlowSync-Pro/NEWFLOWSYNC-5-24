@@ -4,8 +4,12 @@ import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-// Meta (Facebook) Pixel — base code on every page; PageView on client route changes.
-export default function MetaPixel({ pixelId }: { pixelId: string }) {
+// Meta (Facebook) Pixel — base code on every page; PageView on client route
+// changes. Supports multiple pixel IDs for migration scenarios: each
+// fbq('init', ID) registers an additional pixel, and any subsequent
+// fbq('track', ...) call fires the event to ALL initialized pixels
+// automatically. eventID-based dedup applies across all of them.
+export default function MetaPixel({ pixelIds }: { pixelIds: string[] }) {
   const pathname = usePathname();
   const first = useRef(true);
 
@@ -15,8 +19,11 @@ export default function MetaPixel({ pixelId }: { pixelId: string }) {
       return;
     }
     const w = window as unknown as { fbq?: (...a: unknown[]) => void };
+    // Fires to every initialized pixel — no per-pixel loop needed.
     w.fbq?.("track", "PageView");
   }, [pathname]);
+
+  if (pixelIds.length === 0) return null;
 
   return (
     <>
@@ -30,18 +37,22 @@ export default function MetaPixel({ pixelId }: { pixelId: string }) {
           t.src=v;s=b.getElementsByTagName(e)[0];
           s.parentNode.insertBefore(t,s)}(window, document,'script',
           'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '${pixelId}');
+          ${pixelIds.map((id) => `fbq('init', '${id}');`).join("\n          ")}
           fbq('track', 'PageView');
         `}
       </Script>
       <noscript>
-        <img
-          height="1"
-          width="1"
-          style={{ display: "none" }}
-          src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
-          alt=""
-        />
+        {pixelIds.map((id) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={id}
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src={`https://www.facebook.com/tr?id=${id}&ev=PageView&noscript=1`}
+            alt=""
+          />
+        ))}
       </noscript>
     </>
   );

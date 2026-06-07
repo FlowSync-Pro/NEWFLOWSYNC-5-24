@@ -59,8 +59,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const metaPixelId =
-    process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "2070476707153491";
+  // Comma-separated list of Meta Pixel IDs so we can dual-fire during the
+  // migration from the old flowsyncdrivers.com pixel to the new
+  // flowsyncdriver.com pixel. Ad campaigns currently target the old pixel —
+  // we keep firing both until the new pixel has enough learning data to
+  // safely migrate campaigns and sunset the old one.
+  //
+  //   1719247029245897 — OLD (flowsyncdrivers.com) — where current ads live
+  //   2070476707153491 — NEW (flowsyncdriver.com) — long-term home
+  const metaPixelIds = (process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "2070476707153491,1719247029245897")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const fbAppId = process.env.NEXT_PUBLIC_FB_APP_ID;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -90,7 +100,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <GoogleTagManager />
-        <MetaPixel pixelId={metaPixelId} />
+        <MetaPixel pixelIds={metaPixelIds} />
         {fbAppId && <meta property="fb:app_id" content={fbAppId} />}
         <script
           type="application/ld+json"
