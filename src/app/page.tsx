@@ -90,6 +90,12 @@ export default function Home() {
               From groceries to grand pianos, FlowSync connects you to the work you want.
               Pick your service, build a profile that fits, and keep more of what you earn.
             </p>
+            {/* Vehicle-range signal — preempts the most common pre-signup question:
+                'is this for my vehicle?' Caps at box truck (no semi-truck claim). */}
+            <p className="mx-auto mt-3 max-w-2xl text-base">
+              <span className="text-muted">Sedan, SUV, pickup, minivan, cargo van, sprinter, or box truck —</span>{" "}
+              <span className="font-medium text-foreground">there&apos;s a service for what you drive.</span>
+            </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link href="/pricing" className="btn-primary w-full rounded-full px-7 py-3.5 text-base sm:w-auto">
                 Become a driver

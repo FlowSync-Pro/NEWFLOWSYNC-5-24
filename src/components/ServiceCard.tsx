@@ -17,16 +17,21 @@ export default function ServiceCard({ service }: { service: Service }) {
         </span>
       </div>
       <h3 className="mt-5 text-lg font-semibold leading-snug">{service.name}</h3>
-      <p className="mt-2 flex-1 text-sm text-muted">{service.description}</p>
+      {/* Vehicle badge surfaced right under the service name so scanners
+          immediately see if their vehicle fits — the most common pre-signup
+          question this site gets. */}
+      <span className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5">
+          <path d="M3 13l2-5h11l3 5v4H3v-4z" strokeLinejoin="round" />
+          <circle cx="7" cy="17" r="1.5" />
+          <circle cx="16" cy="17" r="1.5" />
+        </svg>
+        {service.vehicle}
+      </span>
+      <p className="mt-3 flex-1 text-sm text-muted">{service.description}</p>
       <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-        <div>
-          <p className="text-xs text-muted">Typical vehicle</p>
-          <p className="text-sm font-medium">{service.vehicle}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-muted">Earnings</p>
-          <p className="text-sm font-semibold text-accent">{service.earnings}</p>
-        </div>
+        <span className="text-xs text-muted">Earnings</span>
+        <span className="text-sm font-semibold text-accent">{service.earnings}</span>
       </div>
     </Link>
   );
