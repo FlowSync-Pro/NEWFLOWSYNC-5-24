@@ -41,7 +41,7 @@ function Field({
 const inputCls =
   "w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition-colors focus:border-accent";
 
-export default function QuoteCalculator() {
+export default function QuoteCalculator({ alreadyListed = false }: { alreadyListed?: boolean } = {}) {
   const [service, setService] = useState<ServiceId | "">("");
   const [distance, setDistance] = useState(10);
   const [roundTrip, setRoundTrip] = useState(true);
@@ -253,9 +253,11 @@ export default function QuoteCalculator() {
               <span className="text-sm font-medium">Extra take-home / month</span>
               <span className="text-2xl font-extrabold text-accent">{money(r.monthlyDiff)}</span>
             </div>
-            <Link href="/pricing" className="btn-primary mt-5 flex w-full justify-center rounded-full px-6 py-3 text-sm">
-              Get listed for $17
-            </Link>
+            {!alreadyListed && (
+              <Link href="/pricing" className="btn-primary mt-5 flex w-full justify-center rounded-full px-6 py-3 text-sm">
+                Get listed for $17
+              </Link>
+            )}
           </div>
         </aside>
       </div>
