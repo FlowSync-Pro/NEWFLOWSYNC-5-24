@@ -47,6 +47,9 @@ export const metadata: Metadata = {
     "facebook-domain-verification":
       process.env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION ??
       "ih9zjpk5stwwwehn8qehjd7csvupd4",
+    // Impact.com site ownership verification — proves we own flowsyncdriver.com
+    // so Impact attributes affiliate conversions back to FlowSync.
+    "impact-site-verification": "2de5e941-38d7-4691-9fe9-d3422a7f60aa",
   },
 };
 
