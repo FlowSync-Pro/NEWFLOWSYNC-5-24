@@ -4,6 +4,50 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+# ⛔ DATA SAFETY — HIGHEST PRIORITY (read this first, every time)
+
+Driver data is the single most important asset in this project. It has been
+**wiped twice** by structural changes made without backing up and migrating
+existing data first:
+1. Rebuilding the old site into a new site erased a long-time driver's (Teri)
+   trip data and profit/loss logs.
+2. A driver-dashboard upgrade wiped saved trip logs from driver profiles.
+
+This must never happen again. Drivers must NEVER have to re-sign up or re-enter
+their trips, mileage, expenses, or P/L logs because of a change we made. This
+section OVERRIDES everything else in this file when there is any conflict.
+
+## Hard rules — NEVER do any of these without explicit owner approval AND a fresh backup
+- **Never run destructive DB commands:** `prisma migrate reset`,
+  `prisma db push --force-reset`, `prisma migrate dev` against production, or
+  anything that drops, recreates, truncates, reseeds, or resets tables or the DB.
+- **Never drop, rename, or delete** existing tables/columns holding driver
+  accounts, profiles, trip logs, mileage, expenses, or profit/loss data.
+  (Renaming a column = drop + recreate to Postgres. Don't.)
+- **Never edit or delete migration files** already applied to production.
+- **Never change auth/password storage** in a way that invalidates existing logins.
+
+## Required workflow before ANY schema change, migration, dashboard rebuild, or "major upgrade"
+1. **STOP.** Explain in plain English what will change and what data it could
+   touch. Wait for explicit approval.
+2. **Back up FIRST** — export all driver-related tables to a timestamped file
+   (a `pg_dump` SQL dump PLUS a JSON export via `scripts/backup-driver-data.mjs`),
+   stored OUTSIDE the app (cloud storage or the DB provider's snapshot — NEVER
+   committed to git; it contains customer PII).
+3. **Confirm** the database provider's automated backups / point-in-time
+   recovery are enabled as a second safety net.
+4. **Make changes ADDITIVELY** — add new columns/tables and backfill. Never drop
+   or overwrite. Every migration must preserve all existing rows.
+5. **Verify after** — confirm a sample of driver records (account + trip logs +
+   P/L data) still exist and render correctly before calling it done.
+6. **If anything is risky or ambiguous, do nothing and ask first.**
+
+## Standing "safe file" requirement
+Maintain a recurring export of ALL driver data (accounts, profiles, trip logs,
+mileage, expenses, P/L) to a safe, persistent backup location, so that even in a
+worst-case rebuild the data can be re-imported and drivers keep everything. The
+export tool is `scripts/backup-driver-data.mjs` (read-only; see its header).
+
 # Project state & where to continue
 
 Phase 1 (marketing + onboarding frontend) and Phase 2 (real backend) are built and verified

@@ -40,6 +40,9 @@ yarn-error.log*
 # exported customer lists (PII — never commit)
 *.csv
 
+# driver-data backups (PII — never commit; store in cloud / DB snapshots)
+/backups/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
