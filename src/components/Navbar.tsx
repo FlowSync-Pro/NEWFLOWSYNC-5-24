@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Logo from "./Logo";
+import { logout } from "@/app/actions/auth";
 
 const LINKS = [
   { href: "/find-a-driver", label: "Find a Driver" },
@@ -15,6 +16,12 @@ const LINKS = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Whether the visitor is signed in. Starts false so the server-rendered HTML
+  // and first client render match (no hydration mismatch) and signed-out
+  // visitors — the majority — see the correct CTAs immediately. Confirmed on
+  // mount via the read-only /api/me probe; localStorage gives returning
+  // signed-in drivers an instant correct render with no flash.
+  const [authed, setAuthed] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -26,6 +33,28 @@ export default function Navbar() {
       window.removeEventListener("scroll", onScroll);
     };
   }, []);
+
+  // Resolve signed-in state so we never show "Sign in / Become a driver" to a
+  // driver who's already logged in.
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("fs_authed") === "1") setAuthed(true);
+    } catch {}
+    let alive = true;
+    fetch("/api/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { authed: false }))
+      .then((d: { authed?: boolean }) => {
+        if (!alive) return;
+        setAuthed(!!d.authed);
+        try {
+          localStorage.setItem("fs_authed", d.authed ? "1" : "0");
+        } catch {}
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [pathname]);
 
   return (
     <header
@@ -56,12 +85,27 @@ export default function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link href="/signin" className="text-sm text-muted transition-colors hover:text-foreground">
-            Sign in
-          </Link>
-          <Link href="/pricing" className="btn-primary rounded-full px-5 py-2 text-sm">
-            Become a driver
-          </Link>
+          {authed ? (
+            <>
+              <form action={logout}>
+                <button type="submit" className="text-sm text-muted transition-colors hover:text-foreground">
+                  Sign out
+                </button>
+              </form>
+              <Link href="/account" className="btn-primary rounded-full px-5 py-2 text-sm">
+                My account
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/signin" className="text-sm text-muted transition-colors hover:text-foreground">
+                Sign in
+              </Link>
+              <Link href="/pricing" className="btn-primary rounded-full px-5 py-2 text-sm">
+                Become a driver
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -103,20 +147,42 @@ export default function Navbar() {
                 {l.label}
               </Link>
             ))}
-            <Link
-              href="/signin"
-              onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-3 text-sm text-muted hover:bg-surface hover:text-foreground"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/pricing"
-              onClick={() => setOpen(false)}
-              className="btn-primary mt-2 rounded-full px-5 py-3 text-center text-sm"
-            >
-              Become a driver
-            </Link>
+            {authed ? (
+              <>
+                <Link
+                  href="/account"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-3 py-3 text-sm text-muted hover:bg-surface hover:text-foreground"
+                >
+                  My account
+                </Link>
+                <form action={logout} className="mt-2">
+                  <button
+                    type="submit"
+                    className="btn-ghost w-full rounded-full px-5 py-3 text-center text-sm"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/signin"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-3 py-3 text-sm text-muted hover:bg-surface hover:text-foreground"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/pricing"
+                  onClick={() => setOpen(false)}
+                  className="btn-primary mt-2 rounded-full px-5 py-3 text-center text-sm"
+                >
+                  Become a driver
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
