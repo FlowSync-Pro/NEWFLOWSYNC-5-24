@@ -32,6 +32,7 @@ const COMPARE: { label: string; standard: string | boolean; premium: string | bo
   { label: "Featured placement above other drivers in the directory", standard: false, premium: true },
   { label: "Build a custom service menu with your own prices", standard: false, premium: true },
   { label: "Link your external website on your profile", standard: false, premium: true },
+  { label: "★ Done-for-you setup — we build your profile, menu & website for you", standard: false, premium: true },
 ];
 
 export default async function PremiumOfferPage({ searchParams }: PageProps<"/welcome/premium-offer">) {
@@ -87,9 +88,9 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
             Wait — most drivers add Premium right here.
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-muted">
-            You can always upgrade later from your account. But Premium is{" "}
-            <span className="text-foreground">${TIERS.premium.price} one-time</span> — same price
-            forever — and it makes your listing stand out from day one.
+            Premium is a{" "}
+            <span className="text-foreground">${TIERS.premium.price} one-time</span> add-on — no
+            subscription — and it makes your listing stand out from day one.
           </p>
         </div>
 
@@ -122,6 +123,23 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Done-for-you setup — the "we handle it for you" clincher, right before the price. */}
+        <div className="mt-8 rounded-2xl border border-amber-400/30 bg-amber-400/5 p-6">
+          <div className="flex items-start gap-4">
+            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400/15 text-amber-300">
+              <Check />
+            </span>
+            <div>
+              <h2 className="font-semibold text-amber-200">Premium includes done-for-you setup</h2>
+              <p className="mt-1 text-sm text-muted">
+                We build out your profile, your service menu, and your website{" "}
+                <span className="text-foreground">for you</span> — so you&apos;re set up and ready to
+                get found by local customers, instead of stuck figuring it all out yourself.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* CTA */}
