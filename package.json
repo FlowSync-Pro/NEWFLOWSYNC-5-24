@@ -10,12 +10,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:telegram": "node --experimental-strip-types --test scripts/telegram-utils.test.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@vercel/blob": "^2.4.0",
     "@vercel/speed-insights": "^2.0.0",
+    "ai": "^7.0.65",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",

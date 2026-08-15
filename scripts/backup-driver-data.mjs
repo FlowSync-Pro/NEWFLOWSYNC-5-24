@@ -31,8 +31,8 @@ const prisma = new PrismaClient();
 
 // Every driver-critical model, in dependency order (parents before children) so
 // a future restore can insert without violating foreign keys. Auth.js adapter
-// tables (Account/Session/VerificationToken) are included for completeness even
-// though this app uses cookie sessions — a backup should be total.
+// tables (Account/Session/VerificationToken) and Telegram support records are
+// included for completeness — a backup should be total.
 const MODELS = [
   "user",
   "driverProfile",
@@ -46,6 +46,10 @@ const MODELS = [
   "account",
   "session",
   "verificationToken",
+  "telegramKnowledgeEntry",
+  "telegramEscalation",
+  "telegramProcessedUpdate",
+  "telegramBotSetting",
 ];
 
 async function main() {

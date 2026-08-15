@@ -342,3 +342,78 @@ model Review {
 
   @@index([status, approvedAt])
 }
+
+// ---- Telegram driver-community assistant (isolated from driver records) ----
+
+enum TelegramKnowledgeStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  RETIRED
+}
+
+enum TelegramEscalationStatus {
+  PENDING_OWNER
+  ANSWERED_PENDING_APPROVAL
+  RESOLVED_APPROVED
+  RESOLVED_NOT_SAVED
+}
+
+enum TelegramUpdateStatus {
+  RECEIVED
+  COMPLETED
+  FAILED
+}
+
+model TelegramKnowledgeEntry {
+  id         String                  @id @default(cuid())
+  question   String
+  answer     String
+  keywords   String[]                @default([])
+  status     TelegramKnowledgeStatus @default(DRAFT)
+  source     String                  @default("OWNER")
+  approvedBy String?
+  approvedAt DateTime?
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+
+  @@index([status, updatedAt])
+}
+
+model TelegramEscalation {
+  id                   String                   @id @default(cuid())
+  groupChatId          String
+  groupMessageId       Int
+  telegramUserId       String
+  question             String
+  ownerPromptMessageId Int?                     @unique
+  ownerAnswer          String?
+  status               TelegramEscalationStatus @default(PENDING_OWNER)
+  resolvedAt           DateTime?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  @@unique([groupChatId, groupMessageId])
+  @@index([status, createdAt])
+  @@index([telegramUserId, createdAt])
+}
+
+model TelegramProcessedUpdate {
+  updateId  String               @id
+  chatId    String?
+  userId    String?
+  status    TelegramUpdateStatus @default(RECEIVED)
+  attempts  Int                  @default(1)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([chatId, createdAt])
+  @@index([status, updatedAt])
+}
+
+model TelegramBotSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
