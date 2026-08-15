@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import {
-  isTelegramConfigured,
-  registerTelegramWebhook,
-} from "@/lib/telegram";
+import { isTelegramConfigured } from "@/lib/telegram";
 import {
   processTelegramUpdate,
   type TelegramUpdate,
@@ -15,39 +12,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const MAX_WEBHOOK_BYTES = 64 * 1024;
-const PRODUCTION_WEBHOOK_URL =
-  "https://flowsyncdriver.com/api/telegram/webhook";
 
 function validUpdate(value: unknown): value is TelegramUpdate {
   if (!value || typeof value !== "object") return false;
   const updateId = (value as { update_id?: unknown }).update_id;
   return typeof updateId === "number" && Number.isSafeInteger(updateId);
-}
-
-export async function PUT(request: Request) {
-  const setupSecret = process.env.TELEGRAM_SETUP_SECRET?.trim();
-  const receivedSecret = request.headers.get("x-flowsync-setup-secret") ?? "";
-  if (!setupSecret || !safeSecretEqual(receivedSecret, setupSecret)) {
-    return new NextResponse("Not found", { status: 404 });
-  }
-  if (!isTelegramConfigured()) {
-    return new NextResponse("Telegram bot is not configured", { status: 503 });
-  }
-
-  const completed = await prisma.telegramBotSetting.findUnique({
-    where: { key: "webhook_setup_complete" },
-  });
-  if (completed?.value === "true") {
-    return NextResponse.json({ registered: true, alreadyConfigured: true });
-  }
-
-  await registerTelegramWebhook(PRODUCTION_WEBHOOK_URL);
-  await prisma.telegramBotSetting.upsert({
-    where: { key: "webhook_setup_complete" },
-    create: { key: "webhook_setup_complete", value: "true" },
-    update: { value: "true" },
-  });
-  return NextResponse.json({ registered: true });
 }
 
 export async function POST(request: Request) {

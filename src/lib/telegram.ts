@@ -71,16 +71,3 @@ export async function sendTelegramMessage(
 
   return result.message_id;
 }
-
-export async function registerTelegramWebhook(webhookUrl: string): Promise<void> {
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
-  if (!secret) throw new Error("Telegram webhook secret is not configured");
-
-  const registered = await callTelegram<boolean>("setWebhook", {
-    url: webhookUrl,
-    secret_token: secret,
-    allowed_updates: ["message"],
-    drop_pending_updates: false,
-  });
-  if (!registered) throw new Error("Telegram did not register the webhook");
-}
