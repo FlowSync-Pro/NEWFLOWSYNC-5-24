@@ -75,6 +75,7 @@ test("parses owner commands deterministically", () => {
     escalationId: "abc123",
   });
   assert.deepEqual(parseOwnerCommand("/pause"), { type: "pause" });
+  assert.deepEqual(parseOwnerCommand("/welcome"), { type: "welcome" });
   assert.equal(parseOwnerCommand("please save that answer"), null);
 });
 

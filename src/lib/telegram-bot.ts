@@ -166,8 +166,14 @@ async function escalateToOwner(message: TelegramMessage, question: string) {
 }
 
 async function handleOwnerCommand(message: TelegramMessage, text: string) {
-  const { ownerId } = botConfig();
+  const { ownerId, groupId } = botConfig();
   const command = parseOwnerCommand(text);
+
+  if (command?.type === "welcome") {
+    await sendTelegramMessage(groupId, TELEGRAM_WELCOME_MESSAGE);
+    await sendTelegramMessage(ownerId, "Welcome message posted in the driver group.");
+    return;
+  }
 
   if (command?.type === "pause" || command?.type === "resume") {
     const paused = command.type === "pause";
@@ -264,7 +270,7 @@ async function handleOwnerCommand(message: TelegramMessage, text: string) {
 
   await sendTelegramMessage(
     ownerId,
-    "Reply to an escalation message with an answer, or use /status, /pause, /resume, /save REQUEST_ID, or /discard REQUEST_ID.",
+    "Reply to an escalation message with an answer, or use /welcome, /status, /pause, /resume, /save REQUEST_ID, or /discard REQUEST_ID.",
   );
 }
 

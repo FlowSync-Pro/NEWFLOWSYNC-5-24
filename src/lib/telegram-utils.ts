@@ -121,6 +121,7 @@ export type OwnerCommand =
   | { type: "pause" }
   | { type: "resume" }
   | { type: "status" }
+  | { type: "welcome" }
   | null;
 
 export function parseOwnerCommand(text: string): OwnerCommand {
@@ -133,7 +134,9 @@ export function parseOwnerCommand(text: string): OwnerCommand {
     };
   }
 
-  const simple = normalized.match(/^\/(pause|resume|status)(?:@\w+)?$/i);
+  const simple = normalized.match(/^\/(pause|resume|status|welcome)(?:@\w+)?$/i);
   if (!simple) return null;
-  return { type: simple[1].toLowerCase() as "pause" | "resume" | "status" };
+  return {
+    type: simple[1].toLowerCase() as "pause" | "resume" | "status" | "welcome",
+  };
 }
