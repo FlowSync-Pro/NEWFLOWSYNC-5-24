@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Curri Fleet Invitation — FlowSync</title>
-<meta name="description" content="Stuck on Curri's waitlist or can't bid on loads? Join the FlowSync Curri Fleet — a preferred Curri carrier. We claim delivery jobs for you. Free to apply." />
+<meta name="description" content="Skip Curri's waitlist. Join the FlowSync Curri Fleet — a preferred Curri carrier — for a one-time $97 and start seeing delivery opportunities in your area. All vehicle types, anywhere in the US." />
 <!-- Meta Pixel — dual-fire (new + old), matching the rest of the FlowSync site. -->
 <script>
   !function(f,b,e,v,n,t,s)
@@ -42,7 +42,9 @@
   h2{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700}
   h3{font-size:1.05rem;font-weight:600}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px}
-  .btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#062712;font-weight:700;border-radius:999px;padding:15px 32px;font-size:1rem;transition:opacity .15s;border:none;cursor:pointer}
+  .btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#062712;font-weight:700;border-radius:999px;padding:15px 32px;font-size:1rem;transition:opacity .15s;border:none;cursor:pointer;text-align:center}
+  .btn-ghost{display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--border);color:var(--fg);font-weight:600;border-radius:999px;padding:14px 30px;font-size:1rem;transition:border-color .15s;text-align:center}
+  .btn-ghost:hover{border-color:rgba(37,224,122,.5)}
   .btn:hover{opacity:.9}
   .btn-sm{padding:9px 18px;font-size:.9rem}
   .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:7px 16px;font-size:.78rem;color:var(--muted)}
@@ -54,15 +56,14 @@
   .brand .mark{width:24px;height:24px;border-radius:999px;background:var(--accent);display:inline-block}
   section{position:relative}
   .hero{text-align:center;padding:72px 0 48px}
-  .hero p.sub{max-width:640px;margin:22px auto 0;font-size:1.12rem;color:var(--muted)}
+  .hero p.sub{max-width:660px;margin:22px auto 0;font-size:1.12rem;color:var(--muted)}
   .hero .micro{margin-top:16px;font-size:.88rem;color:var(--muted)}
   .hero .fine{margin-top:12px;font-size:.75rem;color:var(--muted)}
   .cta-row{margin-top:30px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
   .grid{display:grid;gap:18px}
   .g3{grid-template-columns:1fr}
-  .g2{grid-template-columns:1fr}
   .steps{grid-template-columns:1fr}
-  @media(min-width:640px){.g3{grid-template-columns:repeat(2,1fr)} .g2{grid-template-columns:repeat(2,1fr)} .steps{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:640px){.g3{grid-template-columns:repeat(2,1fr)} .steps{grid-template-columns:repeat(2,1fr)}}
   @media(min-width:1024px){.g3{grid-template-columns:repeat(3,1fr)} .steps{grid-template-columns:repeat(5,1fr)}}
   .center{text-align:center}
   .mt8{margin-top:8px}.mt12{margin-top:12px}.mt24{margin-top:24px}.mt40{margin-top:40px}
@@ -95,7 +96,7 @@
 <header>
   <div class="wrap nav">
     <div class="brand"><span class="mark"></span>Flow<span class="accent">Sync</span></div>
-    <a href="#apply" class="btn btn-sm">Apply free</a>
+    <a href="#join" class="btn btn-sm">Join — $97</a>
   </div>
 </header>
 
@@ -103,12 +104,15 @@
 <section class="hero">
   <div class="glow"></div>
   <div class="narrow" style="position:relative">
-    <span class="pill"><span class="dot"></span> Preferred Curri carrier · Free to apply</span>
+    <span class="pill"><span class="dot"></span> No waitlist · All vehicle types · Anywhere in the US</span>
     <h1 class="mt24">Curri's not taking new drivers.<br><span class="accent">We are.</span></h1>
-    <p class="sub">Stuck on Curri's waitlist? Or signed up but locked out of bidding on the good loads? As a <strong class="fg">preferred Curri carrier</strong>, we get you real delivery jobs — claimed <em>for you</em> — and you keep <strong class="fg">95% of every one</strong>.</p>
-    <div class="cta-row"><a href="#apply" class="btn">Apply free — takes 60 seconds</a></div>
-    <p class="micro">Free to apply · No payment now · You only pay if you're approved</p>
-    <p class="fine">Run by Barham Transport LLC · Independent contractors only · Background-checked drivers only</p>
+    <p class="sub">Stuck on Curri's waitlist? Or signed up but locked out of bidding on the good loads? Skip all of it. Join our fleet — a <strong class="fg">preferred Curri carrier</strong> — for a one-time <strong class="fg">$97</strong>, and start seeing real delivery opportunities in your area. You keep <strong class="fg">95% of every job</strong>.</p>
+    <div class="cta-row">
+      <a href="#join" class="btn">Join now — $97</a>
+      <a href="#callback" class="btn-ghost">Want more info? Request a callback</a>
+    </div>
+    <p class="micro">One-time $97 to join · keep 95% · 30-day money-back guarantee</p>
+    <p class="fine">Run by Barham Transport LLC · Preferred Curri carrier · Independent contractors</p>
   </div>
 </section>
 
@@ -131,7 +135,21 @@
       <div class="card center"><div class="emoji">🚫</div><p class="muted mt8">Signed up, but <span class="fg">can't place bids</span> on opportunities.</p></div>
       <div class="card center"><div class="emoji">🥱</div><p class="muted mt8">Stuck with scraps while <span class="fg">preferred carriers take the good loads</span>.</p></div>
     </div>
-    <p class="center muted mt24">Our fleet is the way in — starting this week.</p>
+    <p class="center muted mt24"><strong class="fg">No waitlist. All vehicle types. Anywhere in the US.</strong> Pay once, and you're in.</p>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="sec band">
+  <div class="wrap">
+    <div class="center"><p class="eyebrow">How it works</p><h2 class="mt12">Join today. Active in days — no waitlist.</h2></div>
+    <div class="grid steps mt40">
+      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">01</p><h3 class="mt8">Join for $97</h3><p class="muted mt8">One-time joining fee. 30-day money-back guarantee.</p></div>
+      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">02</p><h3 class="mt8">Join our Telegram</h3><p class="muted mt8">You're added to the FlowSync Drivers channel right away.</p></div>
+      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">03</p><h3 class="mt8">Send your details</h3><p class="muted mt8">Your email + vehicle info — that's all we need to set you up.</p></div>
+      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">04</p><h3 class="mt8">Get your Curri invite</h3><p class="muted mt8">We send an invite from our Curri carrier account. No waitlist.</p></div>
+      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">05</p><h3 class="mt8">Go active &amp; earn</h3><p class="muted mt8">See opportunities in your area, keep 95%, same-day pay.</p></div>
+    </div>
   </div>
 </section>
 
@@ -139,9 +157,9 @@
 <section class="sec">
   <div class="wrap">
     <h2 class="center">What you get</h2>
-    <p class="center muted mt12">Simple: we get you in, get you jobs, and help you win.</p>
+    <p class="center muted mt12">One $97 payment gets you in — and we help you win.</p>
     <div class="grid g3 mt40">
-      <div class="card"><div class="emoji">⏭️</div><h3 class="mt8">Skip the waitlist</h3><p class="muted mt8">Start getting delivery jobs now — no months-long line.</p></div>
+      <div class="card"><div class="emoji">⏭️</div><h3 class="mt8">No waitlist</h3><p class="muted mt8">Pay once and get set up in days — not months in a line.</p></div>
       <div class="card"><div class="emoji">👤</div><h3 class="mt8">A dispatcher claims jobs for you</h3><p class="muted mt8">You can't see or bid on loads as a sub-driver — we do it for you, all day.</p></div>
       <div class="card"><div class="emoji">📈</div><h3 class="mt8">First access to high-value loads</h3><p class="muted mt8">Our preferred-carrier status puts you ahead of the general pool.</p></div>
       <div class="card"><div class="emoji">💸</div><h3 class="mt8">Keep 95% · same-day pay</h3><p class="muted mt8">A flat 5% dispatch fee, that's it. Finish before 11 AM Pacific → paid the same business day.</p></div>
@@ -176,33 +194,19 @@
   </div>
 </section>
 
-<!-- How it works -->
-<section class="sec band">
-  <div class="wrap">
-    <div class="center"><p class="eyebrow">How it works</p><h2 class="mt12">Apply free. Get approved. Start driving.</h2></div>
-    <div class="grid steps mt40">
-      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">01</p><h3 class="mt8">Apply free</h3><p class="muted mt8">60-second application. No payment now.</p></div>
-      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">02</p><h3 class="mt8">We review + run Checkr</h3><p class="muted mt8">License, insurance, W-9, background check. 1–2 business days.</p></div>
-      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">03</p><h3 class="mt8">Approved → join</h3><p class="muted mt8">A one-time $97 joining fee activates your fleet spot. 30-day money-back.</p></div>
-      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">04</p><h3 class="mt8">Set your availability</h3><p class="muted mt8">Tell us your schedule and rate floor. We start claiming jobs for you.</p></div>
-      <div class="card"><p class="accent" style="font-family:monospace;font-size:.85rem">05</p><h3 class="mt8">Deliver &amp; get paid</h3><p class="muted mt8">Keep 95%, same-day pay. We take a flat 5% dispatch fee.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- What it costs -->
-<section class="sec" id="apply">
+<!-- Join / pricing -->
+<section class="sec" id="join">
   <div class="glow"></div>
   <div class="narrow" style="position:relative">
-    <div class="center"><h2>Free to apply. Simple once you're in.</h2><p class="muted mt12">No surprises — you see everything before you ever pay a cent.</p></div>
+    <div class="center"><h2>Join the fleet.</h2><p class="muted mt12">One simple payment. No monthly. No waitlist.</p></div>
     <div class="callout green center mt40" style="padding:36px 28px">
       <p class="eyebrow">Curri Fleet Invitation</p>
       <div style="display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-top:12px">
-        <span class="price">$0</span><span class="muted" style="padding-bottom:8px;font-size:1.1rem">to apply</span>
+        <span class="price">$97</span><span class="muted" style="padding-bottom:8px;font-size:1.1rem">one-time to join</span>
       </div>
-      <p class="muted mt12">Once approved: a one-time <strong class="fg">$97 joining fee</strong>, then a flat <strong class="fg">5% dispatch fee</strong> on completed jobs. <span class="fg">You keep 95%.</span> No monthly, ever.</p>
+      <p class="muted mt12">Then just a flat <strong class="fg">5% dispatch fee</strong> on completed jobs — <span class="fg">you keep 95%</span>. No monthly, ever.</p>
       <div class="list">
-        <div class="row"><span class="check">✓</span><span>Skip Curri's waitlist — start now</span></div>
+        <div class="row"><span class="check">✓</span><span>No waitlist — set up in days</span></div>
         <div class="row"><span class="check">✓</span><span>A dispatcher claims jobs for you</span></div>
         <div class="row"><span class="check">✓</span><span>First access to high-value loads (preferred carrier)</span></div>
         <div class="row"><span class="check">✓</span><span>Keep 95% · same-day pay</span></div>
@@ -210,22 +214,38 @@
         <div class="row"><span class="check">✓</span><span><strong>Everything in the $47 Driver Pack, included</strong></span></div>
       </div>
       <div class="callout softgreen mt24" style="text-align:left">
-        <p style="font-size:.92rem"><strong>30-day money-back guarantee.</strong> After you join, if you're not happy for any reason in your first 30 days, we refund your $97 joining fee — no questions asked.</p>
+        <p style="font-size:.92rem"><strong>30-day money-back guarantee.</strong> If you're not happy for any reason in your first 30 days, we refund your $97 — no questions asked.</p>
       </div>
-      <a href="mailto:drivers@flowsyncpro.io?subject=Curri%20Fleet%20Application&body=Hi%20FlowSync%20team%2C%20I%27d%20like%20to%20apply%20for%20the%20Curri%20Fleet.%0D%0A%0D%0AName%3A%0D%0ACity%2FState%3A%0D%0AVehicle%20(make%2C%20model%2C%20year)%3A%0D%0APhone%3A%0D%0ADo%20you%20already%20have%20a%20Curri%20account%3F%3A%0D%0A"
-         onclick="if(window.fbq)fbq('track','Lead',{content_name:'Curri Fleet Invitation'});"
-         class="btn mt24" style="width:100%">Apply free — takes 60 seconds</a>
-      <p class="muted" style="margin-top:18px;font-size:.75rem;line-height:1.6">Applying is free and puts you under no obligation. Independent contractor opportunity. A one-time $97 joining fee applies once approved, plus a 5% dispatch fee on completed jobs (you keep 95%). No guarantee of job volume or earnings. Activation subject to background-check approval. See the Curri Fleet Driver Agreement for full terms.</p>
+      <!-- NOTE TO OWNER: swap this href for your Stripe $97 Payment Link. Interim: routes to a join email. -->
+      <a href="mailto:drivers@flowsyncpro.io?subject=Curri%20Fleet%20%E2%80%94%20Ready%20to%20Join%20(%2497)&body=Hi%20FlowSync%20team%2C%20I%27m%20ready%20to%20join%20the%20Curri%20Fleet.%20Please%20send%20me%20the%20secure%20%2497%20payment%20link.%0D%0A%0D%0AName%3A%0D%0ACity%2FState%3A%0D%0AVehicle%20(make%2C%20model%2C%20year)%3A%0D%0APhone%3A%0D%0AEmail%3A%0D%0A"
+         onclick="if(window.fbq)fbq('track','InitiateCheckout',{content_name:'Curri Fleet Invitation',value:97,currency:'USD'});"
+         class="btn mt24" style="width:100%">Join now — $97</a>
+      <p class="muted" style="margin-top:18px;font-size:.75rem;line-height:1.6">Independent contractor opportunity. A one-time $97 joining fee applies, plus a 5% dispatch fee on completed jobs (you keep 95%). No guarantee of job volume or earnings. See the Curri Fleet Driver Agreement for full terms.</p>
+    </div>
+    <p class="center muted mt24" style="font-size:.95rem">Not ready to commit? <a href="#callback" class="accent" style="text-decoration:underline">Request a callback</a> and talk to our dispatch team first.</p>
+  </div>
+</section>
+
+<!-- Callback -->
+<section class="sec band" id="callback">
+  <div class="narrow">
+    <div class="callout center" style="border:1px solid var(--border);padding:36px 28px">
+      <p class="eyebrow">Have questions first?</p>
+      <h2 class="mt12">Talk to our dispatch team.</h2>
+      <p class="muted mt12">Not ready to pay yet? No problem. Send us your info and when you're free, and a FlowSync dispatcher will call you back to answer your questions, go over how the fleet works, and see if it's a fit.</p>
+      <a href="mailto:drivers@flowsyncpro.io?subject=Curri%20Fleet%20%E2%80%94%20Callback%20Request&body=Hi%20FlowSync%20team%2C%20I%27d%20like%20a%20callback%20to%20learn%20more%20about%20the%20Curri%20Fleet.%0D%0A%0D%0AName%3A%0D%0APhone%3A%0D%0ACity%2FState%3A%0D%0AVehicle%3A%0D%0ADo%20you%20already%20have%20a%20Curri%20account%3F%3A%0D%0ABest%20days%2Ftimes%20to%20call%3A%0D%0A"
+         onclick="if(window.fbq)fbq('track','Lead',{content_name:'Curri Fleet Callback'});"
+         class="btn-ghost mt24">Request a callback</a>
     </div>
   </div>
 </section>
 
-<!-- Where this works best -->
+<!-- Open to everyone -->
 <section class="sec" style="padding-top:0">
   <div class="narrow">
     <div class="card center">
-      <h3 style="font-size:1.25rem">Where this works best</h3>
-      <p class="muted mt12">Curri volume is concentrated in busy metros — <strong class="fg">California, New York, Florida, Texas, New Jersey, Nevada, Arizona, Denver, Atlanta</strong>, and other major cities. Not sure about your area? Applying is free — find out first, then decide.</p>
+      <h3 style="font-size:1.25rem">All vehicle types. Drivers across the US.</h3>
+      <p class="muted mt12">Sedan, SUV, pickup, minivan, cargo van, sprinter, box truck, or hotshot — there's work for what you drive, and there's <strong class="fg">no waitlist anywhere in the US</strong>. Opportunity volume is strongest in busy metros; if it's slow in your area, your 30-day money-back guarantee has you covered.</p>
     </div>
   </div>
 </section>
@@ -248,14 +268,15 @@
   <div class="narrow">
     <h2 class="center">Questions, answered.</h2>
     <div class="mt40">
-      <details><summary>Does it cost anything to apply?<span class="chev">▾</span></summary><div class="ans">No. Applying is 100% free and puts you under no obligation. You only pay the one-time $97 joining fee <em>after</em> we've reviewed and approved you — backed by a 30-day money-back guarantee.</div></details>
-      <details><summary>I'm signed up but can't bid on jobs — how does this fix that?<span class="chev">▾</span></summary><div class="ans">As a sub-driver on Curri you can't see or bid on opportunities yourself — only carriers can. Join our fleet and our dispatcher claims jobs on your behalf, matched to your vehicle and schedule. You get the notification; you drive.</div></details>
-      <details><summary>What does "preferred carrier" actually mean for me?<span class="chev">▾</span></summary><div class="ans">Years of good standing with Curri make us a preferred carrier — which means we get first access to the highest-value deliveries before they reach the general driver pool. On our fleet, that head start is yours.</div></details>
-      <details><summary>Can I use this if I already have my own Curri account?<span class="chev">▾</span></summary><div class="ans">Yes — many drivers double down. Run under our fleet too, and when it genuinely fits without delaying any customer, we coach you on taking a second delivery to make the most of every mile. We show you when it makes sense and when it doesn't.</div></details>
-      <details><summary>What will it cost once I'm approved?<span class="chev">▾</span></summary><div class="ans">A one-time $97 joining fee, then a flat 5% dispatch fee on jobs you actually complete — you keep 95%. No monthly, ever. No jobs one week? No fee that week.</div></details>
+      <details><summary>What exactly happens after I pay the $97?<span class="chev">▾</span></summary><div class="ans">You're added to the FlowSync Drivers Telegram channel right away. You send us your email and vehicle info, we send you an invite from our Curri carrier account, and you go active — seeing and taking opportunities in your area. No waitlist.</div></details>
+      <details><summary>Is there a waitlist?<span class="chev">▾</span></summary><div class="ans">No. That's the whole point — you skip Curri's line entirely. Pay the one-time $97, send your details, and we get you active in days.</div></details>
+      <details><summary>What vehicles qualify?<span class="chev">▾</span></summary><div class="ans">All types — sedan, SUV, pickup, minivan, cargo van, sprinter, box truck, and hotshot. There's Curri work across the size range.</div></details>
+      <details><summary>Can I ask questions before I pay?<span class="chev">▾</span></summary><div class="ans">Absolutely. Request a callback and a FlowSync dispatcher will call you to walk through how the fleet works and answer anything before you commit.</div></details>
+      <details><summary>What if I'm not in a big city?<span class="chev">▾</span></summary><div class="ans">There's no waitlist anywhere in the US, so you can get set up regardless of where you are. Opportunity volume is strongest in busy metros — if it turns out slow in your area, your 30-day money-back guarantee covers you.</div></details>
+      <details><summary>What does it cost?<span class="chev">▾</span></summary><div class="ans">A one-time $97 joining fee, then a flat 5% dispatch fee on jobs you actually complete — you keep 95%. No monthly, ever. No jobs one week? No fee that week.</div></details>
       <details><summary>What kind of insurance do I need?<span class="chev">▾</span></summary><div class="ans">Under 26 ft (sedan, SUV, pickup, minivan, cargo van, sprinter) — standard personal auto is enough. 26-ft box truck or hotshot (truck + trailer over 26 ft) — commercial insurance required.<ul><li>Some personal policies exclude commercial use — worth confirming yours covers it before you start.</li></ul></div></details>
       <details><summary>How does same-day pay work?<span class="chev">▾</span></summary><div class="ans">Mark a delivery complete before 11 AM Pacific on a business day → your payout (95% of the job) is sent the same business day. After 11 AM, or weekends → next business day. Paid through Stripe.</div></details>
-      <details><summary>What if it's not for me?<span class="chev">▾</span></summary><div class="ans">You're covered by a 30-day money-back guarantee on your $97 joining fee — not happy for any reason, we refund you, no questions asked. And if we deny your application, you're never charged.</div></details>
+      <details><summary>What if it's not for me?<span class="chev">▾</span></summary><div class="ans">You're covered by a 30-day money-back guarantee on your $97 joining fee — not happy for any reason, we refund you, no questions asked.</div></details>
     </div>
   </div>
 </section>
@@ -267,15 +288,18 @@
       <div class="glow"></div>
       <div style="position:relative">
         <h2>Stop waiting on Curri's list. <span class="accent">Start driving.</span></h2>
-        <div class="cta-row"><a href="#apply" class="btn">Apply free — takes 60 seconds</a></div>
-        <p class="micro">Free to apply · $97 one-time to join · keep 95% · 30-day money-back</p>
+        <div class="cta-row">
+          <a href="#join" class="btn">Join now — $97</a>
+          <a href="#callback" class="btn-ghost">Request a callback</a>
+        </div>
+        <p class="micro">One-time $97 to join · keep 95% · 30-day money-back · all vehicle types · US-wide</p>
       </div>
     </div>
   </div>
 </section>
 
 <footer>
-  <div class="wrap"><p class="fine">Operated by Barham Transport LLC. Curri Fleet drivers are independent contractors, not employees. Applying is free; once approved, a one-time $97 joining fee applies, plus a 5% dispatch fee on completed jobs (drivers keep 95%). No guarantee of opportunities or earnings. Activation subject to background-check approval. By applying, you agree to our Terms and Curri Fleet Driver Agreement.</p></div>
+  <div class="wrap"><p class="fine">Operated by Barham Transport LLC. Curri Fleet drivers are independent contractors, not employees. A one-time $97 joining fee applies, plus a 5% dispatch fee on completed jobs (drivers keep 95%). No guarantee of opportunities or earnings. By joining, you agree to our Terms and Curri Fleet Driver Agreement.</p></div>
 </footer>
 
 </body>
