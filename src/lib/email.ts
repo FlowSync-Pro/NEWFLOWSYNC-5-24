@@ -142,7 +142,7 @@ export async function sendPremiumUpgradeEmail(opts: {
 }) {
   const body = `
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName} — you've been upgraded to <strong style="color:#25e07a">FlowSync Premium</strong>.</p>
-    <p style="color:#aebac1;line-height:1.6">Your account now includes the premium badge, elevated profile styling, your own website link, and <strong style="color:#e7ecef">My Services</strong> — build your own service menu and set your own prices.</p>
+    <p style="color:#aebac1;line-height:1.6">Your account now includes the <strong style="color:#e7ecef">premium badge</strong>, elevated profile styling, priority placement in the directory, and your own external website link.</p>
     <p style="margin-top:8px">${button(opts.servicesUrl, "Build your service menu")}</p>`;
   return send(opts.to, "You've been upgraded to FlowSync Premium", shell("Welcome to Premium", body));
 }

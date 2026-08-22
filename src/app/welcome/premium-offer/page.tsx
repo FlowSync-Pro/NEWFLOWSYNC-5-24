@@ -30,7 +30,7 @@ const COMPARE: { label: string; standard: string | boolean; premium: string | bo
   { label: "Roadmap, member resources, referral program", standard: true, premium: true },
   { label: "★ Premium badge on your public profile", standard: false, premium: true },
   { label: "Featured placement above other drivers in the directory", standard: false, premium: true },
-  { label: "Build a custom service menu with your own prices", standard: false, premium: true },
+  { label: "Build a custom service menu with your own prices", standard: true, premium: true },
   { label: "Link your external website on your profile", standard: false, premium: true },
   { label: "★ Done-for-you setup — we build your profile, menu & website for you", standard: false, premium: true },
 ];

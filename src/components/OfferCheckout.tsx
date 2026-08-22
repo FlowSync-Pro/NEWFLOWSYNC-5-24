@@ -163,7 +163,7 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
           </div>
         </div>
         <p className="mt-3 text-center text-xs text-muted">
-          Want a custom service menu, a premium badge &amp; priority placement? Upgrade to{" "}
+          Want a premium badge, elevated styling, priority placement &amp; your own website link? Upgrade to{" "}
           <span className="font-medium text-foreground">Premium (${TIERS.premium.price})</span>{" "}
           anytime from your account after you&apos;re set up.
         </p>

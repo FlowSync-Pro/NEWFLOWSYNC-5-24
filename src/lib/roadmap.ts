@@ -46,7 +46,7 @@ export const MILESTONES: Milestone[] = [
   { id: "m-price-right", label: "Dial in your pricing", detail: "Make sure every job leaves real profit.", href: "/grow/price-your-jobs-for-profit" },
   { id: "m-taxes", label: "Set up your tax system", detail: "Set aside for quarterly taxes and track write-offs.", href: "/grow/quarterly-taxes-for-delivery-drivers" },
   { id: "m-llc", label: "Form your LLC", detail: "Protect your personal assets as you grow.", href: "/grow/llc-sole-prop-or-dba" },
-  { id: "m-premium", label: "Upgrade to Premium", detail: "Custom service menu, premium badge, priority placement.", href: "/account/services" },
+  { id: "m-premium", label: "Upgrade to Premium", detail: "Premium badge, elevated styling, priority placement, and your own website link.", href: "/account/edit" },
 ];
 
 export interface RoadmapProgress {

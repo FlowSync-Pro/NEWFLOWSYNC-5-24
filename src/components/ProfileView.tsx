@@ -150,10 +150,10 @@ export default function ProfileView({
               )}
             </section>
 
-            {premium && services.length > 0 && (
+            {services.length > 0 && (
               <section className="card overflow-hidden">
-                <div className="flex items-center gap-2 border-b border-border bg-amber-400/10 px-7 py-4">
-                  <span className="text-amber-300">★</span>
+                <div className={`flex items-center gap-2 border-b border-border px-7 py-4 ${premium ? "bg-amber-400/10" : "bg-surface"}`}>
+                  {premium && <span className="text-amber-300">★</span>}
                   <h2 className="text-lg font-semibold">Services &amp; pricing</h2>
                 </div>
                 <div className="divide-y divide-border">

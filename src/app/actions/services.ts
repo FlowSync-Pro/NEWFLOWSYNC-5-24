@@ -3,17 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { isPremiumTier } from "@/lib/pricing";
 
-async function requirePremiumProfileId(): Promise<string> {
+// My Services (custom service menu) is available to ALL drivers — no tier gate.
+// Premium keeps the badge, gold styling, featured directory placement, and the
+// external website link; the service-menu tool itself is open to everyone.
+async function requireProfileId(): Promise<string> {
   const session = await getSession();
   if (!session) throw new Error("Not signed in.");
   const profile = await prisma.driverProfile.findUnique({
     where: { userId: session.userId },
-    select: { id: true, tier: true },
+    select: { id: true },
   });
   if (!profile) throw new Error("No driver profile.");
-  if (!isPremiumTier(profile.tier)) throw new Error("My Services is a Premium feature.");
   return profile.id;
 }
 
@@ -24,7 +25,7 @@ export interface ServiceInput {
 }
 
 export async function addService(input: ServiceInput): Promise<{ ok: boolean; error?: string }> {
-  const driverProfileId = await requirePremiumProfileId();
+  const driverProfileId = await requireProfileId();
   const name = input.name.trim();
   const price = Number(input.price);
   if (!name) return { ok: false, error: "Name is required." };
@@ -46,7 +47,7 @@ export async function addService(input: ServiceInput): Promise<{ ok: boolean; er
 }
 
 export async function deleteService(id: string): Promise<{ ok: boolean }> {
-  const driverProfileId = await requirePremiumProfileId();
+  const driverProfileId = await requireProfileId();
   await prisma.driverService.deleteMany({ where: { id, driverProfileId } });
   revalidatePath("/account/services");
   revalidatePath("/profile");

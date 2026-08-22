@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { isPremiumTier, TIERS } from "@/lib/pricing";
 import MyServicesEditor, { type ServiceRow } from "@/components/MyServicesEditor";
-import UpgradeButton from "@/components/UpgradeButton";
 import TrackEvent from "@/components/TrackEvent";
 
 export const dynamic = "force-dynamic";
@@ -43,27 +42,7 @@ export default async function MyServicesPage({ searchParams }: PageProps<"/accou
         </div>
 
         <div className="mt-8">
-          {premium ? (
-            <MyServicesEditor services={profile.services as ServiceRow[]} />
-          ) : (
-            <div className="card overflow-hidden">
-              <div className="border-b border-border bg-accent-soft px-7 py-6">
-                <p className="text-sm font-semibold uppercase tracking-widest text-accent">Premium feature</p>
-                <h2 className="mt-2 text-2xl font-bold">Build your own service menu</h2>
-                <p className="mt-2 max-w-xl text-muted">
-                  Upgrade to Premium to create your own services with custom pricing — like the pros do —
-                  plus a Premium badge, elevated profile styling, and your own website link.
-                </p>
-              </div>
-              <div className="flex flex-col items-start justify-between gap-4 p-7 sm:flex-row sm:items-center">
-                <div>
-                  <p className="text-3xl font-extrabold text-accent">${TIERS.premium.price}<span className="text-base font-medium text-muted"> one-time</span></p>
-                  <p className="text-sm text-muted">Upgrade from Verified anytime.</p>
-                </div>
-                <UpgradeButton label={`Upgrade to Premium — $${TIERS.premium.price}`} />
-              </div>
-            </div>
-          )}
+          <MyServicesEditor services={profile.services as ServiceRow[]} />
         </div>
       </div>
     </div>

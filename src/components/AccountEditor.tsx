@@ -337,7 +337,7 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
           <div className="rounded-xl border border-border bg-surface-2 p-4 text-sm">
             <p className="font-medium">Add your own website link <span className="text-amber-300">★ Premium</span></p>
             <p className="mt-1 text-muted">
-              <Link href="/account/services" className="text-accent hover:underline">Upgrade to Premium</Link> to link your external site and build a custom service menu.
+              <Link href="/pricing" className="text-accent hover:underline">Upgrade to Premium</Link> to link your external website, get the Premium badge, and feature your profile in the directory.
             </p>
           </div>
         )}
