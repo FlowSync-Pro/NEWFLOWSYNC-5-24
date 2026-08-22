@@ -45,7 +45,7 @@ export default async function BookingsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Your bookings</h1>
-            <p className="mt-1 text-muted">Review requests and send quotes. You keep 95% of every paid job.</p>
+            <p className="mt-1 text-muted">Review requests and send quotes — you set the price on every job.</p>
           </div>
           <Link href="/account" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Account</Link>
         </div>

@@ -35,7 +35,7 @@ export default function RequestQuoteButton({
                   </svg>
                 </span>
                 <h2 className="mt-4 text-lg font-bold">Request sent</h2>
-                <p className="mt-2 text-sm text-muted">{firstName} will review your request and reply with a quote. You&apos;ll get an email with a link to pay — and {firstName} keeps 95%.</p>
+                <p className="mt-2 text-sm text-muted">{firstName} will review your request and reply with a quote. You&apos;ll get an email with a link to pay {firstName} directly.</p>
                 <button onClick={() => setOpen(false)} className="btn-primary mt-5 rounded-full px-6 py-2.5 text-sm">Done</button>
               </div>
             ) : (

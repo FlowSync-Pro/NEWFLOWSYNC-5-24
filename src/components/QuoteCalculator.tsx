@@ -82,7 +82,7 @@ export default function QuoteCalculator({ alreadyListed = false }: { alreadyList
           Free tool for FlowSync drivers
         </span>
         <h1 className="mt-5 text-balance text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Quote fairly. <span className="text-accent">Keep 95%.</span>
+          Quote fairly. <span className="text-accent">Get paid right.</span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-muted">
           Price every job so it covers your costs and pays you well — then see how much more you

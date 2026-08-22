@@ -24,7 +24,7 @@ function Check() {
 
 const COMPARE: { label: string; standard: string | boolean; premium: string | boolean }[] = [
   { label: "Listed in the FlowSync driver directory", standard: true, premium: true },
-  { label: "Keep 95% of every job — direct customer bookings", standard: true, premium: true },
+  { label: "Direct customer bookings — you set your own rates", standard: true, premium: true },
   { label: "Fair-quote calculator + Profit & Loss tracker", standard: true, premium: true },
   { label: "DOT & EIN setup guide", standard: true, premium: true },
   { label: "Roadmap, member resources, referral program", standard: true, premium: true },

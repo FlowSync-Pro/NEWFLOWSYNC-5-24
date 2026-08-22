@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 export const metadata: Metadata = {
   title: "Fair-quote calculator for delivery drivers",
   description:
-    "Free calculator to price delivery and errand jobs fairly — covers your time and mileage, then shows how much more you keep on FlowSync (5% fee) vs. a typical gig app.",
+    "Free calculator to price delivery and errand jobs fairly — covers your time and mileage, then shows how much more you take home on FlowSync vs. a typical gig app.",
   alternates: { canonical: `${SITE_URL}/calculator` },
 };
 

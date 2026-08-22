@@ -26,7 +26,7 @@ export default function ReferralCard({ code, referred, remaining, rewarded, thre
   };
 
   const share = async () => {
-    const text = "I'm getting booked through FlowSync — driver-owned delivery where you keep 95%. Get listed for $17:";
+    const text = "I'm getting booked through FlowSync — driver-owned delivery where you set your own rates. Get listed for $17:";
     if (typeof navigator !== "undefined" && "share" in navigator) {
       try { await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({ title: "FlowSync", text, url: link }); return; } catch {}
     }

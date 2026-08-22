@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps<"/delivery/[service
   const { matched, cityName } = await load(service as ServiceId, city);
   if (matched.length === 0) return {};
   const title = `${svc.name} in ${cityName} — book a local driver`;
-  const description = `Find verified independent ${svc.name.toLowerCase()} drivers in ${cityName}. Browse local drivers, see their rates, and request a quote directly — they keep 95%, so you get fair prices.`;
+  const description = `Find verified independent ${svc.name.toLowerCase()} drivers in ${cityName}. Browse local drivers, see their rates, and request a quote directly from the driver — no middleman markup.`;
   return {
     title,
     description,
@@ -98,7 +98,7 @@ export default async function CityServicePage({ params }: PageProps<"/delivery/[
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-muted">
           Book a verified, independent {svc.name.toLowerCase()} driver in {cityName}. These are local
-          drivers who own their business and keep 95% of every job — so you get fair prices and
+          drivers who own their business and quote you directly — so you get fair prices and
           someone who actually cares about your delivery.
         </p>
         <p className="mt-4 text-sm text-muted">
@@ -115,7 +115,7 @@ export default async function CityServicePage({ params }: PageProps<"/delivery/[
         <div className="card flex flex-col items-center justify-between gap-4 p-7 text-center sm:flex-row sm:text-left">
           <div>
             <h2 className="text-lg font-bold">Drive {svc.name.toLowerCase()} in {cityName}?</h2>
-            <p className="mt-1 text-sm text-muted">Get listed here and start taking direct bookings — you keep 95%.</p>
+            <p className="mt-1 text-sm text-muted">Get listed here and start taking direct bookings — you set your own rates.</p>
           </div>
           <Link href="/pricing" className="btn-primary shrink-0 rounded-full px-7 py-3 text-sm">Get listed for $17</Link>
         </div>

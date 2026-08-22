@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Pricing — get listed for $17",
   description:
-    "Get listed in the FlowSync driver directory for a one-time $17 and keep 95% of every job — your DOT & EIN setup guide is included. Upgrade to Premium ($97) anytime from your account for a custom service menu and priority placement.",
+    "Get listed in the FlowSync driver directory for a one-time $17 and set your own rates on every job — your DOT & EIN setup guide is included. Upgrade to Premium ($97) anytime from your account for a premium badge and priority placement.",
   alternates: { canonical: `${SITE_URL}/pricing` },
 };
 
@@ -20,7 +20,7 @@ const productLd = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "FlowSync Driver Listing",
-  description: "Get listed and take direct bookings — keep 95% of every job.",
+  description: "Get listed and take direct bookings — you set your own rates.",
   brand: { "@type": "Brand", name: "FlowSync" },
   offers: [
     ...Object.values(TIERS).map((t) => ({

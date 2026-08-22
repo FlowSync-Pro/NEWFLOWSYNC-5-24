@@ -17,14 +17,14 @@ export const CORE_OFFER = {
   features: [
     "Listed in the FlowSync driver directory",
     "Direct customer bookings — no middleman",
-    "Keep 95% of every job (we take just 5%)",
+    "Direct customer bookings — you set the price",
     "A service-matched profile page",
     "Fair-quote calculator to price every job",
     "Set your own rates and schedule",
   ],
 };
 
-export const PLATFORM_FEE_PERCENT = 5;
+export const PLATFORM_FEE_PERCENT = 10;
 
 export type TierId = "standard" | "premium";
 
@@ -48,7 +48,7 @@ export const TIERS: Record<TierId, Tier> = {
     tagline: "Get listed and take direct bookings.",
     features: [
       "Listed in the FlowSync driver directory",
-      "Direct customer bookings — keep 95%",
+      "Direct customer bookings — no middleman",
       "Service-matched profile page",
       "Fair-quote calculator",
       "DOT & EIN setup guide included (get them free)",

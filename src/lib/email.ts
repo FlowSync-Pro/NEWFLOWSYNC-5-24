@@ -57,7 +57,7 @@ export async function sendDriverWelcomeEmail(opts: {
   signInUrl: string;
 }) {
   const body = `
-    <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName}, your FlowSync driver listing is active — you keep 95% of every job.</p>
+    <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName}, your FlowSync driver listing is active — you set your own rates on every job.</p>
     <p style="color:#aebac1;line-height:1.6">Sign in with your temporary password and set a permanent one:</p>
     <div style="background:#11181c;border:1px solid #1d262b;border-radius:12px;padding:14px;margin:14px 0;text-align:center;font-size:18px;font-weight:700;letter-spacing:1px;color:#25e07a">${opts.tempPassword}</div>
     <p style="margin-top:8px">${button(opts.signInUrl, "Sign in to FlowSync")}</p>`;
@@ -102,7 +102,7 @@ export async function sendBookingPaidEmail(opts: {
   amountCents: number;
 }) {
   const body = `
-    <p style="color:#aebac1;line-height:1.6">Hi ${opts.driverFirstName}, ${opts.customerName} just paid ${money(opts.amountCents)}. You keep 95% — go make it happen!</p>`;
+    <p style="color:#aebac1;line-height:1.6">Hi ${opts.driverFirstName}, ${opts.customerName} just paid ${money(opts.amountCents)} — go make it happen!</p>`;
   return send(opts.to, `You got booked — ${money(opts.amountCents)}`, shell("Payment received", body));
 }
 

@@ -97,11 +97,11 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
           One-time setup — no monthly fees
         </span>
         <h1 className="mt-5 text-balance text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Get listed. Get booked. <span className="text-accent">Keep 95%.</span>
+          Get listed. Get booked. <span className="text-accent">Set your rates.</span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-muted">
-          Get in the directory and start taking direct bookings. We only take{" "}
-          {PLATFORM_FEE_PERCENT}% — you set the price and keep the rest.
+          Get in the directory and start taking direct bookings — no monthly fees, and
+          you decide what every job is worth.
         </p>
 
         {/* Social proof: real count once we have scale, founding-driver framing before that */}
@@ -242,9 +242,9 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
             </div>
 
             <div className="mt-5 space-y-2 text-xs text-muted">
-              <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> Only {PLATFORM_FEE_PERCENT}% per job — no monthly fees, ever</p>
+              <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> No monthly fees, ever — a {PLATFORM_FEE_PERCENT}% platform fee applies per booked job</p>
               <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> Set up in about 3 minutes</p>
-              <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> You keep 95% of every job you book</p>
+              <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> You set your own rates on every job</p>
             </div>
 
             {/* Trust badges */}

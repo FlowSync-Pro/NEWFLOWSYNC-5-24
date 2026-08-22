@@ -48,7 +48,7 @@ export default async function BookingPayPage({ params }: PageProps<"/book/[id]/p
               <div className="mt-6">
                 <PayButton bookingId={booking.id} label={`Pay ${money(booking.quoteAmount)}`} />
               </div>
-              <p className="mt-3 text-xs text-muted">Secure checkout. {driverName} keeps 95%.</p>
+              <p className="mt-3 text-xs text-muted">Secure checkout. You&apos;re paying {driverName} directly.</p>
             </>
           ) : (
             <>

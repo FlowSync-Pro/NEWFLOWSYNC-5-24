@@ -33,7 +33,7 @@ function serviceFaqs(s: Service): { q: string; a: string }[] {
     },
     {
       q: `How much can I earn doing ${s.short.toLowerCase()} on FlowSync?`,
-      a: `Drivers in this category typically earn ${s.earnings}. On FlowSync you keep 95% of every job — we only take a 5% platform fee, and you set your own quote.`,
+      a: `Drivers in this category typically earn ${s.earnings}. On FlowSync you set your own quote on every job — there are no monthly fees, just a platform fee on jobs you book.`,
     },
     {
       q: `What does ${s.short.toLowerCase()} work involve?`,

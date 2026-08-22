@@ -7,7 +7,7 @@ import Reveal from "@/components/Reveal";
 const STATS = [
   { value: "8", label: "Service types" },
   { value: "$40+/hr", label: "Top category" },
-  { value: "95%", label: "Earnings kept" },
+  { value: "$0", label: "Monthly fees" },
   { value: "24/7", label: "Work on your terms" },
 ];
 
@@ -36,8 +36,8 @@ const STEPS = [
 
 const PERKS = [
   {
-    title: "Keep more of every job",
-    body: "Low flat platform fee instead of steep commissions. The bulk of every fare stays with you.",
+    title: "Your customers, your prices",
+    body: "No bidding wars and no algorithm deciding your pay. You quote the job and the customer books you directly.",
   },
   {
     title: "A business, not a gig",
@@ -59,8 +59,8 @@ const PROMISES = [
     body: "A clean, professional listing customers can find and book — built around the services you actually offer.",
   },
   {
-    title: "Keep 95% of every job",
-    body: "A flat 5% platform fee instead of the 20–40% the big apps take. You set your rates; the money is yours.",
+    title: "You set your own rates",
+    body: "No commission games and no monthly fees. You quote the job, you set the price, and the customer books you directly.",
   },
   {
     title: "Tools to run it like a business",
@@ -88,7 +88,7 @@ export default function Home() {
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-muted">
               From groceries to grand pianos, FlowSync connects you to the work you want.
-              Pick your service, build a profile that fits, and keep more of what you earn.
+              Pick your service, build a profile that fits, and set your own rates.
             </p>
             {/* Vehicle-range signal — preempts the most common pre-signup question:
                 'is this for my vehicle?' Caps at box truck (no semi-truck claim). */}
@@ -105,7 +105,7 @@ export default function Home() {
               </Link>
             </div>
             <p className="mt-3 text-sm text-muted">
-              $17 one-time to get listed · no monthly fees · keep 95% of every job
+              $17 one-time to get listed · no monthly fees · set your own rates
             </p>
             <p className="mt-5 text-sm text-muted">
               Need something delivered?{" "}

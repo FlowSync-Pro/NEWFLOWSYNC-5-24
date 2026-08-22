@@ -77,7 +77,7 @@ export default function DriversPage() {
       <section className="mx-auto max-w-7xl px-5 py-20">
         <div className="grid gap-5 sm:grid-cols-3">
           {[
-            { v: "95%", l: "of each fare stays with you on a typical job" },
+            { v: "$0", l: "monthly fees — one-time listing only" },
             { v: "$40–75/hr", l: "earning range in moving & hauling" },
             { v: "Same day", l: "cash out on completed jobs" },
           ].map((x, i) => (

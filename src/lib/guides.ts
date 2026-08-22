@@ -27,13 +27,13 @@ export const CATEGORY_LABEL: Record<GuideCategory, string> = {
 const DOT_EIN_CTA = {
   label: "Get listed for $17",
   href: "/pricing",
-  note: "Get listed for a one-time $17 — the full DOT & EIN setup guide is included, and you keep 95% of every job.",
+  note: "Get listed for a one-time $17 — the full DOT & EIN setup guide is included, and you set your own rates.",
 };
 
 const GET_LISTED_CTA = {
   label: "Get listed for $17",
   href: "/pricing",
-  note: "List your profile in the FlowSync directory and take direct bookings — you keep 95%.",
+  note: "List your profile in the FlowSync directory and take direct bookings — you set your own rates.",
 };
 
 const PNL_CTA = {
@@ -304,7 +304,7 @@ export const GUIDES: Guide[] = [
     cta: {
       label: "Open the quote calculator",
       href: "/calculator",
-      note: "Price any job fairly in seconds with the FlowSync calculator — then keep 95% of it.",
+      note: "Price any job fairly in seconds with the FlowSync calculator — you set the number.",
     },
   },
   {
@@ -433,7 +433,7 @@ export const GUIDES: Guide[] = [
       {
         heading: "Turn one-time leads into repeat customers",
         body: [
-          "After a great job, invite the customer to book you directly through FlowSync next time — no per-lead fee, and you keep 95%.",
+          "After a great job, invite the customer to book you directly through FlowSync next time — no per-lead fee, and you set the price.",
         ],
       },
     ],
