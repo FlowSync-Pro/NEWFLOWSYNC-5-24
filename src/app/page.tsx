@@ -1,8 +1,17 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import Link from "next/link";
+import Image from "next/image";
 import { SERVICES } from "@/lib/services";
 import ServiceCard from "@/components/ServiceCard";
 import ServiceIcon from "@/components/ServiceIcon";
 import Reveal from "@/components/Reveal";
+
+// Branded hero photo (driver + FlowSync van). Checked at build time so the page
+// renders the classic centered hero until public/hero-driver.jpg is added —
+// upload the file and the two-column photo hero switches on automatically.
+const HERO_IMAGE = "/hero-driver.jpg";
+const hasHeroImage = existsSync(join(process.cwd(), "public", "hero-driver.jpg"));
 
 const STATS = [
   { value: "8", label: "Service types" },
@@ -71,12 +80,33 @@ const PROMISES = [
 export default function Home() {
   return (
     <div>
-      {/* Hero */}
+      {/* Hero — two-column with the branded driver/van photo when
+          public/hero-driver.jpg exists; classic centered hero otherwise. */}
       <section className="relative overflow-hidden">
+        {hasHeroImage && (
+          <>
+            {/* Photo anchored right on large screens; dimmed backdrop on small. */}
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-0 lg:left-auto lg:w-[62%]">
+                <Image
+                  src={HERO_IMAGE}
+                  alt="A FlowSync driver standing beside a branded delivery van at dusk."
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 62vw, 100vw"
+                  className="object-cover object-[72%_center] opacity-30 lg:opacity-100"
+                />
+              </div>
+              {/* Blend the photo into the page background so text stays readable. */}
+              <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/30 lg:via-background/60 lg:to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background to-transparent" />
+            </div>
+          </>
+        )}
         <div className="glow-radial pointer-events-none absolute inset-0" />
         <div className="grid-bg pointer-events-none absolute inset-0" />
         <div className="relative mx-auto max-w-7xl px-5 pb-20 pt-20 sm:pt-28">
-          <div className="mx-auto max-w-3xl text-center">
+          <div className={hasHeroImage ? "max-w-2xl text-center lg:text-left" : "mx-auto max-w-3xl text-center"}>
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-4 py-1.5 text-xs text-muted backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
               The driver-owned delivery marketplace
@@ -86,17 +116,17 @@ export default function Home() {
               <br />
               of delivery, <span className="text-accent">your way.</span>
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-muted">
+            <p className={`mt-6 max-w-2xl text-pretty text-lg text-muted ${hasHeroImage ? "lg:mx-0 mx-auto" : "mx-auto"}`}>
               From groceries to grand pianos, FlowSync connects you to the work you want.
               Pick your service, build a profile that fits, and set your own rates.
             </p>
             {/* Vehicle-range signal — preempts the most common pre-signup question:
                 'is this for my vehicle?' Caps at box truck (no semi-truck claim). */}
-            <p className="mx-auto mt-3 max-w-2xl text-base">
+            <p className={`mt-3 max-w-2xl text-base ${hasHeroImage ? "lg:mx-0 mx-auto" : "mx-auto"}`}>
               <span className="text-muted">Sedan, SUV, pickup, minivan, cargo van, sprinter, or box truck —</span>{" "}
               <span className="font-medium text-foreground">there&apos;s a service for what you drive.</span>
             </p>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className={`mt-9 flex flex-col items-center gap-3 sm:flex-row ${hasHeroImage ? "justify-center lg:justify-start" : "justify-center"}`}>
               <Link href="/pricing" className="btn-primary w-full rounded-full px-7 py-3.5 text-base sm:w-auto">
                 Become a driver
               </Link>
