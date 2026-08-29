@@ -152,11 +152,13 @@ model DriverProfile {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  documents   Document[]
-  bookings    Booking[]
-  services    DriverService[]
-  trips       Trip[]
-  inspections Inspection[]
+  documents     Document[]
+  bookings      Booking[]
+  services      DriverService[]
+  trips         Trip[]
+  inspections   Inspection[]
+  verifiedLoads VerifiedLoad[]
+  licenses      DriverLicense[]
 
   @@index([primaryService])
   @@index([city])
@@ -172,16 +174,21 @@ model Trip {
   pickupAddress  String
   dropoffAddress String
 
-  earningsCents      Int   @default(0) // what the trip paid
-  paidMiles          Float @default(0) // loaded miles
-  deadheadMiles      Float @default(0) // empty/unpaid miles
-  fuelCents          Int   @default(0)
-  tollsCents         Int   @default(0)
-  otherExpensesCents Int   @default(0) // personal/other operating expenses
-  durationMinutes    Int   @default(0)
+  earningsCents      Int      @default(0) // what the trip paid
+  paidMiles          Float    @default(0) // loaded miles
+  deadheadMiles      Float    @default(0) // empty/unpaid miles
+  fuelCents          Int      @default(0)
+  tollsCents         Int      @default(0)
+  otherExpensesCents Int      @default(0) // personal/other operating expenses
+  durationMinutes    Int      @default(0)
   notes              String?
   // Proof-of-delivery / record photos (Blob URLs or inline data URLs).
+  // PRIVATE by default — these routinely show house numbers, packages on
+  // porches, and plates, so they are never shown publicly.
   photos             String[] @default([])
+  // Opt-in subset of `photos` the driver has explicitly approved for their
+  // public profile gallery. Empty for every existing trip.
+  publicPhotos       String[] @default([])
 
   createdAt DateTime @default(now())
 
@@ -327,7 +334,7 @@ model Review {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  rating Int    // 1-5
+  rating Int // 1-5
   text   String
 
   status ReviewStatus @default(PENDING)
@@ -416,4 +423,96 @@ model TelegramBotSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Driver experience & credentials
+//
+// Two separate ideas, kept apart on purpose:
+//   * Trip          — the driver's OWN logged work (P&L tracker). Self-reported
+//                     and editable by the driver, and it covers all their
+//                     driving, not just FlowSync work. Shown publicly as
+//                     "deliveries logged".
+//   * VerifiedLoad  — a load the FlowSync team entered and rated. Drivers can't
+//                     edit these, which is what makes the rating meaningful to
+//                     a shipper. Shown publicly as "verified by FlowSync".
+// ---------------------------------------------------------------------------
+
+/// A completed load recorded and rated by FlowSync (admin-entered, not
+/// driver-editable). Powers the driver's public rating and verified count.
+model VerifiedLoad {
+  id              String        @id @default(cuid())
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id], onDelete: Cascade)
+
+  date DateTime @default(now())
+
+  // City-level only by design — full pickup/dropoff addresses are never made
+  // public, so a customer's home can't be identified from a driver profile.
+  pickupCity  String
+  dropoffCity String
+  /// Free-text description, e.g. "2 pallets of tile — box truck".
+  loadType    String?
+
+  /// 1–5, set by an admin. Null while a load is logged but not yet rated.
+  rating     Int?
+  /// Optional short line shown on the driver's public profile.
+  publicNote String?
+  /// Internal only — never rendered publicly.
+  adminNote  String?
+
+  /// Proof photos captured by FlowSync. Hidden unless photosPublic is true.
+  photos       String[] @default([])
+  photosPublic Boolean  @default(false)
+
+  /// User id of the admin who recorded it (audit trail).
+  createdById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([driverProfileId, date])
+  @@index([driverProfileId, rating])
+}
+
+/// Credentials and endorsements a driver holds (TWIC, Hazmat, CDL classes...).
+/// A separate table because Document is capped at one row per kind, which can't
+/// represent a driver holding several certifications at once.
+model DriverLicense {
+  id              String        @id @default(cuid())
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id], onDelete: Cascade)
+
+  kind        LicenseKind
+  /// Used when kind is OTHER, so new credential types never need a migration.
+  customLabel String?
+
+  /// Photo of the physical credential, used to verify the driver actually holds it.
+  blobUrl String
+
+  /// Only VERIFIED credentials are shown publicly.
+  status     DocStatus @default(PENDING)
+  /// Expired credentials are hidden from the public profile automatically.
+  expiresAt  DateTime?
+  uploadedAt DateTime  @default(now())
+  reviewedAt DateTime?
+
+  @@index([driverProfileId])
+  @@index([status])
+}
+
+enum LicenseKind {
+  TWIC
+  HAZMAT
+  TANKER
+  DOUBLES_TRIPLES
+  CDL_A
+  CDL_B
+  CDL_C
+  PASSENGER
+  AIR_BRAKES
+  FORKLIFT
+  MEDICAL_CARD
+  OSHA_10
+  OTHER
 }
