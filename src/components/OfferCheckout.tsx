@@ -120,12 +120,18 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
         </div>
       </div>
 
-      {/* Cost-of-waiting / FOMO band */}
+      {/* Early-mover band. Urgency here is deliberately built on things that are
+          verifiably true (the directory is still filling out; placement favours
+          drivers already listed; the setup + guides ship immediately) rather
+          than on customer demand we can't substantiate. */}
       <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] p-5 text-center">
-        <p className="text-sm font-semibold text-amber-300">Every week you&apos;re not listed, the booking goes to someone else.</p>
+        <p className="text-sm font-semibold text-amber-300">You&apos;re early — and that&apos;s the whole advantage.</p>
         <p className="mt-1 text-sm text-muted">
-          Customers in your area are booking the drivers who show up in the directory <span className="text-foreground">today</span>.
-          The earliest drivers lock in the top spots — and the repeat customers that come with them. That window doesn&apos;t stay open.
+          The FlowSync directory is still being built out in most cities. The drivers who list now are the
+          ones customers find first as it grows — and the top spots go to whoever&apos;s already there.
+          Your ${tier.price} also gets you the full setup: DOT &amp; EIN, pricing tools, and 14 guides for
+          landing your own direct customers.{" "}
+          <span className="text-foreground">You start building from day one instead of waiting on anyone.</span>
         </p>
       </div>
 
