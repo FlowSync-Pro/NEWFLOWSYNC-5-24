@@ -41,6 +41,23 @@ export default async function MyServicesPage({ searchParams }: PageProps<"/accou
           <Link href="/account" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Account</Link>
         </div>
 
+        {premium && (
+          <Link
+            href="/account/curri-fleet"
+            className="mt-8 flex items-center justify-between gap-4 rounded-2xl border border-accent/30 bg-accent-soft p-5 transition-colors hover:bg-accent-soft/80"
+          >
+            <div>
+              <p className="text-sm font-bold text-accent">
+                {justUpgraded ? "Next — Curri fleet" : "Curri fleet"}
+              </p>
+              <p className="mt-0.5 text-xs text-muted">
+                Ask to be added on our carrier account, then claim, bid, or reject nearby loads. Pay is 1–2 business days, or instant with a 6% fee.
+              </p>
+            </div>
+            <span className="shrink-0 text-sm font-medium text-accent">Open guide →</span>
+          </Link>
+        )}
+
         <div className="mt-8">
           <MyServicesEditor services={profile.services as ServiceRow[]} />
         </div>
