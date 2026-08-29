@@ -6,6 +6,7 @@ import { getSession } from "@/lib/session";
 import { getAdminUserId } from "@/lib/admin";
 import { currentStreak, parseProgress, todayKey } from "@/lib/roadmap";
 import { referralStats, REWARD_THRESHOLD } from "@/lib/referrals";
+import { isPremiumTier } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import RoadmapTracker from "@/components/RoadmapTracker";
 import ReferralCard from "@/components/ReferralCard";
@@ -27,12 +28,13 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   if (session.mustResetPassword) redirect("/reset-password");
 
   const [profile, user] = await Promise.all([
-    prisma.driverProfile.findUnique({ where: { userId: session.userId }, select: { firstName: true } }),
+    prisma.driverProfile.findUnique({ where: { userId: session.userId }, select: { firstName: true, tier: true } }),
     prisma.user.findUnique({ where: { id: session.userId }, select: { roadmapData: true, email: true } }),
   ]);
   if (!profile) redirect("/account/setup");
 
   const isAdmin = !!(await getAdminUserId());
+  const premium = isPremiumTier(profile.tier);
   const justRegistered = (await searchParams).registered === "1";
   const progress = parseProgress(user?.roadmapData);
   const ref = await referralStats(session.userId);
@@ -49,6 +51,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <Link href="/account/edit" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Edit profile & documents</Link>
           <Link href="/account/trips" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Operations</Link>
           <Link href="/account/services" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">My Services</Link>
+          {premium && (
+            <Link href="/account/curri-fleet" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Curri fleet</Link>
+          )}
           <Link href="/grow" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Resources</Link>
           <Link href="/account/bookings" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Bookings</Link>
           <Link href="/account/share-experience" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Leave a review</Link>
@@ -58,6 +63,20 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <div className="mx-auto mt-6 max-w-3xl space-y-5 px-5">
           <FounderLoom firstName={profile.firstName} />
           <TelegramCTA />
+          {premium && (
+            <Link
+              href="/account/curri-fleet"
+              className="flex items-center justify-between gap-4 rounded-2xl border border-accent/30 bg-accent-soft p-5 transition-colors hover:bg-accent-soft/80"
+            >
+              <div>
+                <p className="text-sm font-bold text-accent">Curri fleet</p>
+                <p className="mt-0.5 text-xs text-muted">
+                  How to get activated on our carrier account, how nearby loads work, and how pay works.
+                </p>
+              </div>
+              <span className="shrink-0 text-sm font-medium text-accent">Open guide →</span>
+            </Link>
+          )}
         </div>
 
         {/* The Roadmap is the dashboard. Everything else is a side trip. */}

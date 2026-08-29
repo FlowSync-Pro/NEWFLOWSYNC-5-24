@@ -52,6 +52,7 @@ export async function setDriverTier(driverProfileId: string, tier: "STANDARD" | 
       to: driver.user.email,
       firstName: driver.firstName,
       servicesUrl: `${base}/account/services`,
+      fleetUrl: `${base}/account/curri-fleet`,
     });
   }
 

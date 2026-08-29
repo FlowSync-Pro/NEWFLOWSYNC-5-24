@@ -140,6 +140,7 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     to: profile.user.email,
     firstName: profile.firstName,
     servicesUrl: `${base}/account/services`,
+    fleetUrl: `${base}/account/curri-fleet`,
   });
 
   // Server-side Purchase event to Meta (CAPI). Same event_id as the browser
