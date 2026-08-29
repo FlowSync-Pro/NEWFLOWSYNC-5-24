@@ -98,8 +98,14 @@ export function getBump(id: string): Bump | undefined {
 export const VALUE_STACK: { label: string; value: number }[] = [
   { label: "Driver directory listing — get found by local customers", value: 97 },
   { label: "DOT & EIN setup guide (skip the $300+ filing services)", value: 27 },
+  // The guide library was the most under-sold thing in the offer — 14 guides
+  // ship today (see lib/guides.ts) and every paying driver already has access
+  // (lib/access.ts). Listed as "13 more" so the DOT & EIN guide above isn't
+  // double-counted.
+  { label: "13 more step-by-step guides — find customers, price for profit, taxes & write-offs", value: 67 },
   { label: "Fair-quote calculator to price every job", value: 39 },
   { label: "Profit & Loss tracker for your business", value: 47 },
+  { label: "Your own service menu with custom pricing", value: 29 },
 ];
 
 export const VALUE_STACK_TOTAL = VALUE_STACK.reduce((s, i) => s + i.value, 0);

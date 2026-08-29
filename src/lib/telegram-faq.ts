@@ -7,22 +7,35 @@ export const TELEGRAM_BASELINE_FAQS: KnowledgeCandidate[] = [
     id: "baseline-entry-offer",
     question: "What is included in the $17 FlowSync driver offer?",
     keywords: ["$17", "17 dollars", "entry tier", "driver pack", "what is included"],
+    // Kept in sync with what the site actually delivers today (VALUE_STACK in
+    // lib/pricing.ts and the guide library in lib/guides.ts). Do not list
+    // anything here that a driver cannot open in their account after paying.
     answer:
-      "The $17 entry tier is for sedan, SUV, and minivan operators. It includes the apps checklist, ebook, Telegram community access, a public driver profile, a 30-day action plan, the lead-generation tool, and guidance for DOT, EIN, and LLC setup.",
+      "The $17 one-time listing includes a public driver profile in the FlowSync directory, 14 step-by-step guides (DOT and EIN setup, LLC vs sole proprietor, insurance, quarterly taxes and write-offs, pricing for profit, getting your first reviews, and finding customers on Nextdoor, Yelp, Thumbtack, Craigslist, and Indeed), the fair-quote calculator, the profit and loss tracker, your own service menu with custom pricing, the driver roadmap, and Telegram community access. It is backed by a 30-day money-back guarantee.",
+  },
+  {
+    id: "baseline-vehicles",
+    question: "What vehicles can join FlowSync?",
+    keywords: ["vehicle", "car", "sedan", "SUV", "pickup", "van", "sprinter", "box truck", "qualify"],
+    answer:
+      "FlowSync works for sedans, SUVs, pickups, minivans, cargo vans, sprinter vans, and box trucks — there is a service type for each. Pick the services that match what you drive when you set up your profile.",
   },
   {
     id: "baseline-website-offer",
-    question: "What is the $97 website offer?",
-    keywords: ["$97", "97 dollars", "website", "custom site"],
+    question: "What is the $97 Premium upgrade?",
+    keywords: ["$97", "97 dollars", "premium", "website", "custom site", "upgrade"],
     answer:
-      "The $97 offer is a custom website build for the driver’s own business, designed to help the driver present their services and land direct clients.",
+      "Premium is a $97 one-time upgrade. It adds a Premium badge and elevated styling on your public profile, priority placement above other drivers in the directory, the ability to link your own external website, and done-for-you setup where the FlowSync team builds out your profile, service menu, and website for you.",
   },
   {
     id: "baseline-refund",
     question: "How does the FlowSync refund policy work?",
     keywords: ["refund", "money back", "guarantee", "cancel purchase"],
+    // Deliberately points at the guarantee shown at checkout rather than
+    // restating terms here, so the bot can never contradict what the buyer was
+    // actually promised on the payment page.
     answer:
-      "Refund eligibility is tied to completing the checklist with proof; it is not tied to income outcomes. Any onboarding-call portion is non-refundable. For a specific purchase, contact FlowSync support so Nas can review it with you.",
+      "The $17 listing is backed by a 30-day money-back guarantee — the terms shown at checkout are the ones that apply to your purchase. Refunds are never tied to income outcomes. For a specific purchase, contact FlowSync support and Nas will review it with you.",
   },
   {
     id: "baseline-dot-ein-llc",
@@ -55,7 +68,7 @@ export const TELEGRAM_BASELINE_FAQS: KnowledgeCandidate[] = [
 ];
 
 export const TELEGRAM_WELCOME_MESSAGE =
-  "Welcome to the FlowSync driver community. This group is here to help independent drivers build their own book of direct clients. Start with your 30-day action plan, ask general FlowSync questions here, and the assistant will bring Nas in when a human answer is needed.";
+  "Welcome to the FlowSync driver community. This group is here to help independent drivers build their own book of direct clients. Start with the roadmap in your account, work through the guides, ask general FlowSync questions here, and the assistant will bring Nas in when a human answer is needed.";
 
 export const TELEGRAM_PAUSED_MESSAGE =
   "The FlowSync assistant is temporarily paused. Your question has not been answered automatically; please try again later or wait for Nas to respond.";
