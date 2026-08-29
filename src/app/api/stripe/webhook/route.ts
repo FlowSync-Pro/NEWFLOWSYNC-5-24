@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
 import { attributeReferral } from "@/lib/referrals";
+import { alertOwner } from "@/lib/alerts";
 import { sendCapiPurchase } from "@/lib/meta-capi";
 import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendPremiumUpgradeEmail, sendPnlProEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
@@ -243,12 +244,26 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
       include: { driverProfile: true },
     });
     const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-    await sendDriverWelcomeEmail({
+    const welcome = await sendDriverWelcomeEmail({
       to: email,
       firstName: md.firstName || "there",
       tempPassword,
       signInUrl: `${base}/signin`,
     });
+    // A paying driver whose welcome email didn't send can't sign in. That used
+    // to fail silently; now it pings the owner over Telegram (a channel that
+    // still works when email is the thing that's broken) so they can reach out
+    // before the driver gives up or asks for a refund.
+    if (!welcome.sent) {
+      await alertOwner(
+        `⚠️ FlowSync: welcome email FAILED to send.\n\n` +
+          `Driver: ${md.firstName || "(no name)"} ${md.lastName ?? ""}\n` +
+          `Email: ${email}\n` +
+          `Paid: $${((session.amount_total ?? 0) / 100).toFixed(2)}\n\n` +
+          `They have paid but may not be able to sign in. Reach out to them, ` +
+          `and check the Resend dashboard / RESEND_* env vars.`,
+      );
+    }
   }
 
   if (user.driverProfile) {

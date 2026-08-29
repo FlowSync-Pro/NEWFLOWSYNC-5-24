@@ -7,6 +7,7 @@ import { createSession, destroySession, getSession } from "@/lib/session";
 import { generateTempPassword, hashPassword, verifyPassword } from "@/lib/password";
 import { serviceToEnum } from "@/lib/enums";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
+import { getStripe } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
 
@@ -120,6 +121,73 @@ export async function setPassword(_prev: AuthState, formData: FormData): Promise
     data: { hashedPassword: hashPassword(password), mustResetPassword: false },
   });
   await createSession({ ...session, mustResetPassword: false });
+  redirect("/account");
+}
+
+export interface ActivateState {
+  error?: string;
+}
+
+/** How long after checkout the on-screen activation stays usable. */
+const ACTIVATION_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Post-checkout activation. Lets a driver who just paid set their own password
+ * on the success screen instead of depending on the welcome email arriving —
+ * previously a missing/spam-filtered email locked a paying customer out of the
+ * account they'd just bought, with no other way in.
+ *
+ * Access is gated on proof of payment, and is deliberately narrow:
+ *   1. the Stripe Checkout Session must exist and be `paid`;
+ *   2. it must be less than 24h old (a stale/shared URL stops working);
+ *   3. the account must still be un-activated (`mustResetPassword`), so this is
+ *      single-use — once a password is set, this path closes permanently.
+ * The session id is high-entropy and only ever appears in the buyer's own
+ * browser, so it functions like an emailed activation link without the email.
+ */
+export async function activateAfterCheckout(_prev: ActivateState, formData: FormData): Promise<ActivateState> {
+  const sessionId = String(formData.get("session_id") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  if (!sessionId) return { error: "Missing checkout reference. Use the password from your welcome email to sign in below." };
+  if (password.length < 8) return { error: "Use at least 8 characters." };
+  if (password !== confirm) return { error: "Passwords don't match." };
+
+  const stripe = getStripe();
+  if (!stripe) return { error: "We can't verify your payment right now. Please sign in with the password from your email." };
+
+  let email = "";
+  let createdAtMs = 0;
+  try {
+    const cs = await stripe.checkout.sessions.retrieve(sessionId);
+    if (cs.payment_status !== "paid") {
+      return { error: "We couldn't confirm that payment. Please sign in with the password from your email." };
+    }
+    email = (cs.customer_details?.email ?? cs.metadata?.email ?? "").trim().toLowerCase();
+    createdAtMs = (cs.created ?? 0) * 1000;
+  } catch {
+    return { error: "We couldn't confirm that payment. Please sign in with the password from your email." };
+  }
+
+  if (!email) return { error: "We couldn't match that payment to an email. Please sign in with the password from your email." };
+  if (!createdAtMs || Date.now() - createdAtMs > ACTIVATION_WINDOW_MS) {
+    return { error: "This activation window has closed. Use “Forgot password?” below to set a new password." };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  // The Stripe webhook creates the account; on a fast redirect it may not have
+  // landed yet. Tell the driver to retry rather than implying something broke.
+  if (!user) return { error: "We're still setting up your account — wait a few seconds and try again." };
+  if (!user.mustResetPassword) {
+    return { error: "Your password is already set. Sign in with it below, or use “Forgot password?”." };
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { hashedPassword: hashPassword(password), mustResetPassword: false },
+  });
+  await createSession({ userId: user.id, role: user.role, mustResetPassword: false });
   redirect("/account");
 }
 

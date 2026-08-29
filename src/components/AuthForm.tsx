@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { login, setPassword, requestPasswordReset, resetPasswordWithToken, type AuthState, type ForgotState } from "@/app/actions/auth";
+import { login, setPassword, requestPasswordReset, resetPasswordWithToken, activateAfterCheckout, type AuthState, type ForgotState, type ActivateState } from "@/app/actions/auth";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition-colors focus:border-accent";
@@ -61,6 +61,27 @@ export function TokenResetForm({ token, email }: { token: string; email: string 
       <button type="submit" disabled={pending} className="btn-primary w-full rounded-full px-6 py-3 text-sm disabled:opacity-60">
         {pending ? "Saving…" : "Set new password"}
       </button>
+    </form>
+  );
+}
+
+/**
+ * Shown on the post-checkout success screen so a driver who just paid can set
+ * their password immediately, instead of being stuck waiting on the welcome
+ * email. The ordinary sign-in form stays available underneath as a fallback.
+ */
+export function ActivateAccountForm({ sessionId }: { sessionId: string }) {
+  const [state, action, pending] = useActionState<ActivateState, FormData>(activateAfterCheckout, {});
+  return (
+    <form action={action} className="space-y-3">
+      <input type="hidden" name="session_id" value={sessionId} />
+      <input name="password" type="password" placeholder="Choose a password" autoComplete="new-password" required minLength={8} className={inputCls} />
+      <input name="confirm" type="password" placeholder="Confirm password" autoComplete="new-password" required minLength={8} className={inputCls} />
+      {state.error && <p className="text-sm text-red-400">{state.error}</p>}
+      <button type="submit" disabled={pending} className="btn-primary w-full rounded-full px-6 py-3 text-sm disabled:opacity-60">
+        {pending ? "Setting up…" : "Set password & continue"}
+      </button>
+      <p className="text-center text-xs text-muted">At least 8 characters. You&apos;ll go straight to your dashboard.</p>
     </form>
   );
 }
