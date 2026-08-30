@@ -209,6 +209,7 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
           <Link href="/account" className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-[#04130a] transition-opacity hover:opacity-90">Roadmap</Link>
           <Link href="/account/trips" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Operations</Link>
           <Link href="/account/services" className="btn-ghost rounded-full px-5 py-2.5 text-sm">My Services</Link>
+          <Link href="/account/experience" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Experience</Link>
           {premium && (
             <Link href="/account/curri-fleet" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Curri fleet</Link>
           )}

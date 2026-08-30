@@ -51,6 +51,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <Link href="/account/edit" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Edit profile & documents</Link>
           <Link href="/account/trips" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Operations</Link>
           <Link href="/account/services" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">My Services</Link>
+          <Link href="/account/experience" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Experience</Link>
           {premium && (
             <Link href="/account/curri-fleet" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Curri fleet</Link>
           )}
