@@ -75,3 +75,57 @@ export function publicCredentials<T extends CredentialLike>(all: T[], now: Date 
 export function formatRating(avg: number): string {
   return avg.toFixed(1);
 }
+
+// ---------------------------------------------------------------------------
+// Public profile assembly
+// ---------------------------------------------------------------------------
+
+export interface ProfileExperienceSource {
+  trips: { publicPhotos: string[] }[];
+  verifiedLoads: {
+    id: string;
+    date: Date;
+    pickupCity: string;
+    dropoffCity: string;
+    loadType: string | null;
+    rating: number | null;
+    publicNote: string | null;
+    photos: string[];
+    photosPublic: boolean;
+  }[];
+  licenses: { kind: string; customLabel: string | null; status: string; expiresAt: Date | null }[];
+  loggedTripCount: number;
+}
+
+/**
+ * Builds exactly what a shipper is allowed to see. Everything opt-in or
+ * unverified is filtered out here, in one place, so no page can accidentally
+ * leak a private photo, an unverified credential, or a premature rating.
+ */
+export function buildProfileExperience(src: ProfileExperienceSource, maxPhotos = 9, maxLoads = 5) {
+  const rating = showPublicRating(src.verifiedLoads) ? averageRating(src.verifiedLoads) : null;
+
+  // Driver-approved trip photos first, then admin-approved load photos.
+  const photos = [
+    ...src.trips.flatMap((t) => t.publicPhotos),
+    ...src.verifiedLoads.filter((l) => l.photosPublic).flatMap((l) => l.photos),
+  ].slice(0, maxPhotos);
+
+  return {
+    loggedDeliveries: src.loggedTripCount,
+    verifiedDeliveries: src.verifiedLoads.length,
+    rating,
+    ratedCount: ratedCount(src.verifiedLoads),
+    credentials: publicCredentials(src.licenses).map((c) => licenseLabel(c.kind, c.customLabel)),
+    photos,
+    recentLoads: src.verifiedLoads.slice(0, maxLoads).map((l) => ({
+      id: l.id,
+      date: l.date.toISOString(),
+      pickupCity: l.pickupCity,
+      dropoffCity: l.dropoffCity,
+      loadType: l.loadType,
+      rating: l.rating,
+      publicNote: l.publicNote,
+    })),
+  };
+}

@@ -11,6 +11,45 @@ export interface ProfileServiceItem {
   priceCents: number;
 }
 
+/**
+ * Experience shown to shippers. Deliberately reports two separate numbers:
+ * `loggedDeliveries` is what the driver recorded themselves (their P&L tracker
+ * covers all their work, not just FlowSync jobs), while `verifiedDeliveries`
+ * is what FlowSync recorded and rated. Conflating the two would tell a shipper
+ * FlowSync dispatched work it didn't.
+ */
+export interface ProfileExperience {
+  loggedDeliveries: number;
+  verifiedDeliveries: number;
+  /** Average rating, or null while there aren't enough rated loads to show one. */
+  rating: number | null;
+  ratedCount: number;
+  /** Admin-verified, unexpired credentials only. */
+  credentials: string[];
+  /** Opt-in photos only — driver-approved trip photos plus admin-approved load photos. */
+  photos: string[];
+  recentLoads: {
+    id: string;
+    date: string;
+    pickupCity: string;
+    dropoffCity: string;
+    loadType: string | null;
+    rating: number | null;
+    publicNote: string | null;
+  }[];
+}
+
+function Stars({ value }: { value: number }) {
+  const rounded = Math.round(value);
+  return (
+    <span aria-label={`${value.toFixed(1)} out of 5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={n <= rounded ? "text-amber-300" : "text-muted/30"}>★</span>
+      ))}
+    </span>
+  );
+}
+
 function initials(first: string, last: string) {
   return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || "FS";
 }
@@ -33,11 +72,13 @@ export default function ProfileView({
   services = [],
   headerActions,
   sidebarCta,
+  experience,
 }: {
   profile: DriverProfile;
   services?: ProfileServiceItem[];
   headerActions?: ReactNode;
   sidebarCta?: ReactNode;
+  experience?: ProfileExperience;
 }) {
   const primary = getService(profile.primaryService);
   if (!primary) return null;
@@ -47,13 +88,19 @@ export default function ProfileView({
   const years = Number(profile.yearsExperience) || 0;
   const fullName = `${profile.firstName} ${profile.lastName}`.trim() || "Driver";
 
-  // No fabricated stats. Show only what the driver has actually provided; the
-  // rest reads as "new driver" until real booking/review data exists.
+  const totalDeliveries = (experience?.loggedDeliveries ?? 0) + (experience?.verifiedDeliveries ?? 0);
+
+  // No fabricated stats. Every value below is either something the driver
+  // actually entered or something FlowSync actually recorded; anything we don't
+  // have yet reads as "New" rather than an invented number.
   const stats = [
     { label: "Rate", value: profile.hourlyRate ? `$${profile.hourlyRate}/hr` : "—" },
     { label: "Experience", value: years > 0 ? `${years} yr${years === 1 ? "" : "s"}` : "New" },
     { label: "Service area", value: profile.serviceRadius || profile.city || "Local" },
-    { label: "Reviews", value: "New" },
+    {
+      label: experience?.rating != null ? `Rating · ${experience.ratedCount} loads` : "Rating",
+      value: experience?.rating != null ? `★ ${experience.rating.toFixed(1)}` : "New",
+    },
   ];
 
   return (
@@ -103,10 +150,39 @@ export default function ProfileView({
                 )}
               </div>
               <p className="mt-0.5 text-muted">{profile.headline || primary.profileHeadline}</p>
-              <div className="mt-1.5 flex items-center gap-3 text-sm text-muted">
-                <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs">New driver</span>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+                {totalDeliveries > 0 ? (
+                  <>
+                    <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs">
+                      {experience!.loggedDeliveries} deliveries logged
+                    </span>
+                    {experience!.verifiedDeliveries > 0 && (
+                      <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
+                        {experience!.verifiedDeliveries} verified by FlowSync
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs">New driver</span>
+                )}
                 <span className="hidden sm:inline">{profile.city || "Local area"}</span>
               </div>
+              {experience && experience.credentials.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {experience.credentials.map((c) => (
+                    <span
+                      key={c}
+                      title="Credential verified by FlowSync"
+                      className="flex items-center gap-1 rounded-full border border-accent/40 bg-accent-soft px-2.5 py-0.5 text-[11px] font-medium text-accent"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-3 w-3">
+                        <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           {headerActions && <div className="flex gap-2">{headerActions}</div>}
@@ -165,6 +241,59 @@ export default function ProfileView({
                       </div>
                       <span className="shrink-0 font-bold text-accent">{money(s.priceCents)}</span>
                     </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Delivery history recorded and rated by FlowSync. Only city names
+                appear — never the customer's full address. */}
+            {experience && experience.recentLoads.length > 0 && (
+              <section className="card overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface px-7 py-4">
+                  <h2 className="text-lg font-semibold">Delivery history</h2>
+                  <span className="text-xs text-muted">
+                    {experience.verifiedDeliveries} verified by FlowSync
+                    {experience.rating != null && <> · ★ {experience.rating.toFixed(1)} average</>}
+                  </span>
+                </div>
+                <div className="divide-y divide-border">
+                  {experience.recentLoads.map((l) => (
+                    <div key={l.id} className="flex items-start justify-between gap-4 px-7 py-4">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{l.pickupCity} → {l.dropoffCity}</p>
+                        <p className="text-xs text-muted">
+                          {new Date(l.date).toLocaleDateString()}
+                          {l.loadType ? ` · ${l.loadType}` : ""}
+                        </p>
+                        {l.publicNote && <p className="mt-1 text-sm text-muted">“{l.publicNote}”</p>}
+                      </div>
+                      {l.rating != null && (
+                        <span className="shrink-0 text-sm"><Stars value={l.rating} /></span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Photos the driver (or FlowSync) explicitly approved for public
+                display. Delivery photos often show addresses and plates, so
+                nothing appears here without an explicit opt-in. */}
+            {experience && experience.photos.length > 0 && (
+              <section className="card p-7">
+                <h2 className="text-lg font-semibold">Work photos</h2>
+                <p className="mt-1 text-sm text-muted">Completed deliveries shared by {fullName.split(" ")[0]}.</p>
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {experience.photos.map((p, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={i}
+                      src={p}
+                      alt={`Completed delivery by ${fullName}`}
+                      loading="lazy"
+                      className="aspect-square w-full rounded-xl border border-border object-cover"
+                    />
                   ))}
                 </div>
               </section>

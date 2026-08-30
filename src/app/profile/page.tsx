@@ -7,6 +7,7 @@ import { dbToAppProfile } from "@/lib/profileMap";
 import ProfileView from "@/components/ProfileView";
 import PendingBanner from "@/components/PendingBanner";
 import { DocKind } from "@prisma/client";
+import { buildProfileExperience } from "@/lib/experience";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +24,28 @@ export default async function ProfilePage() {
 
   const db = await prisma.driverProfile.findUnique({
     where: { userId: session.userId },
-    include: { documents: true, services: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
+    include: {
+      documents: true,
+      services: { where: { active: true }, orderBy: { sortOrder: "asc" } },
+      trips: { select: { publicPhotos: true } },
+      verifiedLoads: { orderBy: { date: "desc" } },
+      licenses: true,
+      _count: { select: { trips: true } },
+    },
   });
   if (!db) redirect("/signin");
 
   const kinds = new Set(db.documents.map((d) => d.kind));
   const hasDocs = kinds.has(DocKind.LICENSE) && kinds.has(DocKind.INSURANCE);
   const services = db.services.map((s) => ({ id: s.id, name: s.name, description: s.description, priceCents: s.priceCents }));
+  // Same builder the public page uses, so a driver previews exactly what a
+  // shipper will see — including which photos are (and aren't) public.
+  const experience = buildProfileExperience({
+    trips: db.trips,
+    verifiedLoads: db.verifiedLoads,
+    licenses: db.licenses,
+    loggedTripCount: db._count.trips,
+  });
 
   return (
     <>
@@ -37,6 +53,7 @@ export default async function ProfilePage() {
       <ProfileView
       services={services}
       profile={dbToAppProfile(db)}
+      experience={experience}
       headerActions={
         <>
           <Link href="/dashboard" className="btn-primary rounded-full px-6 py-2.5 text-sm">Dashboard</Link>
