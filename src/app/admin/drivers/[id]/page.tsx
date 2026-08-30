@@ -8,6 +8,7 @@ import { serviceFromEnum } from "@/lib/enums";
 import { getService } from "@/lib/services";
 import { money, sumTrips, tripStats, type TripView } from "@/lib/trips";
 import TripMap from "@/components/TripMap";
+import AdminDriverExperience from "@/components/AdminDriverExperience";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Driver operations", robots: { index: false } };
@@ -26,6 +27,8 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
       user: true,
       trips: { orderBy: { date: "desc" }, take: 200 },
       inspections: { orderBy: { date: "desc" }, take: 30 },
+      verifiedLoads: { orderBy: { date: "desc" } },
+      licenses: { orderBy: { uploadedAt: "desc" } },
     },
   });
   if (!driver) notFound();
@@ -59,6 +62,35 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
           <Stat label="Earnings" value={money(totals.earningsCents)} accent />
           <Stat label="Expenses" value={money(totals.expensesCents)} />
           <Stat label="Net profit" value={money(totals.profitCents)} accent />
+        </div>
+
+        {/* Experience: verified loads, ratings, credentials */}
+        <h2 className="mt-8 text-lg font-semibold">Experience &amp; credentials</h2>
+        <div className="mt-3">
+          <AdminDriverExperience
+            driverProfileId={driver.id}
+            loggedTripCount={trips.length}
+            loads={driver.verifiedLoads.map((l) => ({
+              id: l.id,
+              date: l.date.toISOString(),
+              pickupCity: l.pickupCity,
+              dropoffCity: l.dropoffCity,
+              loadType: l.loadType,
+              rating: l.rating,
+              publicNote: l.publicNote,
+              adminNote: l.adminNote,
+              photos: l.photos,
+              photosPublic: l.photosPublic,
+            }))}
+            licenses={driver.licenses.map((c) => ({
+              id: c.id,
+              kind: c.kind,
+              customLabel: c.customLabel,
+              blobUrl: c.blobUrl,
+              status: c.status,
+              expiresAt: c.expiresAt ? c.expiresAt.toISOString() : null,
+            }))}
+          />
         </div>
 
         {/* Inspections */}
