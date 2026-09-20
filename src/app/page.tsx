@@ -6,6 +6,15 @@ import { SERVICES } from "@/lib/services";
 import ServiceCard from "@/components/ServiceCard";
 import ServiceIcon from "@/components/ServiceIcon";
 import Reveal from "@/components/Reveal";
+import ReviewStrip from "@/components/ReviewStrip";
+
+// The homepage is the paid-ad landing page, so it must stay fast. Rather than
+// making it dynamic to show reviews, it's regenerated at most once every 5
+// minutes and served from cache — visitors get a static-speed page, and a newly
+// approved review appears within 5 minutes. ReviewStrip also swallows DB errors
+// and renders nothing below 3 reviews, so neither a database hiccup nor a thin
+// review count can break or thin out this page.
+export const revalidate = 300;
 
 // Branded hero photo (driver + FlowSync van). Checked at build time so the page
 // renders the classic centered hero until public/hero-driver.jpg is added —
@@ -274,6 +283,19 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Real driver reviews — social proof immediately before the signup CTA,
+          where it does the most work. Heading lives inside ReviewStrip so the
+          whole block disappears together when there aren't enough approved
+          reviews (or the DB is unreachable), never leaving a bare heading. */}
+      <section className="mx-auto max-w-7xl px-5 pt-20">
+        <ReviewStrip
+          minToShow={3}
+          take={3}
+          heading="What drivers say about FlowSync."
+          subheading="Reviews from drivers who signed up and set up their profile."
+        />
       </section>
 
       {/* Final CTA */}

@@ -7,6 +7,7 @@ import { getService, type ServiceId } from "@/lib/services";
 import { SITE_URL } from "@/lib/site";
 import { citySlug, cityDisplay } from "@/lib/locations";
 import DriverDirectory, { type DirectoryCard } from "@/components/DriverDirectory";
+import { cardExperience } from "@/lib/experience";
 import JsonLd, { breadcrumbLd } from "@/components/JsonLd";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,11 @@ const SERVICE_IDS: ServiceId[] = [
 async function load(serviceId: ServiceId, citySlugParam: string) {
   const rows = await prisma.driverProfile.findMany({
     where: { verified: true, primaryService: serviceToEnum(serviceId), city: { not: null } },
-    include: { documents: true },
+    include: {
+      documents: true,
+      verifiedLoads: { select: { rating: true } },
+      licenses: { select: { kind: true, customLabel: true, status: true, expiresAt: true } },
+    },
     // Premium first, then newest — the directory groups them into a
     // "Featured" section above the rest.
     orderBy: [{ tier: "desc" }, { createdAt: "desc" }],
@@ -69,6 +74,7 @@ export default async function CityServicePage({ params }: PageProps<"/delivery/[
       headline: db.headline ?? "",
       photoUrl: db.documents.find((d) => docKeyFromKind(d.kind) === "profilePhoto")?.blobUrl,
       tier: db.tier,
+      ...cardExperience({ verifiedLoads: db.verifiedLoads, licenses: db.licenses }),
     });
   }
 

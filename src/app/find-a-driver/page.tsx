@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { serviceFromEnum, docKeyFromKind } from "@/lib/enums";
 import { SITE_URL } from "@/lib/site";
+import { cardExperience } from "@/lib/experience";
 import DriverDirectory, { type DirectoryCard } from "@/components/DriverDirectory";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Find a driver near you",
   description:
-    "Browse verified, independent delivery and errand drivers and request a quote directly — grocery, food, furniture, courier, pharmacy, senior errands, moving, and auto parts.",
+    "Browse verified, independent delivery and errand drivers by location and service, and request a quote directly — grocery, food, furniture, courier, pharmacy, senior errands, moving, and auto parts.",
   alternates: { canonical: `${SITE_URL}/find-a-driver` },
 };
 
@@ -18,7 +19,15 @@ export default async function FindADriverPage() {
   // Drivers who skipped service selection at setup aren't listed until they pick one.
   const rows = await prisma.driverProfile.findMany({
     where: { verified: true, primaryService: { not: null } },
-    include: { documents: true },
+    include: {
+      documents: true,
+      // Only what the card needs: ratings for the average, credentials for
+      // the badges. Same public-safety rules as the profile page apply in
+      // cardExperience() (rating gated on 3+ loads, credentials must be
+      // verified and unexpired).
+      verifiedLoads: { select: { rating: true } },
+      licenses: { select: { kind: true, customLabel: true, status: true, expiresAt: true } },
+    },
     // Premium first, then newest. The component also re-groups Premium into
     // a "Featured" section visually; ordering here keeps SSR snapshot tidy.
     orderBy: [{ tier: "desc" }, { createdAt: "desc" }],
@@ -28,6 +37,7 @@ export default async function FindADriverPage() {
   for (const db of rows) {
     const service = serviceFromEnum(db.primaryService);
     if (!service) continue;
+    const xp = cardExperience({ verifiedLoads: db.verifiedLoads, licenses: db.licenses });
     drivers.push({
       id: db.id,
       name: `${db.firstName} ${db.lastName}`.trim(),
@@ -38,6 +48,8 @@ export default async function FindADriverPage() {
       headline: db.headline ?? "",
       photoUrl: db.documents.find((d) => docKeyFromKind(d.kind) === "profilePhoto")?.blobUrl,
       tier: db.tier,
+      rating: xp.rating,
+      credentials: xp.credentials,
     });
   }
 

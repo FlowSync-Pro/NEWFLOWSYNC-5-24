@@ -129,3 +129,23 @@ export function buildProfileExperience(src: ProfileExperienceSource, maxPhotos =
     })),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Directory card summary
+// ---------------------------------------------------------------------------
+
+/**
+ * The compact experience shown on a directory card: the public rating (same
+ * MIN_RATINGS_FOR_PUBLIC gate as the profile) and verified, unexpired
+ * credential labels. Reuses the profile rules so a card never claims something
+ * the driver's own profile page wouldn't.
+ */
+export function cardExperience(src: {
+  verifiedLoads: RatedLoad[];
+  licenses: CredentialLike[];
+}): { rating: number | null; credentials: string[] } {
+  return {
+    rating: showPublicRating(src.verifiedLoads) ? averageRating(src.verifiedLoads) : null,
+    credentials: publicCredentials(src.licenses).map((c) => licenseLabel(c.kind, c.customLabel)),
+  };
+}

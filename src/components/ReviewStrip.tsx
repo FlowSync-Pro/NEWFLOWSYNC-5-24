@@ -21,6 +21,11 @@ export interface ReviewStripProps {
   minToShow?: number;
   /** Show a "Read all" link at the bottom pointing to /reviews. */
   showSeeAllLink?: boolean;
+  /** Optional section heading. Rendered INSIDE the same null-guard as the
+   * reviews, so a caller can never be left with a heading and nothing beneath
+   * it when there aren't enough reviews yet. */
+  heading?: string;
+  subheading?: string;
 }
 
 /** Server component — renders only real, admin-approved reviews. Returns null
@@ -29,15 +34,29 @@ export default async function ReviewStrip({
   take = 3,
   minToShow = 3,
   showSeeAllLink = true,
+  heading,
+  subheading,
 }: ReviewStripProps) {
-  const [reviews, summary] = await Promise.all([
-    listPublicReviews(take),
-    reviewSummary(),
-  ]);
+  // Never let a database hiccup take down the page this sits on. On the
+  // homepage this also lets `next build` succeed with no DATABASE_URL — the
+  // section simply renders nothing until the first ISR regeneration.
+  let reviews: Awaited<ReturnType<typeof listPublicReviews>> = [];
+  let summary: Awaited<ReturnType<typeof reviewSummary>> = { count: 0, averageRating: 0 };
+  try {
+    [reviews, summary] = await Promise.all([listPublicReviews(take), reviewSummary()]);
+  } catch {
+    return null;
+  }
   if (reviews.length < minToShow) return null;
 
   return (
     <section className="mx-auto mt-8 max-w-3xl">
+      {heading && (
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{heading}</h2>
+          {subheading && <p className="mt-4 text-muted">{subheading}</p>}
+        </div>
+      )}
       <div className="mb-5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Stars rating={summary.averageRating} />
