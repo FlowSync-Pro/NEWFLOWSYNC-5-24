@@ -21,8 +21,11 @@ export default async function AccountExperiencePage() {
     where: { userId: session.userId },
     include: {
       licenses: { orderBy: { uploadedAt: "desc" } },
+      // Only the most recent trips are loaded for the photo picker; the
+      // headline count comes from _count so it's never capped by `take`.
       trips: { orderBy: { date: "desc" }, take: 60 },
       verifiedLoads: { select: { id: true, rating: true } },
+      _count: { select: { trips: true } },
     },
   });
   if (!profile) redirect("/account/setup");
@@ -48,7 +51,7 @@ export default async function AccountExperiencePage() {
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="card p-4">
-            <p className="text-xl font-bold">{profile.trips.length}</p>
+            <p className="text-xl font-bold">{profile._count.trips}</p>
             <p className="mt-0.5 text-xs text-muted">Deliveries you&apos;ve logged</p>
           </div>
           <div className="card p-4">

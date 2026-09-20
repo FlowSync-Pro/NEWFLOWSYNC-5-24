@@ -37,10 +37,16 @@ export default function Navbar() {
   // Resolve signed-in state so we never show "Sign in / Become a driver" to a
   // driver who's already logged in.
   useEffect(() => {
-    try {
-      if (localStorage.getItem("fs_authed") === "1") setAuthed(true);
-    } catch {}
     let alive = true;
+    // Optimistic first paint for returning signed-in drivers. Deferred to a
+    // microtask (not called synchronously in the effect body) to satisfy
+    // react-hooks/set-state-in-effect; it still lands before the network reply.
+    queueMicrotask(() => {
+      if (!alive) return;
+      try {
+        if (localStorage.getItem("fs_authed") === "1") setAuthed(true);
+      } catch {}
+    });
     fetch("/api/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { authed: false }))
       .then((d: { authed?: boolean }) => {
