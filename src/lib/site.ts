@@ -6,5 +6,7 @@ export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://flowsyncdriver.com";
 
 // Support / contact address shown in the footer, on checkout next to the
-// guarantee, and on the legal pages.
-export const SUPPORT_EMAIL = "drivers@flowsyncpro.io";
+// guarantee, and on the legal pages. Must be a mailbox someone actually reads —
+// the previous address (drivers@flowsyncpro.io) wasn't receiving mail, and
+// drivers who can't reach support go to Stripe disputes instead.
+export const SUPPORT_EMAIL = "support@flowsyncdriver.com";
