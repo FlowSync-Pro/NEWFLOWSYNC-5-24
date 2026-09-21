@@ -162,13 +162,26 @@ given fresh, per specific action.
 
 ## D. Offers & pricing (must always be exact)
 
-**ACTIVE — only reference or build for these two:**
-- **$17 entry tier** (sedan / SUV / minivan operators): auto-delivers apps checklist,
-  ebook, Telegram community access, public driver profile, 30-day action plan, lead-gen
-  tool; walks them through DOT / EIN / LLC setup.
-- **$97 custom website build** (the driver's own site to land direct clients).
+**ACTIVE — only reference or build for these:**
+- **$17 Verified listing** (one-time; any vehicle, sedan through box truck): a public
+  driver profile in the FlowSync directory with direct customer bookings; 14 step-by-step
+  guides (DOT & EIN setup, LLC vs sole proprietor, insurance, quarterly taxes &
+  write-offs, pricing for profit, first reviews, finding customers on Nextdoor / Yelp /
+  Thumbtack / Craigslist / Indeed); the fair-quote calculator; the Profit & Loss tracker;
+  My Services (the driver's own service menu with custom pricing); the Driver Roadmap;
+  Telegram community access. Covered by the 30-day guarantee below.
+- **$97 Premium upgrade** (one-time): Premium badge & elevated profile styling, priority
+  placement above other drivers in the directory, the ability to link an external
+  website, and done-for-you setup (we build out the profile, service menu & website).
 
-Vehicle type is the key decision point between the two tiers.
+Both tiers serve every vehicle type. The upgrade decision is about visibility and
+placement, not vehicle.
+
+**SEPARATE from both tiers — the Curri fleet:** a $97 one-time joining fee; 15%
+dispatching fee, paid every Friday (20% for payout in 1–2 business days); no monthly fee
+and no insurance charges — we only earn on loads we bring the driver. Paid via Stripe
+Connect as an independent contractor (1099 at year end). Open to any signed-in driver;
+never a Premium perk.
 
 **ON STANDBY — do NOT pitch, build CTAs for, or surface anywhere:**
 - $197 four-week coaching program
