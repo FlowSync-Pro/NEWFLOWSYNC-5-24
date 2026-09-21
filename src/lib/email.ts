@@ -135,17 +135,18 @@ export async function sendDriverApprovedEmail(opts: {
   return send(opts.to, "You're verified on FlowSync", shell("You're verified", body));
 }
 
+// Premium and the Curri fleet are separate products that happen to share a
+// price point. This email covers Premium only — pitching the fleet here made
+// buyers think the fleet was part of what they'd just bought, and the pay terms
+// it quoted were wrong. Cross-sell the fleet in its own message instead.
 export async function sendPremiumUpgradeEmail(opts: {
   to: string;
   firstName: string;
   servicesUrl: string;
-  fleetUrl: string;
 }) {
   const body = `
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName} — you've been upgraded to <strong style="color:#25e07a">FlowSync Premium</strong>.</p>
     <p style="color:#aebac1;line-height:1.6">Your account now includes the <strong style="color:#e7ecef">premium badge</strong>, elevated profile styling, priority placement in the directory, and your own external website link.</p>
-    <p style="color:#aebac1;line-height:1.6">You can also ask to join the FlowSync / Barham Transport carrier fleet for Curri. Nearby loads come through our dispatch relay. You choose to claim, bid, or reject — nothing is required. Standard pay is 1–2 business days after delivery completion. Instant pay is available with Curri's 6% instant-payout fee and a Stripe account to receive the transfer.</p>
-    <p style="margin-top:8px">${button(opts.fleetUrl, "Read the Curri fleet guide")}</p>
     <p style="margin-top:8px">${button(opts.servicesUrl, "Build your service menu")}</p>`;
   return send(opts.to, "You've been upgraded to FlowSync Premium", shell("Welcome to Premium", body));
 }

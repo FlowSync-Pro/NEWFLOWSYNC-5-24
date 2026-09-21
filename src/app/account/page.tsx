@@ -52,9 +52,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <Link href="/account/trips" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Operations</Link>
           <Link href="/account/services" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">My Services</Link>
           <Link href="/account/experience" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Experience</Link>
-          {premium && (
-            <Link href="/account/curri-fleet" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Curri fleet</Link>
-          )}
+          <Link href="/account/curri-fleet" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Curri fleet</Link>
           <Link href="/grow" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Resources</Link>
           <Link href="/account/bookings" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Bookings</Link>
           <Link href="/account/share-experience" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Leave a review</Link>
@@ -64,20 +62,19 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <div className="mx-auto mt-6 max-w-3xl space-y-5 px-5">
           <FounderLoom firstName={profile.firstName} />
           <TelegramCTA />
-          {premium && (
-            <Link
-              href="/account/curri-fleet"
-              className="flex items-center justify-between gap-4 rounded-2xl border border-accent/30 bg-accent-soft p-5 transition-colors hover:bg-accent-soft/80"
-            >
-              <div>
-                <p className="text-sm font-bold text-accent">Curri fleet</p>
-                <p className="mt-0.5 text-xs text-muted">
-                  How to get activated on our carrier account, how nearby loads work, and how pay works.
-                </p>
-              </div>
-              <span className="shrink-0 text-sm font-medium text-accent">Open guide →</span>
-            </Link>
-          )}
+          <Link
+            href="/account/curri-fleet"
+            className="flex items-center justify-between gap-4 rounded-2xl border border-accent/30 bg-accent-soft p-5 transition-colors hover:bg-accent-soft/80"
+          >
+            <div>
+              <p className="text-sm font-bold text-accent">Curri fleet</p>
+              <p className="mt-0.5 text-xs text-muted">
+                A separate opportunity — get activated on our carrier account, see how nearby loads
+                work, and what it costs.
+              </p>
+            </div>
+            <span className="shrink-0 text-sm font-medium text-accent">Open guide →</span>
+          </Link>
         </div>
 
         {/* The Roadmap is the dashboard. Everything else is a side trip. */}
