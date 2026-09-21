@@ -30,7 +30,7 @@ export default function TrustBlock() {
             <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-accent hover:underline">
               {SUPPORT_EMAIL}
             </a>{" "}
-            with any question, before or after you pay. We answer within 24 hours.
+            with any question, before or after you pay. We reply within one business day.
           </p>
         </div>
 
