@@ -174,8 +174,13 @@ Vehicle type is the key decision point between the two tiers.
 - $197 four-week coaching program
 - $49/month subscription
 
-**Refund policy (state exactly):** tied to checklist completion **WITH PROOF**, not to
-income outcomes. The onboarding-call portion is **non-refundable**.
+**Refund policy (state exactly):** the one-time driver listing fee carries a
+**30-day money-back guarantee — full refund, no questions asked**, requested by emailing
+support within 30 days of purchase. It is tied to the driver's satisfaction, **not** to
+income outcomes, and never requires proof of anything. This is what the live
+`/refund-policy` page and the checkout guarantee box have promised every buyer since
+May 2026 — do **not** reintroduce a proof/checklist requirement or a non-refundable
+portion without the owner's explicit approval (and, per Section E, an attorney's review).
 
 ## E. Legal-safety guardrails
 
