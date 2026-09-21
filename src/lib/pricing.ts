@@ -63,7 +63,6 @@ export const TIERS: Record<TierId, Tier> = {
     highlight: true,
     features: [
       "Everything in Verified",
-      "★ My Services — build your own menu with custom pricing",
       "Premium badge & elevated profile styling",
       "Add your own external website link",
       "Priority placement in the directory",
