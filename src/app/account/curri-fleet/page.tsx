@@ -124,14 +124,9 @@ export default async function CurriFleetPage() {
             of the standard 15%. Like all payouts, it goes to your Stripe account — see the
             Stripe setup below.
           </p>
-          <a
-            href="https://stripe.com"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-block text-sm font-medium text-accent hover:underline"
-          >
-            Open Stripe’s official site →
-          </a>
+          {/* No self-serve stripe.com link here: under Stripe Connect the owner
+              sends the onboarding link, and the required-setup section below
+              tells the driver to ask for it. */}
         </section>
 
         {/* Stripe is how every payout is delivered and how the 1099 gets issued, so
@@ -142,8 +137,8 @@ export default async function CurriFleetPage() {
           <p className="mt-2 text-sm leading-relaxed text-foreground/90">
             We pay you as an independent contractor through Stripe, and you&apos;ll receive a{" "}
             <strong className="font-semibold text-foreground">1099 for your taxes</strong> at the
-            end of the year. A free Stripe account is where every payout lands — standard Friday
-            pay and faster payouts alike.
+            end of the year. We&apos;ll send you a Stripe setup link — that&apos;s where every payout
+            lands, standard Friday pay and faster payouts alike.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-foreground/90">
             <strong className="font-semibold text-foreground">Don&apos;t have one yet? That won&apos;t
@@ -151,13 +146,14 @@ export default async function CurriFleetPage() {
             way while you get Stripe set up — but please get it done, because after that all pay
             goes through Stripe.
           </p>
+          {/* Payouts run through Stripe Connect: the owner generates the onboarding
+              link, so drivers ask for it rather than opening an unconnected
+              stripe.com account on their own. */}
           <a
-            href="https://stripe.com"
-            target="_blank"
-            rel="noreferrer"
+            href={`mailto:${SUPPORT_EMAIL}?subject=Stripe%20setup%20link`}
             className="btn-primary mt-4 inline-flex rounded-full px-6 py-2.5 text-sm"
           >
-            Create a free Stripe account →
+            Ask for your Stripe setup link →
           </a>
         </section>
 
@@ -178,7 +174,7 @@ export default async function CurriFleetPage() {
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground/90">
             <li>The email you used to sign up on FlowSync</li>
             <li>Your name and city (so we can add you correctly)</li>
-            <li>The email on your Stripe account — or tell us you&apos;re still setting one up</li>
+            <li>The email you want your Stripe setup link sent to</li>
             <li>Whether you want standard pay (every Friday, 15%) or faster pay (1–2 business days, 20%)</li>
           </ul>
           <a

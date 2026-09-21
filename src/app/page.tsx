@@ -66,8 +66,8 @@ const PERKS = [
     body: "Slow grocery day? Take a moving job or a courier run. Diversify how you earn.",
   },
   {
-    title: "Fast, transparent pay",
-    body: "See your earnings up front and cash out the same day. No surprises, no hidden math.",
+    title: "Transparent pay",
+    body: "See what a job pays before you take it. No surprises, no hidden math.",
   },
 ];
 

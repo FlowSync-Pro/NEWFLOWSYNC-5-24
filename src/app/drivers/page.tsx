@@ -18,7 +18,7 @@ const COMPARE = [
   { label: "Customer relationship", flowsync: "Yours to keep", others: "Owned by the app" },
   { label: "Services available", flowsync: "8 categories", others: "Usually 1" },
   { label: "Set your own rates", flowsync: "Yes", others: "Rarely" },
-  { label: "Same-day pay", flowsync: "Yes", others: "Sometimes (for a fee)" },
+  { label: "Pay shown before you accept", flowsync: "Yes", others: "Varies" },
 ];
 
 const FAQ = [
@@ -42,8 +42,8 @@ const FAQ = [
     a: "When you pick a service, we build a profile tailored to it — highlighting the certifications, equipment, and specialties customers care about for that exact job.",
   },
   {
-    q: "When do I get paid?",
-    a: "Earnings are shown up front and you can cash out the same day. No guessing, no hidden math.",
+    q: "What will a job pay me?",
+    a: "You see exactly what a job pays before you accept it. No guessing, no hidden math.",
   },
 ];
 
@@ -83,7 +83,7 @@ export default function DriversPage() {
           {[
             { v: "$0", l: "monthly fees — one-time listing only" },
             { v: "$40–75/hr", l: "earning range in moving & hauling" },
-            { v: "Same day", l: "cash out on completed jobs" },
+            { v: "Up front", l: "see what every job pays before you accept" },
           ].map((x, i) => (
             <Reveal key={x.v} delay={i * 80}>
               <div className="card h-full p-8 text-center">

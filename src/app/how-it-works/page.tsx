@@ -34,8 +34,8 @@ const STEPS = [
   {
     n: "04",
     title: "Accept jobs & get paid",
-    body: "See nearby requests, accept what fits your day, and cash out the same day. Build reviews and repeat customers under your own name.",
-    points: ["Transparent up-front pay", "Same-day cash out", "Keep your customer relationships"],
+    body: "See nearby requests, see what each one pays, and accept what fits your day. Build reviews and repeat customers under your own name.",
+    points: ["Transparent up-front pay", "Set your own rates", "Keep your customer relationships"],
   },
 ];
 
