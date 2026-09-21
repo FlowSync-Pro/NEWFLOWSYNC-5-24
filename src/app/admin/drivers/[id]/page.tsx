@@ -9,6 +9,7 @@ import { getService } from "@/lib/services";
 import { money, sumTrips, tripStats, type TripView } from "@/lib/trips";
 import TripMap from "@/components/TripMap";
 import AdminDriverExperience from "@/components/AdminDriverExperience";
+import AdminReviewInvite from "@/components/AdminReviewInvite";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Driver operations", robots: { index: false } };
@@ -32,6 +33,12 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
     },
   });
   if (!driver) notFound();
+
+  // Reviews hang off the user, not the profile.
+  const review = await prisma.review.findUnique({
+    where: { userId: driver.userId },
+    select: { status: true },
+  });
 
   const trips: TripView[] = driver.trips.map((t) => ({
     id: t.id, date: t.date.toISOString(), pickupAddress: t.pickupAddress, dropoffAddress: t.dropoffAddress,
@@ -62,6 +69,16 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
           <Stat label="Earnings" value={money(totals.earningsCents)} accent />
           <Stat label="Expenses" value={money(totals.expensesCents)} />
           <Stat label="Net profit" value={money(totals.profitCents)} accent />
+        </div>
+
+        {/* Review invite — the only way a driver gets to leave a review */}
+        <div className="mt-6">
+          <AdminReviewInvite
+            driverProfileId={driver.id}
+            driverFirstName={driver.firstName}
+            reviewStatus={review?.status ?? null}
+            verifiedLoadCount={driver.verifiedLoads.length}
+          />
         </div>
 
         {/* Experience: verified loads, ratings, credentials */}

@@ -140,7 +140,7 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
   await sendPremiumUpgradeEmail({
     to: profile.user.email,
     firstName: profile.firstName,
-    servicesUrl: `${base}/account/services`,
+    accountUrl: `${base}/account`,
   });
 
   // Server-side Purchase event to Meta (CAPI). Same event_id as the browser
@@ -249,6 +249,9 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
       firstName: md.firstName || "there",
       tempPassword,
       signInUrl: `${base}/signin`,
+      // The one-time-offer page identifies the driver by this paid listing
+      // session, so the email's upgrade button works without signing in.
+      upgradeUrl: `${base}/welcome/premium-offer?session_id=${encodeURIComponent(session.id)}`,
     });
     // A paying driver whose welcome email didn't send can't sign in. That used
     // to fail silently; now it pings the owner over Telegram (a channel that

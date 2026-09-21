@@ -4,18 +4,30 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { requireAdmin } from "@/lib/admin";
+import { inviteMatchesUser } from "@/lib/review-invite";
 
 export interface ReviewState {
   ok?: boolean;
   error?: string;
 }
 
-/** Driver submits (or edits) their FlowSync signup-experience review.
- * One per driver — re-submitting overwrites their existing one and resets it
- * to PENDING for admin re-approval. */
+/** Driver submits (or edits) their FlowSync review.
+ * Reviews are by invitation: a NEW review needs a valid invite token for this
+ * exact signed-in driver (the owner sends those only to drivers actively
+ * running loads with us). A driver who already has a review may edit it
+ * without a token — they were vetted once, and edits reset to PENDING for
+ * re-approval anyway. One per driver either way. */
 export async function submitReview(_prev: ReviewState, formData: FormData): Promise<ReviewState> {
   const session = await getSession();
   if (!session) return { error: "Please sign in to leave a review." };
+
+  const invite = String(formData.get("invite") ?? "");
+  if (!inviteMatchesUser(invite, session.userId)) {
+    const existing = await prisma.review.findUnique({ where: { userId: session.userId }, select: { id: true } });
+    if (!existing) {
+      return { error: "Reviews are by invitation. If you're running loads with us, ask Nas for your review link." };
+    }
+  }
 
   const ratingRaw = String(formData.get("rating") ?? "");
   const text = String(formData.get("text") ?? "").trim();

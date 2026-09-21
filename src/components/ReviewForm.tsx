@@ -7,13 +7,15 @@ const inputCls =
   "w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition-colors focus:border-accent";
 
 export interface ReviewFormProps {
+  /** Signed invite token from the review link — required for a first review. */
+  inviteToken?: string;
   initialRating?: number;
   initialText?: string;
   /** Status of the existing review, if any — informs the on-screen messaging. */
   initialStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
 }
 
-export default function ReviewForm({ initialRating, initialText, initialStatus }: ReviewFormProps) {
+export default function ReviewForm({ inviteToken, initialRating, initialText, initialStatus }: ReviewFormProps) {
   const [state, action, pending] = useActionState<ReviewState, FormData>(submitReview, {});
   const [rating, setRating] = useState<number>(initialRating ?? 0);
   const [text, setText] = useState<string>(initialText ?? "");
@@ -23,9 +25,10 @@ export default function ReviewForm({ initialRating, initialText, initialStatus }
 
   return (
     <form action={action} className="space-y-5">
+      {inviteToken && <input type="hidden" name="invite" value={inviteToken} />}
       {/* Stars */}
       <div>
-        <p className="text-sm font-medium">How was your signup experience?</p>
+        <p className="text-sm font-medium">How has your experience with FlowSync been?</p>
         <div className="mt-2 flex gap-2">
           {[1, 2, 3, 4, 5].map((n) => (
             <button
@@ -57,7 +60,7 @@ export default function ReviewForm({ initialRating, initialText, initialStatus }
           rows={5}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="What was it like signing up? Anything that surprised you (good or bad)? Other drivers thinking about joining want to hear it."
+          placeholder="What has it been like working with FlowSync? Anything that surprised you (good or bad)? Other drivers thinking about joining want to hear it."
           className={inputCls}
           maxLength={600}
         />

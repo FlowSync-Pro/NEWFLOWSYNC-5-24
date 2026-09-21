@@ -6,7 +6,6 @@ import { getSession } from "@/lib/session";
 import { getAdminUserId } from "@/lib/admin";
 import { currentStreak, parseProgress, todayKey } from "@/lib/roadmap";
 import { referralStats, REWARD_THRESHOLD } from "@/lib/referrals";
-import { isPremiumTier } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import RoadmapTracker from "@/components/RoadmapTracker";
 import ReferralCard from "@/components/ReferralCard";
@@ -27,14 +26,16 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   if (!session) redirect("/signin");
   if (session.mustResetPassword) redirect("/reset-password");
 
-  const [profile, user] = await Promise.all([
-    prisma.driverProfile.findUnique({ where: { userId: session.userId }, select: { firstName: true, tier: true } }),
+  const [profile, user, review] = await Promise.all([
+    prisma.driverProfile.findUnique({ where: { userId: session.userId }, select: { firstName: true } }),
     prisma.user.findUnique({ where: { id: session.userId }, select: { roadmapData: true, email: true } }),
+    // Reviews are invite-only; the chip only makes sense for a driver who
+    // already has one to edit. Invitees arrive through their link instead.
+    prisma.review.findUnique({ where: { userId: session.userId }, select: { id: true } }),
   ]);
   if (!profile) redirect("/account/setup");
 
   const isAdmin = !!(await getAdminUserId());
-  const premium = isPremiumTier(profile.tier);
   const justRegistered = (await searchParams).registered === "1";
   const progress = parseProgress(user?.roadmapData);
   const ref = await referralStats(session.userId);
@@ -55,7 +56,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <Link href="/account/curri-fleet" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Curri fleet</Link>
           <Link href="/grow" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Resources</Link>
           <Link href="/account/bookings" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Bookings</Link>
-          <Link href="/account/share-experience" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Leave a review</Link>
+          {review && <Link href="/account/share-experience" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Edit my review</Link>}
         </div>
 
         {/* Start here — single focus block at the top */}

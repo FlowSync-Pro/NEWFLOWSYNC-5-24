@@ -4,11 +4,41 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import { generateTempPassword, hashPassword } from "@/lib/password";
-import { sendDriverApprovedEmail, sendDriverWelcomeEmail, sendPremiumUpgradeEmail, sendTempPasswordEmail } from "@/lib/email";
+import { sendDriverApprovedEmail, sendDriverWelcomeEmail, sendPremiumUpgradeEmail, sendReviewInviteEmail, sendTempPasswordEmail } from "@/lib/email";
 import { serviceToEnum } from "@/lib/enums";
 import { getService } from "@/lib/services";
 import type { ServiceId } from "@/lib/services";
 import { SITE_URL } from "@/lib/site";
+import { createReviewInviteToken, REVIEW_INVITE_DAYS } from "@/lib/review-invite";
+
+/**
+ * Invite a driver who is actively running loads with us to leave a review.
+ * Emails them a signed link and returns the same link so the admin can text it
+ * (the owner reaches drivers by text more than email). Nothing is stored — the
+ * link itself is the permission, valid for REVIEW_INVITE_DAYS.
+ */
+export async function sendReviewInvite(
+  driverProfileId: string,
+): Promise<{ ok: boolean; inviteUrl?: string; emailSent?: boolean; expiresInDays?: number; error?: string }> {
+  await requireAdmin();
+  const driver = await prisma.driverProfile.findUnique({
+    where: { id: driverProfileId },
+    include: { user: { select: { id: true, email: true } } },
+  });
+  if (!driver) return { ok: false, error: "Driver not found." };
+
+  const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+  const token = createReviewInviteToken(driver.user.id);
+  const inviteUrl = `${base}/account/share-experience?invite=${encodeURIComponent(token)}`;
+
+  const { sent } = await sendReviewInviteEmail({
+    to: driver.user.email,
+    firstName: driver.firstName,
+    inviteUrl,
+  });
+
+  return { ok: true, inviteUrl, emailSent: sent, expiresInDays: REVIEW_INVITE_DAYS };
+}
 
 /** Admin-issues a temporary password for a driver who's locked out.
  * Returns the temp password so the admin can relay it directly (e.g. if email
@@ -51,7 +81,7 @@ export async function setDriverTier(driverProfileId: string, tier: "STANDARD" | 
     await sendPremiumUpgradeEmail({
       to: driver.user.email,
       firstName: driver.firstName,
-      servicesUrl: `${base}/account/services`,
+      accountUrl: `${base}/account`,
     });
   }
 
