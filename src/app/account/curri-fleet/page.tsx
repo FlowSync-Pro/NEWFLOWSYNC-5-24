@@ -31,7 +31,7 @@ const STEPS = [
   },
   {
     title: "Get paid every Friday",
-    body: "Standard pay runs weekly — completed deliveries are paid out every Friday, with a 15% dispatching fee taken from the load. If you want your money sooner, see the faster-payout option below.",
+    body: "Curri pays our fleet account, and we pay you — as an independent contractor, by Stripe transfer. Standard pay runs weekly: completed deliveries are paid out every Friday, with a 15% dispatching fee taken from the load. If you want your money sooner, see the faster-payout option below.",
   },
 ];
 
@@ -121,7 +121,8 @@ export default async function CurriFleetPage() {
             <strong className="font-semibold text-foreground">1–2 business days</strong> after a
             completed delivery. That option carries a{" "}
             <strong className="font-semibold text-foreground">20% dispatching fee</strong> instead
-            of the standard 15%. You need a Stripe account set up to receive payouts.
+            of the standard 15%. Like all payouts, it goes to your Stripe account — see the
+            Stripe setup below.
           </p>
           <a
             href="https://stripe.com"
@@ -130,6 +131,33 @@ export default async function CurriFleetPage() {
             className="mt-4 inline-block text-sm font-medium text-accent hover:underline"
           >
             Open Stripe’s official site →
+          </a>
+        </section>
+
+        {/* Stripe is how every payout is delivered and how the 1099 gets issued, so
+            a driver needs it before their first real pay cycle. The grace period
+            is stated plainly so nobody's first paycheck is held hostage to setup. */}
+        <section className="mt-6 rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] p-6">
+          <h2 className="text-lg font-bold tracking-tight text-amber-300">Set up a Stripe account (required)</h2>
+          <p className="mt-2 text-sm leading-relaxed text-foreground/90">
+            We pay you as an independent contractor through Stripe, and you&apos;ll receive a{" "}
+            <strong className="font-semibold text-foreground">1099 for your taxes</strong> at the
+            end of the year. A free Stripe account is where every payout lands — standard Friday
+            pay and faster payouts alike.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-foreground/90">
+            <strong className="font-semibold text-foreground">Don&apos;t have one yet? That won&apos;t
+            hold up your first loads.</strong> We can send your first two or three payouts another
+            way while you get Stripe set up — but please get it done, because after that all pay
+            goes through Stripe.
+          </p>
+          <a
+            href="https://stripe.com"
+            target="_blank"
+            rel="noreferrer"
+            className="btn-primary mt-4 inline-flex rounded-full px-6 py-2.5 text-sm"
+          >
+            Create a free Stripe account →
           </a>
         </section>
 
@@ -150,6 +178,7 @@ export default async function CurriFleetPage() {
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground/90">
             <li>The email you used to sign up on FlowSync</li>
             <li>Your name and city (so we can add you correctly)</li>
+            <li>The email on your Stripe account — or tell us you&apos;re still setting one up</li>
             <li>Whether you want standard pay (every Friday, 15%) or faster pay (1–2 business days, 20%)</li>
           </ul>
           <a
