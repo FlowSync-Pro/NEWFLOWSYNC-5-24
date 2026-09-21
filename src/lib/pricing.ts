@@ -59,7 +59,7 @@ export const TIERS: Record<TierId, Tier> = {
     id: "premium",
     price: 97,
     name: "Premium",
-    tagline: "Run your business your way — build your own service menu.",
+    tagline: "Stand out in the directory — badge, priority placement, and your own website link.",
     highlight: true,
     features: [
       "Everything in Verified",
