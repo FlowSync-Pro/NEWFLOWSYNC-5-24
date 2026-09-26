@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getStripe } from "@/lib/stripe";
-import { TIERS } from "@/lib/pricing";
+import { FLEET, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import TrackEvent from "@/components/TrackEvent";
 import PremiumOfferButtons from "@/components/PremiumOfferButtons";
+import { FleetBiddingStory, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
 
 export const dynamic = "force-dynamic";
 
@@ -142,21 +143,44 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
           </div>
         </div>
 
+        {/* Second, separate add-on: the Curri fleet invite at its one-time $97.
+            This is the only place it's ever $97 — everywhere else it's $197. */}
+        <div className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft/40 p-6 sm:p-7">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
+                Only on this page
+              </span>
+              <h2 className="mt-3 text-xl font-bold tracking-tight">Also add the Curri fleet invite</h2>
+            </div>
+            <div className="text-right">
+              <span className="text-3xl font-extrabold text-accent">${FLEET.addOnPrice}</span>
+              <span className="ml-2 text-sm text-muted line-through">${FLEET.price}</span>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-muted">
+            Separate from Premium. Get added to our carrier account and have loads dispatched to you — we
+            bid them, you run them, paid every Friday. Pass on it here and it&apos;s ${FLEET.price}{" "}
+            from your account later.
+          </p>
+          <div className="mt-4"><FleetTerms /></div>
+          <div className="mt-5 border-t border-border pt-5"><FleetBiddingStory compact /></div>
+        </div>
+
         {/* CTA */}
         <div className="card mt-8 p-7">
           <div className="flex items-baseline justify-between">
-            <span className="text-base font-semibold">Add Premium today</span>
-            <div className="text-right">
-              <span className="text-3xl font-extrabold text-accent">${TIERS.premium.price}</span>
-              <span className="ml-1 text-xs text-muted">one-time</span>
-            </div>
+            <span className="text-base font-semibold">Add to your listing</span>
+            <span className="text-xs text-muted">each one-time · pick one</span>
           </div>
           <p className="mt-2 text-sm text-muted">
-            Same 30-day money-back guarantee. Same secure Stripe checkout.
+            Same 30-day money-back guarantee. Same secure Stripe checkout. Premium stays ${TIERS.premium.price}{" "}
+            from your account any time; the fleet invite is ${FLEET.addOnPrice} only here.
           </p>
           <div className="mt-6">
             <PremiumOfferButtons sessionId={sessionId} />
           </div>
+          <div className="mt-5"><FleetDisclaimer /></div>
         </div>
       </div>
     </div>

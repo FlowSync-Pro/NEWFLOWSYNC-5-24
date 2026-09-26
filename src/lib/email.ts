@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { SUPPORT_EMAIL } from "./site";
-import { TIERS } from "./pricing";
+import { FLEET, TIERS } from "./pricing";
 
 // Lazy + graceful: when RESEND_API_KEY isn't set, email sends are skipped (logged)
 // so the rest of the flow still works. Swap nothing to go live — just set the keys.
@@ -233,6 +233,33 @@ export async function sendPremiumUpgradeEmail(opts: {
     <p ${P}><strong style="color:#e7ecef">Reply to this email with those three</strong> and I'll come back with a plan built specifically around where you actually are.</p>
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
   return send(opts.to, "You're in — FlowSync Premium (3 quick questions)", shell("Welcome to Premium", body));
+}
+
+/**
+ * Sent the moment the Curri fleet invite is paid (either price). The owner
+ * still has to add the driver to the carrier account and send the Stripe
+ * Connect link by hand, so this email's job is to collect what he needs and
+ * set the expectation of what happens next.
+ */
+export async function sendFleetWelcomeEmail(opts: {
+  to: string;
+  firstName: string;
+  fleetUrl: string;
+}) {
+  const body = `
+    <p ${P}>Hey ${opts.firstName} — you're in. Welcome to the Barham Transport fleet.</p>
+    <p ${P}>Here's how the next few days go:</p>
+    <ol style="padding-left:20px;margin:0 0 14px">
+      <li ${LI}><strong style="color:#e7ecef">Reply to this email</strong> with your city, your vehicle (year, make, model), and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}% dispatching fee) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).</li>
+      <li ${LI}><strong style="color:#e7ecef">We add you to our carrier account.</strong> That's what gets you activated so loads can be dispatched to you. Usually same day once we have your details.</li>
+      <li ${LI}><strong style="color:#e7ecef">You get a Stripe setup link</strong> from us. That's where every payout lands, and it's what your 1099 comes from at year end. Don't have Stripe yet? We can send your first two or three payouts another way while you set it up.</li>
+      <li ${LI}><strong style="color:#e7ecef">Loads start showing up.</strong> Claim, bid, or pass — you're never required to take one.</li>
+    </ol>
+    <p ${P}>The full walkthrough, including how we bid loads instead of claiming them at the listed price, is in your account:</p>
+    <p style="margin:0 0 18px">${button(opts.fleetUrl, "Open the fleet guide")}</p>
+    <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.</p>
+    <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
+  return send(opts.to, `You're in the fleet, ${opts.firstName} — next steps`, shell("Welcome to the fleet", body));
 }
 
 /**

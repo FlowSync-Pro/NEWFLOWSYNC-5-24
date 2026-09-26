@@ -68,6 +68,24 @@ export async function adminResetDriverPassword(driverProfileId: string): Promise
   return { ok: true, tempPassword };
 }
 
+/** Mark (or unmark) a driver as a Curri fleet member — for drivers who paid the
+ * joining fee another way (text/payment link) so they're recorded like Stripe
+ * buyers. Only touches the fleetJoinedAt date on the user. */
+export async function setFleetJoined(driverProfileId: string, joined: boolean): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  const driver = await prisma.driverProfile.findUnique({
+    where: { id: driverProfileId },
+    select: { userId: true, user: { select: { fleetJoinedAt: true } } },
+  });
+  if (!driver) return { ok: false, error: "Driver not found." };
+  await prisma.user.update({
+    where: { id: driver.userId },
+    data: { fleetJoinedAt: joined ? (driver.user.fleetJoinedAt ?? new Date()) : null },
+  });
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
 export async function setDriverTier(driverProfileId: string, tier: "STANDARD" | "PREMIUM"): Promise<{ ok: boolean }> {
   await requireAdmin();
   const driver = await prisma.driverProfile.update({

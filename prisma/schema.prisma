@@ -57,6 +57,8 @@ enum PaymentType {
   LISTING
   BUMP
   BOOKING
+  // Curri fleet invite ($197 standalone, or $97 added right after the $17 listing).
+  FLEET
 }
 
 enum PaymentStatus {
@@ -97,6 +99,11 @@ model User {
 
   // Driver review of the FlowSync signup experience (one per driver).
   review Review?
+
+  // Curri fleet membership: set when the fleet invite is paid (Stripe webhook)
+  // or when an admin marks a driver who paid another way. Lives on User, not
+  // DriverProfile, because a homepage buyer may pay before a profile exists.
+  fleetJoinedAt DateTime?
 
   // Referral program: each user's own shareable code, and the code they signed
   // up under (only set once they've paid, so it counts real referrals).

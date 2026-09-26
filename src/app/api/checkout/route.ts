@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { getBump, isPremiumTier, PNL_PRO, TIERS, type TierId } from "@/lib/pricing";
+import { FLEET, getBump, isPremiumTier, PNL_PRO, TIERS, type TierId } from "@/lib/pricing";
 import { pnlProActive } from "@/lib/subscription";
 
 export const runtime = "nodejs";
+
+const fleetLineItem = (unitAmount: number) => ({
+  price_data: { currency: "usd", unit_amount: unitAmount, product_data: { name: FLEET.name } },
+  quantity: 1,
+});
 
 export async function POST(req: Request) {
   const stripe = getStripe();
@@ -13,6 +18,97 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const base = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+
+  // Curri fleet invite, full price, for a signed-in driver (one who passed on
+  // the $97 post-checkout offer, or an existing driver joining later).
+  if (body.intent === "fleet") {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Please sign in to join the fleet." }, { status: 401 });
+    const user = await prisma.user.findUnique({ where: { id: session.userId } });
+    if (!user) return NextResponse.json({ error: "Account not found." }, { status: 400 });
+    if (user.fleetJoinedAt) return NextResponse.json({ error: "You're already in the fleet." }, { status: 400 });
+
+    const fleet = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [fleetLineItem(FLEET.price * 100)],
+      customer_email: user.email,
+      metadata: { type: "fleet", userId: user.id, source: "account" },
+      // Session id in the URL so the fleet page fires the browser Purchase pixel
+      // with the same eventID the webhook sends to CAPI (one event, not two).
+      success_url: `${base}/account/curri-fleet?joined=1&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${base}/account/curri-fleet`,
+    });
+    return NextResponse.json({ url: fleet.url });
+  }
+
+  // Curri fleet invite from the homepage: no account yet. $197 buys the invite
+  // AND creates their full FlowSync account + listing (the webhook handles it
+  // exactly like a listing purchase, then marks the fleet membership).
+  if (body.intent === "fleet-standalone") {
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const firstName = typeof body.firstName === "string" ? body.firstName.trim().slice(0, 60) : "";
+    const lastName = typeof body.lastName === "string" ? body.lastName.trim().slice(0, 60) : "";
+    const ref = typeof body.ref === "string" ? body.ref.trim().slice(0, 16) : "";
+    if (!email || !email.includes("@")) return NextResponse.json({ error: "Enter a valid email." }, { status: 400 });
+    if (!firstName) return NextResponse.json({ error: "Enter your first name." }, { status: 400 });
+
+    const existing = await prisma.user.findUnique({ where: { email }, select: { fleetJoinedAt: true } });
+    if (existing?.fleetJoinedAt) {
+      return NextResponse.json({ error: "That email is already in the fleet — sign in to see your fleet guide." }, { status: 400 });
+    }
+
+    const fleet = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [fleetLineItem(FLEET.price * 100)],
+      customer_email: email,
+      metadata: { type: "fleet", standalone: "1", firstName, lastName, email, ref },
+      // Same post-payment landing as the listing: on-screen activation if the
+      // account is brand new, plus the Purchase pixel with this session's id.
+      success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
+      cancel_url: `${base}/#curri-fleet`,
+    });
+    return NextResponse.json({ url: fleet.url });
+  }
+
+  // Post-payment one-time offer for the fleet: $97 instead of $197, offered
+  // exactly once, right after the $17 listing. Identified by the just-completed
+  // listing Stripe session, same as the Premium OTO below.
+  if (body.intent === "oto-fleet" && typeof body.session_id === "string" && body.session_id) {
+    let original: import("stripe").default.Checkout.Session;
+    try {
+      original = await stripe.checkout.sessions.retrieve(body.session_id);
+    } catch {
+      return NextResponse.json({ error: "Invalid checkout session." }, { status: 400 });
+    }
+    if (original.payment_status !== "paid" || original.metadata?.type !== "listing") {
+      return NextResponse.json({ error: "Original payment not found." }, { status: 400 });
+    }
+    const email = (original.customer_details?.email ?? "").toLowerCase();
+    if (!email) return NextResponse.json({ error: "Could not identify your account." }, { status: 400 });
+
+    let user = await prisma.user.findUnique({ where: { email } });
+    for (let i = 0; i < 5 && !user; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      user = await prisma.user.findUnique({ where: { email } });
+    }
+    if (!user) {
+      return NextResponse.json(
+        { error: "Your account is still being set up. Please try again in a moment from your account." },
+        { status: 503 },
+      );
+    }
+    if (user.fleetJoinedAt) return NextResponse.json({ error: "You're already in the fleet." }, { status: 400 });
+
+    const fleet = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [fleetLineItem(FLEET.addOnPrice * 100)],
+      customer_email: email,
+      metadata: { type: "fleet", userId: user.id, source: "oto" },
+      success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
+      cancel_url: `${base}/welcome/premium-offer?session_id=${encodeURIComponent(body.session_id)}`,
+    });
+    return NextResponse.json({ url: fleet.url });
+  }
 
   // Self-serve upgrade: a signed-in Standard driver pays $97 to go Premium.
   if (body.intent === "upgrade") {

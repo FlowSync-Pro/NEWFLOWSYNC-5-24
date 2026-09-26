@@ -177,14 +177,27 @@ given fresh, per specific action.
 Both tiers serve every vehicle type. The upgrade decision is about visibility and
 placement, not vehicle.
 
-**SEPARATE from both tiers — the Curri fleet:** a $97 one-time joining fee; 15%
-dispatching fee, paid every Friday (20% for payout in 1–2 business days); no monthly fee
-and no insurance charges — we only earn on loads we bring the driver. Paid via Stripe
-Connect as an independent contractor (1099 at year end). Open to any signed-in driver;
-never a Premium perk.
+**SEPARATE from both tiers — the Curri fleet invite** (`FLEET` in `src/lib/pricing.ts`):
+- **$197 one-time** is the price everywhere: the homepage section (where it ALSO creates
+  the buyer's full FlowSync account + listing — one payment covers both) and the
+  in-account fleet guide for any signed-in driver.
+- **$97 one-time** exists in exactly ONE place: the post-checkout offer page shown once,
+  right after a driver pays the $17 listing (`/welcome/premium-offer`, alongside the
+  separate $97 Premium offer). Decline it there and it is $197 from then on. Never
+  surface the $97 fleet price anywhere else.
+- Fees on loads only: 15% dispatching fee, paid every Friday (20% for payout in 1–2
+  business days); no monthly fee and no insurance charges — we only earn on loads we
+  bring the driver. We bid loads rather than claiming at the listed price (the
+  "$100.45 listed / $145 gig driver / $300 our bid" example is real — keep the "one
+  load, not a promise" wording next to it).
+- Paid via Stripe Connect as an independent contractor (1099 at year end). Membership
+  is `User.fleetJoinedAt`, set by the Stripe webhook (`type: "fleet"`) or by the admin
+  toggle on the driver page. Adding the driver to the carrier account and sending the
+  Stripe Connect link are MANUAL owner steps (the webhook pings Telegram).
+- Never a Premium perk. Not to be confused with the standby $197 coaching program below.
 
 **ON STANDBY — do NOT pitch, build CTAs for, or surface anywhere:**
-- $197 four-week coaching program
+- $197 four-week coaching program (a different product from the $197 fleet invite)
 - $49/month subscription
 
 **Refund policy (state exactly):** the one-time driver listing fee carries a

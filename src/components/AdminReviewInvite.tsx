@@ -60,8 +60,8 @@ export default function AdminReviewInvite({ driverProfileId, driverFirstName, re
             {statusLabel} · {verifiedLoadCount} verified load{verifiedLoadCount === 1 ? "" : "s"} logged
           </p>
           <p className="mt-2 text-xs text-muted">
-            Only drivers you invite can leave a review. Send this to {driverFirstName} once they&apos;re
-            actively running loads with you. The link is tied to their account and works for 90 days.
+            Only drivers you invite can leave a review. Send this to {driverFirstName}{" "}
+            once they&apos;re actively running loads with you. The link is tied to their account and works for 90 days.
           </p>
         </div>
         <button

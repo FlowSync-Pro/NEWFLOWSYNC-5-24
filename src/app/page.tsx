@@ -7,6 +7,9 @@ import ServiceCard from "@/components/ServiceCard";
 import ServiceIcon from "@/components/ServiceIcon";
 import Reveal from "@/components/Reveal";
 import ReviewStrip from "@/components/ReviewStrip";
+import FleetCheckout from "@/components/FleetCheckout";
+import { FleetBiddingStory, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
+import { FLEET } from "@/lib/pricing";
 
 // The homepage is the paid-ad landing page, so it must stay fast. Rather than
 // making it dynamic to show reviews, it's regenerated at most once every 5
@@ -281,6 +284,49 @@ export default function Home() {
                 </div>
               </Reveal>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Curri fleet — a separate offer from the listing. Visitors can join
+          directly for $197 (which also creates their account); the $97 price
+          exists only on the post-checkout offer page after a $17 listing. */}
+      <section id="curri-fleet" className="border-t border-border bg-surface/30">
+        <div className="mx-auto max-w-7xl px-5 py-20">
+          <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-start">
+            <Reveal>
+              <p className="text-sm font-semibold uppercase tracking-widest text-accent">Curri fleet · separate from your listing</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                Want loads dispatched to you? Join our carrier fleet.
+              </h2>
+              <p className="mt-4 text-muted">
+                Barham Transport runs its own carrier account on Curri and dispatches nearby loads to
+                fleet drivers. You get on our account instead of waiting on your own approval, we bid
+                the loads, you run the ones you want, and you&apos;re paid every Friday as an independent
+                contractor.
+              </p>
+              <div className="mt-6"><FleetBiddingStory /></div>
+            </Reveal>
+            <Reveal delay={120}>
+              <div className="card p-7">
+                <div className="flex items-baseline justify-between">
+                  <h3 className="text-lg font-bold">Join the fleet</h3>
+                  <div className="text-right">
+                    <span className="text-3xl font-extrabold text-accent">${FLEET.price}</span>
+                    <span className="ml-1 text-xs text-muted">one-time</span>
+                  </div>
+                </div>
+                <div className="mt-4"><FleetTerms standalone /></div>
+                <div className="mt-6"><FleetCheckout mode="standalone" /></div>
+                <p className="mt-4 text-center text-xs text-muted">
+                  Already a FlowSync driver?{" "}
+                  <Link href="/account/curri-fleet" className="font-medium text-accent underline-offset-4 hover:underline">
+                    Join from your account →
+                  </Link>
+                </p>
+                <div className="mt-5 border-t border-border pt-4"><FleetDisclaimer /></div>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>

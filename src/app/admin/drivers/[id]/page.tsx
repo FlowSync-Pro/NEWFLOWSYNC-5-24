@@ -10,6 +10,7 @@ import { money, sumTrips, tripStats, type TripView } from "@/lib/trips";
 import TripMap from "@/components/TripMap";
 import AdminDriverExperience from "@/components/AdminDriverExperience";
 import AdminReviewInvite from "@/components/AdminReviewInvite";
+import AdminFleetToggle from "@/components/AdminFleetToggle";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Driver operations", robots: { index: false } };
@@ -59,6 +60,7 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
           <h1 className="text-3xl font-bold tracking-tight">{name}</h1>
           <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">{getService(serviceFromEnum(driver.primaryService))?.name}</span>
           {driver.tier === "PREMIUM" && <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs font-bold text-amber-300">★ Premium</span>}
+          {driver.user.fleetJoinedAt && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-bold text-accent">🚚 Fleet</span>}
         </div>
         <p className="mt-1 text-sm text-muted">{driver.user.email}{driver.city ? ` · ${driver.city}` : ""}</p>
 
@@ -69,6 +71,12 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
           <Stat label="Earnings" value={money(totals.earningsCents)} accent />
           <Stat label="Expenses" value={money(totals.expensesCents)} />
           <Stat label="Net profit" value={money(totals.profitCents)} accent />
+        </div>
+
+        {/* Fleet membership — set by the Stripe webhook, or by hand here for
+            drivers who paid the joining fee another way. */}
+        <div className="mt-6">
+          <AdminFleetToggle driverProfileId={driver.id} fleetJoinedAt={driver.user.fleetJoinedAt?.toISOString() ?? null} />
         </div>
 
         {/* Review invite — the only way a driver gets to leave a review */}

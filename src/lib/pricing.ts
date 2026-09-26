@@ -74,6 +74,29 @@ export function getTier(id: TierId): Tier {
   return TIERS[id];
 }
 
+/**
+ * The Curri fleet invite — a SEPARATE product from the listing tiers. Drivers
+ * join the Barham Transport carrier account and get loads dispatched to them.
+ *
+ * Two prices, on purpose:
+ *  - `addOnPrice` ($97) is offered exactly once: on the post-checkout offer page
+ *    right after a driver pays the $17 listing. Decline it there and it's gone.
+ *  - `price` ($197) is what everyone else pays — a homepage visitor (whose $197
+ *    also creates their full FlowSync account and listing) or a signed-in driver
+ *    who passed on the $97 offer.
+ *
+ * Fees are on loads only: 15% dispatching, paid every Friday; 20% for a payout
+ * in 1–2 business days. No monthly fee, no insurance charge.
+ */
+export const FLEET = {
+  id: "curri-fleet",
+  name: "Curri fleet invite",
+  price: 197,
+  addOnPrice: 97,
+  dispatchFeePercent: 15,
+  fastPayoutFeePercent: 20,
+};
+
 /** Accepts the DB enum ("PREMIUM") or the lowercase id ("premium"). */
 export function isPremiumTier(tier?: string | null): boolean {
   return (tier ?? "").toUpperCase() === "PREMIUM";

@@ -7,8 +7,9 @@ import { serviceToEnum } from "@/lib/enums";
 import { attributeReferral } from "@/lib/referrals";
 import { alertOwner } from "@/lib/alerts";
 import { sendCapiPurchase } from "@/lib/meta-capi";
-import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendPremiumUpgradeEmail, sendPnlProEmail } from "@/lib/email";
+import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendFleetWelcomeEmail, sendPremiumUpgradeEmail, sendPnlProEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
+import { FLEET } from "@/lib/pricing";
 import type { ServiceId } from "@/lib/services";
 
 export const runtime = "nodejs";
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
     if (session.metadata?.type === "booking") await fulfillBooking(session);
     else if (session.metadata?.type === "upgrade") await fulfillUpgrade(session);
     else if (session.metadata?.type === "pnl-sub") await fulfillPnlSubscription(session);
+    else if (session.metadata?.type === "fleet") await fulfillFleet(session);
     else await fulfillCheckout(session);
   } else if (
     event.type === "customer.subscription.updated" ||
@@ -154,6 +156,112 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     firstName: profile.firstName,
     lastName: profile.lastName,
     sourceUrl: `${base}/welcome/premium-offer`,
+  });
+}
+
+// Curri fleet invite — any of the three ways it's bought:
+//   - homepage, no account yet ($197; metadata.standalone = "1")
+//   - post-checkout offer right after the $17 listing ($97; metadata.userId)
+//   - signed-in driver from the fleet guide ($197; metadata.userId)
+// A homepage buyer gets a full account + listing created here, exactly like a
+// listing purchase, so one payment covers both. Everyone gets fleetJoinedAt set,
+// a FLEET payment recorded, the fleet next-steps email, and the owner gets a
+// Telegram ping because the carrier-account add and Stripe link are manual.
+async function fulfillFleet(session: Stripe.Checkout.Session) {
+  const already = await prisma.payment.findUnique({ where: { stripeSessionId: session.id } });
+  if (already) return;
+
+  const md = session.metadata ?? {};
+  const email = (session.customer_details?.email ?? md.email ?? "").toLowerCase();
+  const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+
+  let user = md.userId
+    ? await prisma.user.findUnique({ where: { id: md.userId }, include: { driverProfile: true } })
+    : null;
+  if (!user && email) {
+    user = await prisma.user.findUnique({ where: { email }, include: { driverProfile: true } });
+  }
+
+  // Brand-new buyer from the homepage → create the account + temp password.
+  let tempPassword: string | null = null;
+  if (!user) {
+    if (!email) return;
+    tempPassword = generateTempPassword();
+    user = await prisma.user.create({
+      data: {
+        email,
+        name: md.firstName ? `${md.firstName} ${md.lastName ?? ""}`.trim() : null,
+        role: "DRIVER",
+        hashedPassword: hashPassword(tempPassword),
+        mustResetPassword: true,
+        emailVerified: new Date(),
+        ...(md.firstName
+          ? { driverProfile: { create: { firstName: md.firstName, lastName: md.lastName ?? "", listedAt: new Date() } } }
+          : {}),
+      },
+      include: { driverProfile: true },
+    });
+  }
+
+  // Record the payment first so a successful charge is never lost.
+  await prisma.payment.create({
+    data: {
+      userId: user.id,
+      type: "FLEET",
+      amount: session.amount_total ?? FLEET.price * 100,
+      currency: session.currency ?? "usd",
+      status: "PAID",
+      bumps: [],
+      stripeSessionId: session.id,
+      stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
+    },
+  });
+
+  if (!user.fleetJoinedAt) {
+    await prisma.user.update({ where: { id: user.id }, data: { fleetJoinedAt: new Date() } });
+  }
+  // A homepage buyer's $197 includes the listing; make sure they're listed.
+  if (user.driverProfile && !user.driverProfile.listedAt) {
+    await prisma.driverProfile.update({ where: { id: user.driverProfile.id }, data: { listedAt: new Date() } });
+  }
+
+  const firstName = user.driverProfile?.firstName || md.firstName || user.name?.split(" ")[0] || "there";
+
+  if (tempPassword) {
+    const welcome = await sendDriverWelcomeEmail({
+      to: user.email,
+      firstName,
+      tempPassword,
+      signInUrl: `${base}/signin`,
+    });
+    if (!welcome.sent) {
+      await alertOwner(
+        `⚠️ FlowSync: welcome email FAILED to send (fleet $197 buyer).\n\n` +
+          `Driver: ${firstName} ${md.lastName ?? ""}\nEmail: ${user.email}\n\n` +
+          `They have paid but may not be able to sign in. Reach out to them.`,
+      );
+    }
+  }
+
+  await sendFleetWelcomeEmail({ to: user.email, firstName, fleetUrl: `${base}/account/curri-fleet` });
+
+  // The carrier-account add and the Stripe Connect link are manual steps.
+  await alertOwner(
+    `🚚 New Curri fleet member: ${firstName} ${user.driverProfile?.lastName ?? md.lastName ?? ""}\n` +
+      `Email: ${user.email}\nPaid: $${((session.amount_total ?? 0) / 100).toFixed(2)} (${md.source ?? "homepage"})\n\n` +
+      `Next: add them on the carrier account and send their Stripe setup link once they reply with their details.`,
+  );
+
+  if (md.ref && tempPassword) await attributeReferral(user.id, md.ref);
+
+  await sendCapiPurchase({
+    eventId: session.id,
+    email: user.email,
+    value: (session.amount_total ?? 0) / 100,
+    currency: session.currency ?? "usd",
+    firstName,
+    lastName: user.driverProfile?.lastName || md.lastName || undefined,
+    sourceUrl: `${base}/account/curri-fleet`,
   });
 }
 
