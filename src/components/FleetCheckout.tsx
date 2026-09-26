@@ -88,7 +88,7 @@ export default function FleetCheckout({ mode }: { mode: "standalone" | "member" 
         required
         type="email"
         autoComplete="email"
-        placeholder="Email (this becomes your FlowSync login)"
+        placeholder="Email (your FlowSync login)"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className={inputCls}
