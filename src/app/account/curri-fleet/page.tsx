@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     title: "Ask to be added",
-    body: `Email ${SUPPORT_EMAIL} (or DM Nasser privately — not in the public Telegram group) with the email you used to sign up here. That is how we add you as a driver on the FlowSync / Barham Transport carrier partner account so you can be activated on Curri right away.`,
+    body: `Email ${SUPPORT_EMAIL} (or DM Nasser privately — not in the public Telegram group) with the email you used to sign up here. We reply with the link to pay the one-time joining fee. Once that's paid, we add you as a driver on the FlowSync / Barham Transport carrier partner account so you can be activated on Curri right away.`,
   },
   {
     title: "We add you on our carrier account",
@@ -132,13 +132,18 @@ export default async function CurriFleetPage() {
         {/* Stripe is how every payout is delivered and how the 1099 gets issued, so
             a driver needs it before their first real pay cycle. The grace period
             is stated plainly so nobody's first paycheck is held hostage to setup. */}
+        {/* No "ask for your link" button here on purpose: drivers who hadn't
+            joined yet were requesting Stripe links straight from this section.
+            The request lives under the join step below, after the fee. */}
         <section className="mt-6 rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] p-6">
-          <h2 className="text-lg font-bold tracking-tight text-amber-300">Set up a Stripe account (required)</h2>
+          <h2 className="text-lg font-bold tracking-tight text-amber-300">Set up a Stripe account (required — after you join)</h2>
           <p className="mt-2 text-sm leading-relaxed text-foreground/90">
             We pay you as an independent contractor through Stripe, and you&apos;ll receive a{" "}
             <strong className="font-semibold text-foreground">1099 for your taxes</strong> at the
-            end of the year. We&apos;ll send you a Stripe setup link — that&apos;s where every payout
-            lands, standard Friday pay and faster payouts alike.
+            end of the year. Once your joining fee is paid and you&apos;re on our carrier account,
+            we send you a Stripe setup link — that&apos;s where every payout lands, standard Friday
+            pay and faster payouts alike. The link only works once you&apos;re in, so there&apos;s
+            nothing to set up before then.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-foreground/90">
             <strong className="font-semibold text-foreground">Don&apos;t have one yet? That won&apos;t
@@ -146,15 +151,6 @@ export default async function CurriFleetPage() {
             way while you get Stripe set up — but please get it done, because after that all pay
             goes through Stripe.
           </p>
-          {/* Payouts run through Stripe Connect: the owner generates the onboarding
-              link, so drivers ask for it rather than opening an unconnected
-              stripe.com account on their own. */}
-          <a
-            href={`mailto:${SUPPORT_EMAIL}?subject=Stripe%20setup%20link`}
-            className="btn-primary mt-4 inline-flex rounded-full px-6 py-2.5 text-sm"
-          >
-            Ask for your Stripe setup link →
-          </a>
         </section>
 
         <section className="card mt-6 p-6">
@@ -174,15 +170,32 @@ export default async function CurriFleetPage() {
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground/90">
             <li>The email you used to sign up on FlowSync</li>
             <li>Your name and city (so we can add you correctly)</li>
+            <li>Your vehicle (year, make, model)</li>
             <li>The email you want your Stripe setup link sent to</li>
             <li>Whether you want standard pay (every Friday, 15%) or faster pay (1–2 business days, 20%)</li>
           </ul>
+          <p className="mt-3 text-sm leading-relaxed text-foreground/90">
+            We reply with the joining-fee payment link. Once it&apos;s paid, you&apos;re added to the
+            fleet and your Stripe setup link goes out the same day.
+          </p>
           <a
             href={`mailto:${SUPPORT_EMAIL}?subject=Curri%20fleet%20activation`}
             className="btn-primary mt-5 inline-flex rounded-full px-6 py-2.5 text-sm"
           >
             Email {SUPPORT_EMAIL}
           </a>
+          {/* Payouts run through Stripe Connect: the owner generates the onboarding
+              link, so an already-joined driver asks for it here rather than opening
+              an unconnected stripe.com account on their own. */}
+          <p className="mt-4 text-xs text-muted">
+            Already joined and paid?{" "}
+            <a
+              href={`mailto:${SUPPORT_EMAIL}?subject=Stripe%20setup%20link`}
+              className="font-medium text-accent hover:underline"
+            >
+              Ask for your Stripe setup link →
+            </a>
+          </p>
         </section>
       </div>
     </div>
