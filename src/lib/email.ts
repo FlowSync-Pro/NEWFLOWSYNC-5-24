@@ -59,6 +59,77 @@ const P = `style="color:#aebac1;line-height:1.65;margin:0 0 14px"`;
 const H2 = `style="font-size:17px;color:#e7ecef;margin:26px 0 10px"`;
 const LI = `style="color:#aebac1;line-height:1.6;margin:0 0 8px"`;
 
+// Plain-English labels for the service ids (src/lib/services.ts `short`).
+const SERVICE_LABELS: Record<string, string> = {
+  grocery: "Grocery",
+  food: "Food",
+  furniture: "Furniture",
+  courier: "Courier",
+  pharmacy: "Pharmacy",
+  senior: "Senior care",
+  moving: "Moving",
+  "auto-parts": "Auto parts",
+};
+
+function serviceLabel(id?: string | null): string | null {
+  if (!id) return null;
+  return SERVICE_LABELS[id] ?? null;
+}
+
+/** Optional driver details used to personalize onboarding emails. */
+interface DriverDetails {
+  city?: string | null;
+  vehicleYear?: string | null;
+  vehicleMakeModel?: string | null;
+  vehicleType?: string | null;
+  serviceId?: string | null;
+}
+
+/** "2022 Mercedes Sprinter" from profile fields; falls back to the vehicle type. */
+function vehicleLabel(d: DriverDetails): string | null {
+  const year = d.vehicleYear?.trim();
+  const makeModel = d.vehicleMakeModel?.trim();
+  const combined = [year, makeModel].filter(Boolean).join(" ");
+  if (combined) return combined;
+  return d.vehicleType?.trim() || null;
+}
+
+function joinList(parts: string[]): string {
+  if (parts.length <= 1) return parts.join("");
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+  return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
+}
+
+/**
+ * "I've already got your 2022 Sprinter in Tacoma from when you signed up".
+ * Falls back to the old generic wording when we know nothing specific, so
+ * the email never renders a half-empty sentence.
+ */
+function onFilePhrase(d: DriverDetails): string {
+  const vehicle = vehicleLabel(d);
+  const city = d.city?.trim() || null;
+  const service = serviceLabel(d.serviceId);
+  const bits: string[] = [];
+  if (vehicle && city) bits.push(`your ${vehicle} in ${city}`);
+  else {
+    if (vehicle) bits.push(`your ${vehicle}`);
+    if (city) bits.push(`your location in ${city}`);
+  }
+  if (service) bits.push(`your ${service.toLowerCase()} service`);
+  if (!bits.length) return "I've already got your vehicle and location from when you signed up";
+  return `I've already got ${joinList(bits)} from when you signed up`;
+}
+
+/** "your 2022 Sprinter in Tacoma" — for the fleet email's confirm-your-details step. */
+function knownDetailsPhrase(d: DriverDetails): string | null {
+  const vehicle = vehicleLabel(d);
+  const city = d.city?.trim() || null;
+  if (vehicle && city) return `your ${vehicle} in ${city}`;
+  if (vehicle) return `your ${vehicle}`;
+  if (city) return `your location in ${city}`;
+  return null;
+}
+
 /** Telegram invite link, only when it's configured and really a Telegram URL. */
 function telegramInviteUrl(): string | null {
   const raw = process.env.NEXT_PUBLIC_TELEGRAM_INVITE_URL?.trim();
@@ -88,14 +159,19 @@ export async function sendDriverWelcomeEmail(opts: {
   tempPassword: string;
   signInUrl: string;
   upgradeUrl?: string;
+  serviceId?: string | null;
 }) {
   const base = new URL(opts.signInUrl).origin;
   const upgradeUrl = opts.upgradeUrl || `${base}/account/edit`;
   const telegram = telegramInviteUrl();
   const premium = TIERS.premium.price;
+  const welcomeService = serviceLabel(opts.serviceId);
+  const listingPhrase = welcomeService
+    ? `Your FlowSync ${welcomeService.toLowerCase()} listing is active`
+    : "Your FlowSync driver listing is active";
 
   const body = `
-    <p ${P}>Hi ${opts.firstName} — you're in. Your FlowSync driver listing is active, and you set your own rates on every job.</p>
+    <p ${P}>Hi ${opts.firstName} — you're in. ${listingPhrase}, and you set your own rates on every job.</p>
     <p ${P}>Sign in with this temporary password, and you'll be asked to set a permanent one:</p>
     <div style="background:#11181c;border:1px solid #1d262b;border-radius:12px;padding:14px;margin:14px 0;text-align:center;font-size:18px;font-weight:700;letter-spacing:1px;color:#25e07a">${opts.tempPassword}</div>
     <p style="margin:0 0 6px">${button(opts.signInUrl, "Sign in to FlowSync")}</p>
@@ -216,12 +292,18 @@ export async function sendPremiumUpgradeEmail(opts: {
   to: string;
   firstName: string;
   accountUrl: string;
+  city?: string | null;
+  vehicleYear?: string | null;
+  vehicleMakeModel?: string | null;
+  vehicleType?: string | null;
+  serviceId?: string | null;
 }) {
+  const onFile = onFilePhrase(opts);
   const body = `
     <p ${P}>Hey ${opts.firstName},</p>
     <p ${P}>You're in as a FlowSync Premium member. Log into your account and you'll see your status marked <strong style="color:#25e07a">Premium</strong>. That unlocks the tools we've built for members so far: mileage tracker, profit &amp; loss tracker, bidding calculator, with more rolling out.</p>
     <p style="margin:0 0 18px">${button(opts.accountUrl, "Log into your account")}</p>
-    <p ${P}>Now, before I point you toward the right next step, I want to actually know where you're at instead of guessing. I've already got your vehicle and location from when you signed up — just need a little more so whatever we build for you actually fits.</p>
+    <p ${P}>Now, before I point you toward the right next step, I want to actually know where you're at instead of guessing. ${onFile} — just need a little more so whatever we build for you actually fits.</p>
     <p ${P}><strong style="color:#e7ecef">Three quick things:</strong></p>
     <ol style="padding-left:20px;margin:0 0 14px">
       <li ${LI}>Are you signed up with <strong style="color:#e7ecef">CURRI</strong>? If so, where do you stand right now:
@@ -245,12 +327,20 @@ export async function sendFleetWelcomeEmail(opts: {
   to: string;
   firstName: string;
   fleetUrl: string;
+  city?: string | null;
+  vehicleYear?: string | null;
+  vehicleMakeModel?: string | null;
+  vehicleType?: string | null;
 }) {
+  const known = knownDetailsPhrase(opts);
+  const fleetStep1 = known
+    ? `<strong style="color:#e7ecef">Reply to this email</strong> to confirm your details — I've got ${known} on file — and tell me whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}% dispatching fee) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`
+    : `<strong style="color:#e7ecef">Reply to this email</strong> with your city, your vehicle (year, make, model), and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}% dispatching fee) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`;
   const body = `
     <p ${P}>Hey ${opts.firstName} — you're in. Welcome to the Barham Transport fleet.</p>
     <p ${P}>Here's how the next few days go:</p>
     <ol style="padding-left:20px;margin:0 0 14px">
-      <li ${LI}><strong style="color:#e7ecef">Reply to this email</strong> with your city, your vehicle (year, make, model), and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}% dispatching fee) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).</li>
+      <li ${LI}>${fleetStep1}</li>
       <li ${LI}><strong style="color:#e7ecef">We add you to our carrier account.</strong> That's what gets you activated so loads can be dispatched to you. Usually same day once we have your details.</li>
       <li ${LI}><strong style="color:#e7ecef">You get a Stripe setup link</strong> from us. That's where every payout lands, and it's what your 1099 comes from at year end. Don't have Stripe yet? We can send your first two or three payouts another way while you set it up.</li>
       <li ${LI}><strong style="color:#e7ecef">Loads start showing up.</strong> Claim, bid, or pass — you're never required to take one.</li>
@@ -326,3 +416,4 @@ export async function sendWelcomeEmail(opts: { to: string; firstName: string; pr
     <p style="margin-top:8px">${button(opts.profileUrl, "Complete your profile")}</p>`;
   return send(opts.to, "Welcome to FlowSync", shell("Welcome aboard", body));
 }
+
