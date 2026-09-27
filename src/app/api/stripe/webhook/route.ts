@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
-import { serviceToEnum } from "@/lib/enums";
+import { serviceToEnum, serviceFromEnum } from "@/lib/enums";
 import { attributeReferral } from "@/lib/referrals";
 import { alertOwner } from "@/lib/alerts";
 import { sendCapiPurchase } from "@/lib/meta-capi";
@@ -143,6 +143,11 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     to: profile.user.email,
     firstName: profile.firstName,
     accountUrl: `${base}/account`,
+    city: profile.city,
+    vehicleYear: profile.vehicleYear,
+    vehicleMakeModel: profile.vehicleMakeModel,
+    vehicleType: profile.vehicleType,
+    serviceId: serviceFromEnum(profile.primaryService),
   });
 
   // Server-side Purchase event to Meta (CAPI). Same event_id as the browser
@@ -233,6 +238,7 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
       firstName,
       tempPassword,
       signInUrl: `${base}/signin`,
+      serviceId: serviceFromEnum(user.driverProfile?.primaryService),
     });
     if (!welcome.sent) {
       await alertOwner(
@@ -243,7 +249,15 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     }
   }
 
-  await sendFleetWelcomeEmail({ to: user.email, firstName, fleetUrl: `${base}/account/curri-fleet` });
+  await sendFleetWelcomeEmail({
+    to: user.email,
+    firstName,
+    fleetUrl: `${base}/account/curri-fleet`,
+    city: user.driverProfile?.city,
+    vehicleYear: user.driverProfile?.vehicleYear,
+    vehicleMakeModel: user.driverProfile?.vehicleMakeModel,
+    vehicleType: user.driverProfile?.vehicleType,
+  });
 
   // The carrier-account add and the Stripe Connect link are manual steps.
   await alertOwner(
@@ -360,6 +374,7 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
       // The one-time-offer page identifies the driver by this paid listing
       // session, so the email's upgrade button works without signing in.
       upgradeUrl: `${base}/welcome/premium-offer?session_id=${encodeURIComponent(session.id)}`,
+      serviceId: primaryService,
     });
     // A paying driver whose welcome email didn't send can't sign in. That used
     // to fail silently; now it pings the owner over Telegram (a channel that
@@ -414,3 +429,4 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
     sourceUrl: `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/welcome/premium-offer`,
   });
 }
+
