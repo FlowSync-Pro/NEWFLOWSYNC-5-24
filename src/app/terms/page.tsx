@@ -35,8 +35,14 @@ export default function TermsPage() {
       <h2>Payments &amp; fees</h2>
       <p>
         Listing fees are processed securely by Stripe. When a customer pays for a job through FlowSync,
-        a small platform fee is deducted and the remainder goes to the driver. Listing fees are covered
-        by our <a href="/refund-policy">30-day money-back guarantee</a>.
+        a small platform fee is deducted and the remainder goes to the driver. Listing fees and the
+        Premium upgrade are covered by our <a href="/refund-policy">30-day money-back guarantee</a>.
+      </p>
+      <p>
+        The Curri fleet joining fee is separate: it is fully refundable until you are activated on our
+        carrier account and non-refundable after activation, and a second violation on the carrier
+        account results in removal from the fleet without a refund. Full terms are in the{" "}
+        <a href="/refund-policy">refund policy</a>. You agree to these terms when you pay the joining fee.
       </p>
 
       <h2>Acceptable use</h2>
