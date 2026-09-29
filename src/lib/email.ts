@@ -105,12 +105,12 @@ export async function sendDriverWelcomeEmail(opts: {
       <li ${LI}><strong style="color:#e7ecef">Set your password</strong> and land on your dashboard.</li>
       <li ${LI}><strong style="color:#e7ecef">Finish your profile</strong> — photo, vehicle, city, and the services you offer. That's what customers see in the directory.</li>
       <li ${LI}><strong style="color:#e7ecef">Open your Driver Roadmap.</strong> It's the 30-day action plan, one box at a time. Do a box a day and you'll be set up properly, with a real shot at your first direct customer.</li>
-      <li ${LI}><strong style="color:#e7ecef">Use the tools.</strong> Fair-quote calculator, Profit &amp; Loss tracker, your own service menu, and 14 step-by-step guides (DOT &amp; EIN — both free to apply for — LLC, taxes, finding customers).</li>
+      <li ${LI}><strong style="color:#e7ecef">Follow the setup guides.</strong> USDOT and EIN for free (no filing service), LLC filing, medical courier requirements, and how to sign up with Curri and Dispatch as a carrier instead of a gig driver. Plus your own service menu with your prices.</li>
       ${telegram ? `<li ${LI}><strong style="color:#e7ecef">Join the driver community</strong> on Telegram — real drivers, real answers, free. <a href="${telegram}" style="color:#25e07a">Open the group →</a></li>` : ""}
     </ol>
 
-    <h2 ${H2}>Want the faster route? Add Premium.</h2>
-    <p ${P}>The Roadmap works if you work it. But if you'd rather skip the setup grind, Premium is the shortcut: <strong style="color:#e7ecef">we build your profile, your service menu, and your website for you</strong>, you get the Premium badge, and your listing sits above other drivers in the directory. You can link your own website too.</p>
+    <h2 ${H2}>Want to run it like a business? Add Premium.</h2>
+    <p ${P}>The listing gets you found. Premium is the business behind it: <strong style="color:#e7ecef">the bidding calculator</strong> (your floor and your bid on every load), <strong style="color:#e7ecef">the business P&amp;L tracker</strong> (cost per mile, rate per mile, net income by week, month, quarter), the guide on running an ad for your delivery business, and <strong style="color:#e7ecef">the Curri mastermind course</strong> — the exact playbook below, lesson by lesson. Plus the Premium badge, priority placement above other drivers, and your own website link.</p>
     <p ${P}>It's <strong style="color:#e7ecef">$${premium} one-time</strong> — no subscription, same 30-day money-back guarantee. One click below, pay on Stripe, and I'll start on your setup.</p>
     <p style="margin:0 0 6px">${button(upgradeUrl, `Add Premium — $${premium} one-time`)}</p>
 
@@ -254,7 +254,9 @@ export async function sendFleetWelcomeEmail(opts: {
       <li ${LI}><strong style="color:#e7ecef">We add you to our carrier account.</strong> That's what gets you activated so loads can be dispatched to you. Usually same day once we have your details.</li>
       <li ${LI}><strong style="color:#e7ecef">You get a Stripe setup link</strong> from us. That's where every payout lands, and it's what your 1099 comes from at year end. Don't have Stripe yet? We can send your first two or three payouts another way while you set it up.</li>
       <li ${LI}><strong style="color:#e7ecef">Loads start showing up.</strong> Claim, bid, or pass — you're never required to take one.</li>
+      <li ${LI}><strong style="color:#e7ecef">We build your FlowSync side.</strong> Your profile, service menu, and website — done for you — and everything in Premium is already unlocked in your account: the bidding calculator, the P&amp;L tracker, and the Curri mastermind.</li>
     </ol>
+    <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">Refund terms you agreed to at checkout: ${FLEET.refundShort} Two violations on the carrier account means removal from the fleet without a refund.</p>
     <p ${P}>The full walkthrough, including how we bid loads instead of claiming them at the listed price, is in your account:</p>
     <p style="margin:0 0 18px">${button(opts.fleetUrl, "Open the fleet guide")}</p>
     <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.</p>

@@ -37,6 +37,15 @@ export interface Tier {
   highlight?: boolean;
 }
 
+// The ladder (funnel v2, launched with LEGACY_CUTOVER_AT below):
+//   Tier 1 "Verified"  — listingPrice(): $17 until the dated increase, then $47.
+//                        Listing + service menu + the setup guides below.
+//   Tier 2 "Premium"   — $97 one-time. Everything in Verified + the business
+//                        tools + the ads guide + the Curri mastermind course +
+//                        badge / priority placement / website link.
+//   Tier 3 "Curri fleet" — FLEET below ($297; $197 only on the post-checkout
+//                        offer page). Includes done-for-you setup.
+// Drivers who paid before the cutover keep everything they had (lib/access.ts).
 export const TIERS: Record<TierId, Tier> = {
   standard: {
     id: "standard",
@@ -45,30 +54,48 @@ export const TIERS: Record<TierId, Tier> = {
     // stays STANDARD (id and enum are stable contracts). "Verified" pairs with
     // Premium without sounding like a baseline/lesser tier.
     name: "Verified",
-    tagline: "Get listed and take direct bookings.",
+    tagline: "Get listed, and get set up as a real carrier — not a gig driver.",
     features: [
-      "Listed in the FlowSync driver directory",
-      "Direct customer bookings — no middleman",
-      "Service-matched profile page",
-      "Fair-quote calculator",
-      "DOT & EIN setup guide included (get them free)",
-      "Set your own rates and schedule",
+      "Driver directory listing, plus your own service menu with custom pricing",
+      "How to get your USDOT number free — no filing service",
+      "How to get your EIN free — no filing service",
+      "How to file an LLC for your delivery business",
+      "Medical courier requirements and licenses",
+      "Sign up with Curri & Dispatch as a carrier, not a gig driver — and why it matters",
     ],
   },
   premium: {
     id: "premium",
     price: 97,
     name: "Premium",
-    tagline: "Stand out in the directory — badge, priority placement, and your own website link.",
+    tagline: "Everything in Verified, plus the tools and the training to run it like a business.",
     highlight: true,
     features: [
       "Everything in Verified",
-      "Premium badge & elevated profile styling",
-      "Add your own external website link",
-      "Priority placement in the directory",
+      "Bidding calculator — know your break-even and what to bid on every load",
+      "Profit & Loss business tracker — business and personal expenses, cost per mile, rate per mile, net income weekly / monthly / quarterly",
+      "How to run an ad for your delivery business",
+      "Curri mastermind course",
+      "Premium badge, priority placement in the directory, and your own website link",
     ],
   },
 };
+
+/** Guides included in Tier 1 (Verified). Premium, fleet, and legacy buyers get all guides. */
+export const TIER1_GUIDE_SLUGS = [
+  "get-dot-and-ein-free",
+  "llc-sole-prop-or-dba",
+  "medical-courier-requirements",
+  "sign-up-as-a-carrier-curri-dispatch",
+] as const;
+
+/**
+ * Funnel v2 launch moment. Any driver whose first paid purchase is BEFORE this
+ * keeps every guide and tool they had under the old $17 offer, forever. Set
+ * to the merge time of the launch deploy (a little late is fine — it only
+ * means a few new buyers get extra access; early would take things away).
+ */
+export const LEGACY_CUTOVER_AT = new Date("2026-10-03T00:00:00Z");
 
 export function getTier(id: TierId): Tier {
   return TIERS[id];
@@ -99,15 +126,21 @@ export function listingPrice(now: Date = new Date()): number {
 }
 
 /**
- * The Curri fleet invite — a SEPARATE product from the listing tiers. Drivers
- * join the Barham Transport carrier account and get loads dispatched to them.
+ * The Curri fleet invite (Tier 3) — a SEPARATE product from the listing tiers.
+ * Drivers join the Barham Transport carrier account and get loads dispatched to
+ * them, and the owner builds their profile, service menu, and website for them.
  *
  * Two prices, on purpose:
- *  - `addOnPrice` ($97) is offered exactly once: on the post-checkout offer page
- *    right after a driver pays the $17 listing. Decline it there and it's gone.
- *  - `price` ($197) is what everyone else pays — a homepage visitor (whose $197
+ *  - `addOnPrice` ($197) is offered exactly once: on the post-checkout offer page
+ *    right after a driver pays the listing. Decline it there and it's gone.
+ *  - `price` ($297) is what everyone else pays — a homepage visitor (whose $297
  *    also creates their full FlowSync account and listing) or a signed-in driver
- *    who passed on the $97 offer.
+ *    who passed on the offer-page price.
+ *
+ * Refund: fully refundable until the driver is activated on the carrier account;
+ * after activation the fee is earned and non-refundable. Two violations on the
+ * carrier account means removal from the fleet with no refund. Stated on every
+ * fleet surface and acknowledged on the Stripe checkout page.
  *
  * Fees are on loads only: 15% dispatching, paid every Friday; 20% for a payout
  * in 1–2 business days. No monthly fee, no insurance charge.
@@ -115,10 +148,19 @@ export function listingPrice(now: Date = new Date()): number {
 export const FLEET = {
   id: "curri-fleet",
   name: "Curri fleet invite",
-  price: 197,
-  addOnPrice: 97,
+  price: 297,
+  addOnPrice: 197,
   dispatchFeePercent: 15,
   fastPayoutFeePercent: 20,
+  refundShort: "Fully refundable until you're activated on our carrier account. After activation the fee is earned and non-refundable.",
+  refundWhy:
+    "Activation is real work on our side and on Curri's — we add you to the carrier account, set up your vehicle and paperwork, and vouch for you. Once that's done it can't be undone, so the fee isn't refundable after activation. Two violations on the carrier account means removal from the fleet, without a refund, because violations put every driver on the account at risk.",
+  includes: [
+    "Added to our Curri carrier account — loads dispatched to you, no waiting on your own approval",
+    "We bid the loads, you run the ones you want; paid every Friday",
+    "Done-for-you setup: we build your FlowSync profile, service menu, and website",
+    "Everything in Premium: the tools, the ads guide, the Curri mastermind course",
+  ],
 };
 
 /** Accepts the DB enum ("PREMIUM") or the lowercase id ("premium"). */
@@ -143,15 +185,11 @@ export function getBump(id: string): Bump | undefined {
  */
 export const VALUE_STACK: { label: string; value: number }[] = [
   { label: "Driver directory listing — get found by local customers", value: 97 },
-  { label: "DOT & EIN setup guide (skip the $300+ filing services)", value: 27 },
-  // The guide library was the most under-sold thing in the offer — 14 guides
-  // ship today (see lib/guides.ts) and every paying driver already has access
-  // (lib/access.ts). Listed as "13 more" so the DOT & EIN guide above isn't
-  // double-counted.
-  { label: "13 more step-by-step guides — find customers, price for profit, taxes & write-offs", value: 67 },
-  { label: "Fair-quote calculator to price every job", value: 39 },
-  { label: "Profit & Loss tracker for your business", value: 47 },
   { label: "Your own service menu with custom pricing", value: 29 },
+  { label: "USDOT + EIN free-filing walkthroughs (skip the $300+ services)", value: 47 },
+  { label: "LLC filing guide for your delivery business", value: 19 },
+  { label: "Medical courier requirements & licenses guide", value: 29 },
+  { label: "Carrier-not-gig signup playbook for Curri & Dispatch", value: 47 },
 ];
 
 export const VALUE_STACK_TOTAL = VALUE_STACK.reduce((s, i) => s + i.value, 0);

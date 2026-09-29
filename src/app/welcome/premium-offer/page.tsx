@@ -25,15 +25,15 @@ function Check() {
 
 const COMPARE: { label: string; standard: string | boolean; premium: string | boolean }[] = [
   { label: "Listed in the FlowSync driver directory", standard: true, premium: true },
-  { label: "Direct customer bookings — you set your own rates", standard: true, premium: true },
-  { label: "Fair-quote calculator + Profit & Loss tracker", standard: true, premium: true },
-  { label: "DOT & EIN setup guide", standard: true, premium: true },
-  { label: "Roadmap, member resources, referral program", standard: true, premium: true },
-  { label: "★ Premium badge on your public profile", standard: false, premium: true },
-  { label: "Featured placement above other drivers in the directory", standard: false, premium: true },
-  { label: "Build a custom service menu with your own prices", standard: true, premium: true },
+  { label: "Your own service menu with custom pricing — direct bookings", standard: true, premium: true },
+  { label: "Setup guides: USDOT + EIN free, LLC filing, medical courier, carrier signup", standard: true, premium: true },
+  { label: "Roadmap, Telegram community, referral program", standard: true, premium: true },
+  { label: "★ Bidding calculator — your floor and your bid on every load", standard: false, premium: true },
+  { label: "★ Business P&L tracker — cost per mile, rate per mile, net income", standard: false, premium: true },
+  { label: "★ Curri mastermind course", standard: false, premium: true },
+  { label: "How to run an ad for your delivery business + every other guide", standard: false, premium: true },
+  { label: "Premium badge + featured placement above other drivers", standard: false, premium: true },
   { label: "Link your external website on your profile", standard: false, premium: true },
-  { label: "★ Done-for-you setup — we build your profile, menu & website for you", standard: false, premium: true },
 ];
 
 export default async function PremiumOfferPage({ searchParams }: PageProps<"/welcome/premium-offer">) {
@@ -126,18 +126,19 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
           ))}
         </div>
 
-        {/* Done-for-you setup — the "we handle it for you" clincher, right before the price. */}
+        {/* The tools are the clincher: Premium is what turns a listing into a business. */}
         <div className="mt-8 rounded-2xl border border-amber-400/30 bg-amber-400/5 p-6">
           <div className="flex items-start gap-4">
             <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400/15 text-amber-300">
               <Check />
             </span>
             <div>
-              <h2 className="font-semibold text-amber-200">Premium includes done-for-you setup</h2>
+              <h2 className="font-semibold text-amber-200">Premium is the business behind the listing</h2>
               <p className="mt-1 text-sm text-muted">
-                We build out your profile, your service menu, and your website{" "}
-                <span className="text-foreground">for you</span> — so you&apos;re set up and ready to
-                get found by local customers, instead of stuck figuring it all out yourself.
+                The bidding calculator tells you what a load has to pay before you accept it. The P&amp;L
+                tracker tells you your real cost per mile. The Curri mastermind shows you exactly how we
+                went from one rented van to four Sprinters on one app.{" "}
+                <span className="text-foreground">Verified gets you listed. Premium gets you profitable.</span>
               </p>
             </div>
           </div>
@@ -159,9 +160,10 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
             </div>
           </div>
           <p className="mt-3 text-sm text-muted">
-            Separate from Premium. Get added to our carrier account and have loads dispatched to you — we
-            bid them, you run them, paid every Friday. Pass on it here and it&apos;s ${FLEET.price}{" "}
-            from your account later.
+            Separate from Premium, and it includes everything in Premium. Get added to our carrier
+            account and have loads dispatched to you — we bid them, you run them, paid every Friday —
+            and we build your profile, service menu, and website for you. Pass on it here and it&apos;s
+            ${FLEET.price} from your account later.
           </p>
           <div className="mt-4"><FleetTerms /></div>
           <div className="mt-5 border-t border-border pt-5"><FleetBiddingStory compact /></div>

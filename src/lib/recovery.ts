@@ -57,8 +57,8 @@ export function fleetPitchText(firstName?: string | null): string {
 export function premiumPitchText(firstName?: string | null, premiumPrice = 97): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
   return (
-    `${hi}it's Nas from FlowSync. Want me to build your profile, service menu and website for you? ` +
-    `That's Premium: I do the setup, you get the badge and top placement in the directory. $${premiumPrice} one-time, ${GUARANTEE_DAYS}-day money-back. ` +
-    `Sign in, go to Edit profile, tap Upgrade to Premium: ${base()}/account/edit — or reply "premium" and I'll send the link.`
+    `${hi}it's Nas from FlowSync. Quick one: Premium is now the business side of your listing — the bidding calculator (your floor and your bid on every load), ` +
+    `the P&L tracker with cost per mile, the ads guide, and my Curri mastermind course, plus the badge and top placement in the directory. ` +
+    `$${premiumPrice} one-time, ${GUARANTEE_DAYS}-day money-back. Sign in, go to Edit profile, tap Upgrade to Premium: ${base()}/account/edit — or reply "premium" and I'll send the link.`
   );
 }

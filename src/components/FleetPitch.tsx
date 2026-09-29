@@ -24,6 +24,13 @@ export function FleetTerms({ standalone }: { standalone?: boolean }) {
         1–2 business days instead of waiting for Friday.
       </li>
       <li>We only earn when you do. No loads that week means no fee that week.</li>
+      <li>
+        <strong className="font-semibold text-foreground">Done-for-you setup:</strong> we build your
+        FlowSync profile, service menu, and website — and you get everything in Premium.
+      </li>
+      <li>
+        <strong className="font-semibold text-foreground">Refund:</strong> {FLEET.refundShort}
+      </li>
     </ul>
   );
 }
@@ -61,8 +68,9 @@ export function FleetDisclaimer() {
     <p className="text-xs leading-relaxed text-muted">
       Operated by Barham Transport LLC. FlowSync and Barham Transport are independent and are not owned by,
       affiliated with, or part of Curri. Fleet drivers are independent contractors, paid through Stripe
-      Connect with a 1099 at year end. No guarantee of load volume or earnings. 30-day money-back guarantee
-      on the joining fee.
+      Connect with a 1099 at year end. No guarantee of load volume or earnings. The joining fee is
+      refundable until you&apos;re activated on our carrier account and non-refundable after; two
+      violations on the carrier account means removal from the fleet without a refund.
     </p>
   );
 }

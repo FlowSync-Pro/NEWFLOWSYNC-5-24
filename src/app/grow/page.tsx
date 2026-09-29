@@ -5,7 +5,8 @@ import { CATEGORY_LABEL, guidesByCategory, type GuideCategory } from "@/lib/guid
 import Reveal from "@/components/Reveal";
 import { SITE_URL } from "@/lib/site";
 import { getSession } from "@/lib/session";
-import { hasGuideAccess } from "@/lib/access";
+import { getEntitlements, hasProAccess } from "@/lib/access";
+import { TIER1_GUIDE_SLUGS, TIERS } from "@/lib/pricing";
 
 // Member resources — only signed-in paid drivers (and admins) see the library.
 // Reached from inside the driver dashboard, not the public nav.
@@ -32,7 +33,12 @@ export default async function GrowPage() {
   // Gate the whole library: sign in required, and a paid listing to view it.
   const session = await getSession();
   if (!session) redirect("/signin");
-  if (!(await hasGuideAccess())) redirect("/pricing");
+  const ent = await getEntitlements();
+  if (!ent || !(ent.admin || ent.paid)) redirect("/pricing");
+  // Tier 1 sees every guide but only opens the setup guides; the rest show a
+  // Premium tag and open to the upgrade card.
+  const pro = hasProAccess(ent);
+  const included = (slug: string) => pro || (TIER1_GUIDE_SLUGS as readonly string[]).includes(slug);
 
   return (
     <div>
@@ -66,8 +72,11 @@ export default async function GrowPage() {
               {guidesByCategory(cat).map((g, i) => (
                 <Reveal key={g.slug} delay={(i % 3) * 60}>
                   <Link href={`/grow/${g.slug}`} className="card card-hover flex h-full flex-col p-6">
-                    <span className="text-xs font-medium uppercase tracking-widest text-accent">
+                    <span className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-widest text-accent">
                       {CATEGORY_LABEL[cat]}
+                      {!included(g.slug) && (
+                        <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold normal-case tracking-normal text-amber-300">Premium</span>
+                      )}
                     </span>
                     <h3 className="mt-3 text-lg font-semibold leading-snug">{g.title}</h3>
                     <p className="mt-2 flex-1 text-sm text-muted">{g.excerpt}</p>
@@ -86,13 +95,27 @@ export default async function GrowPage() {
 
         <Reveal>
           <div className="card flex flex-col items-center justify-between gap-5 p-8 text-center sm:flex-row sm:text-left">
-            <div>
-              <h3 className="text-xl font-bold">Ready to put it into action?</h3>
-              <p className="mt-1 text-muted">Get listed in the directory and start taking direct bookings.</p>
-            </div>
-            <Link href="/pricing" className="btn-primary shrink-0 rounded-full px-7 py-3.5 text-sm">
-              Get listed for ${listingPrice()}
-            </Link>
+            {pro ? (
+              <>
+                <div>
+                  <h3 className="text-xl font-bold">Ready to put it into action?</h3>
+                  <p className="mt-1 text-muted">Know your floor before you bid on the next load.</p>
+                </div>
+                <Link href="/account/bidding-calculator" className="btn-primary shrink-0 rounded-full px-7 py-3.5 text-sm">
+                  Open the bidding calculator
+                </Link>
+              </>
+            ) : (
+              <>
+                <div>
+                  <h3 className="text-xl font-bold">Unlock every guide and the business tools</h3>
+                  <p className="mt-1 text-muted">Premium adds the bidding calculator, the P&amp;L tracker, the ads guide, and the Curri mastermind.</p>
+                </div>
+                <Link href="/account/edit" className="btn-primary shrink-0 rounded-full px-7 py-3.5 text-sm">
+                  Upgrade to Premium — ${TIERS.premium.price}
+                </Link>
+              </>
+            )}
           </div>
         </Reveal>
       </div>

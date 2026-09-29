@@ -162,44 +162,49 @@ given fresh, per specific action.
 
 ## D. Offers & pricing (must always be exact)
 
-**ACTIVE — only reference or build for these:**
-- **Verified listing — $17 until 12:00 am Pacific, Monday October 6, 2026, then $47**
-  (one-time; any vehicle, sedan through box truck). This is a REAL, dated increase:
-  `listingPrice()` in `src/lib/pricing.ts` returns the current price and every page,
-  the checkout amount, and every message read it. Never hardcode either number in
-  UI. After the date, fold $47 into `TIERS.standard.price` with owner approval. The
-  listing includes: a public
-  driver profile in the FlowSync directory with direct customer bookings; 14 step-by-step
-  guides (DOT & EIN setup, LLC vs sole proprietor, insurance, quarterly taxes &
-  write-offs, pricing for profit, first reviews, finding customers on Nextdoor / Yelp /
-  Thumbtack / Craigslist / Indeed); the fair-quote calculator; the Profit & Loss tracker;
-  My Services (the driver's own service menu with custom pricing); the Driver Roadmap;
-  Telegram community access. Covered by the 30-day guarantee below.
-- **$97 Premium upgrade** (one-time): Premium badge & elevated profile styling, priority
-  placement above other drivers in the directory, the ability to link an external
-  website, and done-for-you setup (we build out the profile, service menu & website).
+**ACTIVE — the three-tier ladder (funnel v2). Everything is one-time. Source of truth
+is `src/lib/pricing.ts` (`TIERS`, `FLEET`, `TIER1_GUIDE_SLUGS`, `listingPrice()`); every
+page, checkout amount, email and message reads from it — never hardcode a price in UI.**
 
-Both tiers serve every vehicle type. The upgrade decision is about visibility and
-placement, not vehicle.
+- **Tier 1 — Verified listing: $17 until 12:00 am Pacific, Monday October 6, 2026, then
+  $47** (a REAL, dated increase via `listingPrice()`; after the date fold $47 into
+  `TIERS.standard.price` with owner approval). Any vehicle, sedan through box truck.
+  Includes: the directory listing with direct customer bookings; My Services (own service
+  menu with custom pricing); the four setup guides — USDOT free, EIN free, LLC filing,
+  medical courier requirements & licenses, and signing up with Curri & Dispatch as a
+  carrier not a gig driver; the Driver Roadmap; Telegram community. Covered by the
+  30-day guarantee below.
+- **Tier 2 — Premium: $97 one-time.** Everything in Verified plus: the bidding
+  calculator (`/account/bidding-calculator`); the business P&L tracker
+  (`/account/trips` — cost per mile, rate per mile, net income weekly/monthly/quarterly);
+  every other guide including "How to run an ad for your delivery business"; the Curri
+  mastermind course (`/account/course`, content from the owner in `src/lib/course.ts`);
+  Premium badge, priority placement, external website link. Offered on the post-checkout
+  page and any time from the account. Covered by the 30-day guarantee.
+- **Tier 3 — Curri fleet invite: $297 one-time; $197 in exactly ONE place, the
+  post-checkout offer page shown once after the listing is paid.** Homepage purchase
+  also creates the buyer's full account + listing. Includes: added to the Barham
+  Transport carrier account with loads dispatched; we bid the loads; paid every Friday
+  with a 15% dispatching fee (20% for 1–2 business days), no monthly fee, no insurance
+  charge; done-for-you setup (profile, service menu, website); everything in Premium.
+  **Refund: fully refundable until the driver is activated on the carrier account, then
+  earned and non-refundable; two violations on the carrier account = removal without
+  refund.** Stated on every fleet surface and acknowledged via Stripe's required terms
+  checkbox at checkout (needs the Terms of Service URL set in Stripe → Settings → Public
+  details; the code falls back to a plain checkout and logs if it isn't). Attorney
+  review of this clause is still owed. Membership is `User.fleetJoinedAt` (webhook or
+  admin toggle); carrier-account add and Stripe Connect link remain MANUAL owner steps.
+  The "$100.45 listed / $145 gig driver / $300 our bid" example is real — keep "one
+  load, not a promise" next to it.
 
-**SEPARATE from both tiers — the Curri fleet invite** (`FLEET` in `src/lib/pricing.ts`):
-- **$197 one-time** is the price everywhere: the homepage section (where it ALSO creates
-  the buyer's full FlowSync account + listing — one payment covers both) and the
-  in-account fleet guide for any signed-in driver.
-- **$97 one-time** exists in exactly ONE place: the post-checkout offer page shown once,
-  right after a driver pays the $17 listing (`/welcome/premium-offer`, alongside the
-  separate $97 Premium offer). Decline it there and it is $197 from then on. Never
-  surface the $97 fleet price anywhere else.
-- Fees on loads only: 15% dispatching fee, paid every Friday (20% for payout in 1–2
-  business days); no monthly fee and no insurance charges — we only earn on loads we
-  bring the driver. We bid loads rather than claiming at the listed price (the
-  "$100.45 listed / $145 gig driver / $300 our bid" example is real — keep the "one
-  load, not a promise" wording next to it).
-- Paid via Stripe Connect as an independent contractor (1099 at year end). Membership
-  is `User.fleetJoinedAt`, set by the Stripe webhook (`type: "fleet"`) or by the admin
-  toggle on the driver page. Adding the driver to the carrier account and sending the
-  Stripe Connect link are MANUAL owner steps (the webhook pings Telegram).
-- Never a Premium perk. Not to be confused with the standby $197 coaching program below.
+**Grandfathering (never take access away):** any driver whose first PAID payment is
+before `LEGACY_CUTOVER_AT` in `src/lib/pricing.ts` keeps every guide and tool they had
+under the old $17 offer (`legacy` in `src/lib/access.ts`). Set that constant to the
+launch merge time; late is harmless, early takes things away.
+
+**Entitlements** live in `src/lib/access.ts` (`getEntitlements`, `hasProAccess`,
+`canReadGuide`). Free public tools (`/calculator`, `/tools/profit-loss`) stay public as
+lead magnets; the gated ones are the account versions.
 
 **Abandoned-checkout recovery (live):** new-buyer Checkouts (listing, homepage fleet)
 expire after 60 minutes with Stripe recovery on and a phone field (owner-approved

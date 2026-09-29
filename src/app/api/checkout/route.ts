@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
@@ -11,6 +12,29 @@ const fleetLineItem = (unitAmount: number) => ({
   price_data: { currency: "usd", unit_amount: unitAmount, product_data: { name: FLEET.name } },
   quantity: 1,
 });
+
+// The fleet fee is refundable until activation and non-refundable after. That
+// only holds up in a dispute if the buyer agreed to it on the checkout page,
+// so Stripe shows a required terms checkbox (it links to the Terms of Service
+// URL set in the Stripe Dashboard → Settings → Public details). If that URL
+// isn't configured yet Stripe rejects the option; we fall back to a plain
+// checkout rather than block the sale, and log loudly so it gets fixed.
+async function createFleetSession(stripe: Stripe, params: Stripe.Checkout.SessionCreateParams) {
+  try {
+    return await stripe.checkout.sessions.create({
+      ...params,
+      consent_collection: { terms_of_service: "required" },
+      custom_text: {
+        terms_of_service_acceptance: {
+          message: `I understand the fleet joining fee is ${FLEET.refundShort.replace("Fully refundable", "fully refundable").replace(/\.$/, "")}.`,
+        },
+      },
+    });
+  } catch (e) {
+    console.error("[checkout] fleet consent checkbox unavailable (set the Terms of Service URL in Stripe → Settings → Public details):", e instanceof Error ? e.message : e);
+    return stripe.checkout.sessions.create(params);
+  }
+}
 
 // Abandoned-checkout recovery for NEW buyers (listing + homepage fleet):
 //  - the session expires after 60 minutes instead of Stripe's 24-hour default,
@@ -42,7 +66,7 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json({ error: "Account not found." }, { status: 400 });
     if (user.fleetJoinedAt) return NextResponse.json({ error: "You're already in the fleet." }, { status: 400 });
 
-    const fleet = await stripe.checkout.sessions.create({
+    const fleet = await createFleetSession(stripe, {
       mode: "payment",
       line_items: [fleetLineItem(FLEET.price * 100)],
       customer_email: user.email,
@@ -71,7 +95,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "That email is already in the fleet — sign in to see your fleet guide." }, { status: 400 });
     }
 
-    const fleet = await stripe.checkout.sessions.create({
+    const fleet = await createFleetSession(stripe, {
       mode: "payment",
       ...RECOVERY_SESSION_OPTIONS(),
       line_items: [fleetLineItem(FLEET.price * 100)],
@@ -114,7 +138,7 @@ export async function POST(req: Request) {
     }
     if (user.fleetJoinedAt) return NextResponse.json({ error: "You're already in the fleet." }, { status: 400 });
 
-    const fleet = await stripe.checkout.sessions.create({
+    const fleet = await createFleetSession(stripe, {
       mode: "payment",
       line_items: [fleetLineItem(FLEET.addOnPrice * 100)],
       customer_email: email,

@@ -50,7 +50,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-end gap-2 px-5 pt-6 text-xs">
           {isAdmin && <Link href="/admin" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Admin</Link>}
           <Link href="/account/edit" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Edit profile & documents</Link>
-          <Link href="/account/trips" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Operations</Link>
+          <Link href="/account/trips" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">P&amp;L tracker</Link>
+          <Link href="/account/bidding-calculator" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Bidding calculator</Link>
+          <Link href="/account/course" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Curri mastermind</Link>
           <Link href="/account/services" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">My Services</Link>
           <Link href="/account/experience" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Experience</Link>
           <Link href="/account/curri-fleet" className="rounded-full border border-border px-3 py-1 text-muted hover:text-foreground">Curri fleet</Link>

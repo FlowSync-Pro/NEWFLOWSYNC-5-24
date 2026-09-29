@@ -7,7 +7,8 @@ import {
   guidesByCategory,
 } from "@/lib/guides";
 import { SITE_URL } from "@/lib/site";
-import { hasGuideAccess } from "@/lib/access";
+import { canReadGuide, getEntitlements } from "@/lib/access";
+import { TIERS } from "@/lib/pricing";
 import JsonLd, { breadcrumbLd } from "@/components/JsonLd";
 
 // Guides are a paid member benefit — access depends on the signed-in user, so
@@ -40,7 +41,10 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
   const guide = getGuide(slug);
   if (!guide) notFound();
 
-  const unlocked = await hasGuideAccess();
+  // Per-guide: Tier 1 gets the setup guides, Premium/fleet/legacy get all.
+  const ent = await getEntitlements();
+  const unlocked = canReadGuide(ent, guide.slug);
+  const paidButLocked = !unlocked && !!ent?.paid;
   // Non-members see NO body — only the title + excerpt + paywall card. The
   // first section of most guides contains the most valuable info (e.g. the
   // free EIN walkthrough), so even a one-section preview gives the product away.
@@ -138,21 +142,42 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
               <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6"><rect x="4" y="11" width="16" height="9" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" strokeLinecap="round" /></svg>
               </span>
-              <h2 className="mt-4 text-xl font-bold tracking-tight">The rest of this guide is for FlowSync members</h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-                Get listed for a one-time ${listingPrice()}{" "}
-                and unlock every guide in the library —
-                including the full DOT &amp; EIN walkthrough, business-setup, insurance,
-                and local-marketing playbooks. You also get your directory listing and tools.
-              </p>
-              <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href="/pricing" className="btn-primary rounded-full px-7 py-3 text-sm">
-                  Get listed &amp; unlock all guides — ${listingPrice()}
-                </Link>
-                <Link href="/signin" className="btn-ghost rounded-full px-6 py-3 text-sm">
-                  Already a member? Sign in
-                </Link>
-              </div>
+              {paidButLocked ? (
+                <>
+                  <h2 className="mt-4 text-xl font-bold tracking-tight">This guide is part of Premium</h2>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-muted">
+                    Your Verified listing includes the setup guides. Premium (${TIERS.premium.price} one-time)
+                    unlocks every guide in the library, plus the bidding calculator, the business P&amp;L
+                    tracker, and the Curri mastermind course.
+                  </p>
+                  <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                    <Link href="/account/edit" className="btn-primary rounded-full px-7 py-3 text-sm">
+                      Upgrade to Premium — ${TIERS.premium.price}
+                    </Link>
+                    <Link href="/grow" className="btn-ghost rounded-full px-6 py-3 text-sm">
+                      Back to my guides
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="mt-4 text-xl font-bold tracking-tight">The rest of this guide is for FlowSync members</h2>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-muted">
+                    Get listed for a one-time ${listingPrice()}{" "}
+                    and unlock the setup guides — USDOT and EIN for free, LLC filing, medical courier
+                    requirements, and signing up with Curri and Dispatch as a carrier. You also get your
+                    directory listing and your own service menu.
+                  </p>
+                  <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                    <Link href="/pricing" className="btn-primary rounded-full px-7 py-3 text-sm">
+                      Get listed — ${listingPrice()}
+                    </Link>
+                    <Link href="/signin" className="btn-ghost rounded-full px-6 py-3 text-sm">
+                      Already a member? Sign in
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

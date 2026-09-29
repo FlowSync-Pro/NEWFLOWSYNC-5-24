@@ -16,10 +16,12 @@ Nasser is a self-taught beginner at software. He has broken the site before by a
 
 | Product | Price | What it is |
 |---|---|---|
-| **Verified listing** | $17 one-time | Public driver profile in the directory with direct customer bookings; 14 step-by-step guides (DOT & EIN, LLC vs sole prop, insurance, quarterly taxes, pricing, finding customers); fair-quote calculator; Profit & Loss tracker; My Services menu; Driver Roadmap (30-day action plan); Telegram community. Any vehicle, sedan through box truck. |
-| **Premium upgrade** | $97 one-time | Premium badge, elevated profile styling, priority placement in the directory, external website link, and done-for-you setup (Nasser builds their profile, service menu, and website). Offered right after the $17 checkout and any time from the account. |
-| **Curri fleet invite** | $197 one-time, or $97 only on the post-checkout offer page | The driver is added to Barham Transport's carrier account on Curri and gets loads dispatched to them. 15% dispatching fee on loads, paid every Friday; 20% for payout in 1–2 business days. No monthly fee, no insurance charge. Paid through Stripe Connect as an independent contractor (1099 at year end). Bought from the homepage ($197, which also creates their full FlowSync account) or from the fleet guide inside the account ($197). The $97 price exists in exactly one place: the offer page shown once after a $17 purchase. Separate from Premium; never a Premium perk. |
+| **Tier 1 — Verified listing** | $17 until Oct 6 2026, then $47 (one-time) | Directory listing with direct bookings; your own service menu with custom pricing; four setup guides (USDOT free, EIN free, LLC filing, medical courier requirements, carrier-not-gig signup for Curri & Dispatch); Driver Roadmap; Telegram community. Any vehicle. |
+| **Tier 2 — Premium** | $97 one-time | Everything in Verified plus the bidding calculator, the business P&L tracker (cost per mile, rate per mile, net income by period), every other guide including how to run an ad, the Curri mastermind course, Premium badge, priority placement, external website link. Offered right after checkout and any time from the account. |
+| **Tier 3 — Curri fleet invite** | $297 one-time; $197 only on the post-checkout offer page | Added to Barham Transport's carrier account with loads dispatched; Nasser bids the loads; paid every Friday, 15% dispatching fee (20% for 1–2 business days), no monthly fee; done-for-you setup (profile, menu, website); everything in Premium. Refundable until activated on the carrier account, then non-refundable; two violations = removal without refund. Agreed via a required checkbox on the Stripe checkout page. |
 | **P&L Tracker Pro** | $17/month, first month free | Cloud-saved version of the free P&L tracker. Code exists; low priority. |
+
+**Grandfathering:** anyone who paid before the funnel-v2 cutover (`LEGACY_CUTOVER_AT` in `src/lib/pricing.ts`) keeps every guide and tool from the old $17 offer. Never take access away from a paying driver.
 
 **On standby, never pitch:** a $197 four-week coaching program (not the same as the fleet invite) and a $49/month subscription.
 

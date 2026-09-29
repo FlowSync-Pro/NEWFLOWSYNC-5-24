@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import TripsManager, { type InspectionView } from "@/components/TripsManager";
 import type { TripView } from "@/lib/trips";
+import { getEntitlements, hasProAccess } from "@/lib/access";
+import ProGate from "@/components/ProGate";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,19 @@ export default async function TripsPage() {
   const session = await getSession();
   if (!session) redirect("/signin");
   if (session.mustResetPassword) redirect("/reset-password");
+
+  // The business P&L tracker (trips, mileage, expenses, cost per mile) is a
+  // Premium tool. Drivers who bought before the funnel change keep it (legacy);
+  // their logged data is never touched either way — only the page is gated.
+  const ent = await getEntitlements();
+  if (!hasProAccess(ent)) {
+    return (
+      <ProGate
+        title="The business P&L tracker is part of Premium"
+        blurb="Log every trip, split business and personal expenses, and see your cost per mile, rate per mile, and net income by week, month, and quarter."
+      />
+    );
+  }
 
   const profile = await prisma.driverProfile.findUnique({
     where: { userId: session.userId },

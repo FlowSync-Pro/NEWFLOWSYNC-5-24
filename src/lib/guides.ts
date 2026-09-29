@@ -45,7 +45,137 @@ const PNL_CTA = {
   note: "Your FlowSync Profit & Loss tracker does this math for you — log income and expenses and see your real take-home.",
 };
 
+const PREMIUM_CTA = {
+  label: "See what Premium includes",
+  href: "/account/edit",
+  note: "The bidding calculator, the business P&L tracker, and the Curri mastermind course are part of Premium.",
+};
+
 export const GUIDES: Guide[] = [
+  {
+    slug: "medical-courier-requirements",
+    category: "foundation",
+    title: "Medical courier requirements and licenses: what you actually need",
+    excerpt:
+      "Labs, pharmacies, and clinics pay steady, repeat rates — but they only hand routes to drivers who show up with the right paperwork. Here's the checklist.",
+    metaDescription:
+      "What medical courier work requires: background check, HIPAA and bloodborne-pathogen training, specimen handling, insurance, and how to get your first medical route.",
+    readMinutes: 7,
+    sections: [
+      {
+        heading: "What medical courier work is",
+        body: [
+          "Moving lab specimens, prescriptions, medical supplies, records, and equipment between labs, pharmacies, clinics, dialysis centers, and hospitals. The routes are scheduled and repeat daily or weekly, which is why drivers who get in tend to stay busy.",
+          "It's held to a higher standard than a furniture run: temperature, timing, and privacy all matter, and the customer will ask for proof you understand that before you carry anything.",
+        ],
+      },
+      {
+        heading: "The baseline every client asks for",
+        steps: [
+          "A clean driving record (most ask for a 3-year MVR) and a background check.",
+          "A reliable, clean vehicle — any size; a sedan is fine for specimen and pharmacy routes.",
+          "A smartphone for scanning, photos, and chain-of-custody signatures.",
+          "Commercial auto or a business-use rider, and often cargo coverage. Personal policies usually exclude paid delivery.",
+          "An EIN and a business name (sole proprietor or LLC) so they can pay you as a vendor and issue a 1099.",
+        ],
+        tip: "Keep your MVR, insurance certificate, EIN letter, and W-9 in one folder on your phone. Being the driver who sends everything in ten minutes wins routes.",
+      },
+      {
+        heading: "Training and certificates that get you hired",
+        steps: [
+          "HIPAA awareness training — you'll handle records and labeled specimens, and clients must be able to show their couriers were trained.",
+          "OSHA bloodborne pathogens (BBP) training — required by most labs for anyone transporting specimens.",
+          "Specimen handling / dangerous goods basics — many labs want a short course on packing and transporting 'Category B' biological substances (UN3373) and dry ice.",
+          "Some air-courier and hospital contracts add a TSA or facility-specific clearance. Only get these when a specific client requires them.",
+        ],
+        tip: "HIPAA and BBP courses are inexpensive online (typically $20–$50 each) and take an afternoon. Do them before you apply anywhere — it's the first thing a dispatcher checks.",
+      },
+      {
+        heading: "Equipment to have in the vehicle",
+        steps: [
+          "Insulated coolers with ice packs or dry ice, and a way to log temperatures.",
+          "Spill kit, gloves, and biohazard bags.",
+          "Secure, lockable storage — specimens and records never ride loose or visible.",
+        ],
+      },
+      {
+        heading: "Licenses and permits: check your state",
+        body: [
+          "There is no single national 'medical courier license.' Requirements come from three places: the client (training and background checks above), your state or city (a general business license, and in some states a courier or motor-carrier registration), and federal rules if you cross state lines or run larger vehicles (USDOT).",
+          "Search your state's business portal for 'courier' or 'delivery service' requirements before you invest in anything beyond the training above.",
+        ],
+        tip: "If a client tells you a permit is required, ask them to name it. Vague 'you need a license' answers are usually about their own vendor paperwork, not a government license.",
+      },
+      {
+        heading: "How to land your first medical route",
+        steps: [
+          "Independent pharmacies and compounding pharmacies — they deliver daily and often use drivers directly.",
+          "Local and regional labs, dialysis centers, and imaging clinics — ask who handles their specimen and supply runs.",
+          "Medical courier companies that subcontract routes to independent drivers with their own vehicles.",
+          "Your FlowSync profile: list 'medical courier' in your services with your training listed, so clinics searching locally find a driver who's already prepared.",
+        ],
+      },
+    ],
+    cta: GET_LISTED_CTA,
+  },
+  {
+    slug: "sign-up-as-a-carrier-curri-dispatch",
+    category: "foundation",
+    title: "Sign up with Curri and Dispatch as a carrier, not a gig driver — and why it matters",
+    excerpt:
+      "Same apps, two very different doors. The gig door gets you listed prices one job at a time. The carrier door lets you bid, add drivers and vehicles, and grow. Here's how to walk through the right one.",
+    metaDescription:
+      "How to apply to Curri and Dispatch as a carrier (business) account instead of a gig driver, what documents you need, and why carrier accounts earn more.",
+    readMinutes: 8,
+    sections: [
+      {
+        heading: "Gig account vs. carrier account",
+        body: [
+          "A gig account is an individual: you see loads posted at a listed price, you claim one, you're locked until it's complete, and you wait to be offered a few dollars more when the app is desperate.",
+          "A carrier account is a business: you can add vehicles and drivers, see and bid on loads that need bigger equipment, run more than one vehicle at a time, and negotiate instead of accept. Barham Transport runs on a carrier account — that's how a $100 listed load becomes a $300 bid.",
+          "Same apps. The account type decides whether you're a worker or a company.",
+        ],
+      },
+      {
+        heading: "Get these ready before you apply",
+        steps: [
+          "An EIN (free from the IRS) and a business name — sole proprietor is fine to start; an LLC is better once you're steady.",
+          "Commercial auto insurance, and cargo coverage for what you'll haul. Have the certificate (COI) as a PDF; carriers are asked to list the platform as a certificate holder.",
+          "USDOT number if you run heavier vehicles or cross state lines (free to register).",
+          "A W-9, clear photos of each vehicle (all sides, plus cargo area), and your driver's license.",
+          "A dedicated business email and phone number you'll actually answer.",
+        ],
+        tip: "Every carrier application asks for the same five things. Put them in one folder now and every future signup takes ten minutes.",
+      },
+      {
+        heading: "Curri: apply as a carrier",
+        steps: [
+          "On Curri's site, find the carrier or 'become a carrier partner' application — not the driver app download.",
+          "Apply as your business. Add every vehicle type you can legally run, even the bigger ones: many loads are posted for a box truck when it's one pallet a pickup can carry.",
+          "Upload your COI, W-9, and vehicle photos. Answer onboarding emails the same day; slow replies go to the back of the line.",
+          "Expect a waitlist in busy markets. While you wait, you can run under the FlowSync fleet's carrier account and keep earning.",
+        ],
+      },
+      {
+        heading: "Dispatch: apply as a business",
+        steps: [
+          "Dispatch works with suppliers (auto parts, building materials, appliances) and onboards delivery businesses, not individuals. Apply through their driver-partner or vendor onboarding, as your company.",
+          "Same document set: EIN, COI, W-9, vehicle photos. Larger vehicles and liftgates open more routes.",
+          "Once approved, routes are scheduled and repeat — the kind of work that fills the dead time between your bids elsewhere.",
+        ],
+        tip: "Platform requirements change without notice. Treat this as the map, and read the current application page as the territory.",
+      },
+      {
+        heading: "After you're in",
+        steps: [
+          "Bid, don't claim. Learn what a load is worth to the shipper before you touch the accept button (the Premium bidding calculator does this math).",
+          "Add drivers under your account as you grow — that's how one van becomes a fleet.",
+          "Keep your COI current and your paperwork updated. Carrier accounts get paused for expired insurance, not for slow weeks.",
+        ],
+      },
+    ],
+    cta: GET_LISTED_CTA,
+  },
   {
     slug: "get-dot-and-ein-free",
     category: "foundation",
@@ -558,6 +688,71 @@ export const GUIDES: Guide[] = [
       },
     ],
     cta: GET_LISTED_CTA,
+  },
+  {
+    slug: "run-an-ad-for-your-delivery-business",
+    category: "marketing",
+    title: "How to run an ad for your delivery business (without wasting $200 learning)",
+    excerpt:
+      "A $5-a-day local ad, pointed at the right businesses, with one clear offer. Here's the exact setup we use — and the four mistakes that burn most drivers' first budget.",
+    metaDescription:
+      "Step-by-step: run a small Facebook or Instagram ad for a local delivery business — targeting, budget, creative, landing page, and how to know if it's working.",
+    readMinutes: 9,
+    sections: [
+      {
+        heading: "Who the ad is for (not 'everyone')",
+        body: [
+          "The best delivery customers are businesses that ship locally every week and hate doing it themselves: furniture and mattress stores, auto parts counters, appliance dealers, building-supply yards, florists, independent pharmacies, print shops, and contractors.",
+          "One ad, one audience, one offer. 'Same-day delivery for furniture stores in Fresno' beats 'I deliver anything' every time.",
+        ],
+      },
+      {
+        heading: "Set up the account the right way",
+        steps: [
+          "Create a Facebook Business Page for your delivery business (your name + 'Delivery' is fine). Add your FlowSync profile link, phone, and a photo of you with your vehicle.",
+          "Open Meta Ads Manager from that page. Use a business email you check.",
+          "Set your payment method and a spending limit before you build anything — $150 for the first month is plenty to learn.",
+        ],
+        tip: "Skip the 'Boost post' button. Ads Manager gives you the targeting and the numbers; boosting hides both.",
+      },
+      {
+        heading: "Build the campaign",
+        steps: [
+          "Objective: Leads or Messages. You want a text or a call, not 'engagement'.",
+          "Location: your city plus a 15–25 mile radius. Nothing broader.",
+          "Audience: keep it simple — adults 25–65, interests like 'small business owners', 'furniture store', 'auto parts', or leave interests off and let the radius do the work.",
+          "Budget: $5–$10 per day, one ad set, one ad. Let it run 7 days without touching it.",
+          "Placement: automatic. Facebook and Instagram feeds do the work for local service ads.",
+        ],
+      },
+      {
+        heading: "The creative that works for delivery",
+        steps: [
+          "Photo: you, your vehicle, and something being loaded. Real beats stock every time.",
+          "Headline formula: 'Same-day [what you carry] delivery in [City] — text [your number]'.",
+          "Body: three lines. What you deliver, the area you cover, and how to book ('Text me the pickup and drop-off and I'll quote you in 10 minutes').",
+          "Button: Send Message or Call Now. Landing page, if you use one: your FlowSync profile.",
+        ],
+        tip: "Put your phone number in the image itself. People screenshot ads.",
+      },
+      {
+        heading: "How to know if it's working",
+        body: [
+          "Ignore likes and reach. The only number that matters is cost per conversation: dollars spent divided by real texts or calls from businesses. Under $15 per conversation in week one is good for a local service.",
+          "One booked repeat customer usually pays for months of ads. Measure by customers won, not by clicks.",
+        ],
+      },
+      {
+        heading: "The four mistakes that burn the first budget",
+        steps: [
+          "Changing the ad every day. Give it seven days; the system needs time to find your people.",
+          "No phone number and no clear next step. If they have to figure out how to reach you, they won't.",
+          "Targeting the whole state. Radius targeting is the entire trick for a local business.",
+          "Running the ad with an empty profile. Finish your FlowSync profile first — that's where they check you out before they text.",
+        ],
+      },
+    ],
+    cta: PREMIUM_CTA,
   },
 ];
 

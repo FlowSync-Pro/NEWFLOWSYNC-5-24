@@ -137,8 +137,8 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
           The FlowSync directory is still being built out in most cities. The drivers who list now are the
           ones customers find first as it grows — and the top spots go to whoever&apos;s already there.
           Your ${price}{" "}
-          also gets you the full setup: DOT &amp; EIN, pricing tools, and 14 guides for landing your own
-          direct customers.{" "}
+          also gets you set up as a real carrier: USDOT and EIN for free, LLC filing, medical courier
+          requirements, and the carrier-not-gig signup playbook for Curri and Dispatch.{" "}
           <span className="text-foreground">You start building from day one instead of waiting on anyone.</span>
         </p>
       </div>

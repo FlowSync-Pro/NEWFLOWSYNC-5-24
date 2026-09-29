@@ -84,8 +84,8 @@ const PROMISES = [
     body: "No commission games and no monthly fees. You quote the job, you set the price, and the customer books you directly.",
   },
   {
-    title: "Tools to run it like a business",
-    body: "A fair-quote calculator, trip + mileage tracking, a profit & loss tool, and step-by-step guides — included.",
+    title: "Set up as a real carrier",
+    body: "Step-by-step guides to get your USDOT and EIN for free, file an LLC, meet medical courier requirements, and sign up with Curri and Dispatch as a carrier — not a gig driver.",
   },
 ];
 
