@@ -98,7 +98,7 @@ export const TIER1_GUIDE_SLUGS = [
  * to the merge time of the launch deploy (a little late is fine — it only
  * means a few new buyers get extra access; early would take things away).
  */
-export const LEGACY_CUTOVER_AT = new Date("2026-10-03T00:00:00Z");
+export const LEGACY_CUTOVER_AT = new Date("2026-09-29T16:45:00Z");
 
 export function getTier(id: TierId): Tier {
   return TIERS[id];
