@@ -163,7 +163,12 @@ given fresh, per specific action.
 ## D. Offers & pricing (must always be exact)
 
 **ACTIVE — only reference or build for these:**
-- **$17 Verified listing** (one-time; any vehicle, sedan through box truck): a public
+- **Verified listing — $17 until 12:00 am Pacific, Monday October 6, 2026, then $47**
+  (one-time; any vehicle, sedan through box truck). This is a REAL, dated increase:
+  `listingPrice()` in `src/lib/pricing.ts` returns the current price and every page,
+  the checkout amount, and every message read it. Never hardcode either number in
+  UI. After the date, fold $47 into `TIERS.standard.price` with owner approval. The
+  listing includes: a public
   driver profile in the FlowSync directory with direct customer bookings; 14 step-by-step
   guides (DOT & EIN setup, LLC vs sole proprietor, insurance, quarterly taxes &
   write-offs, pricing for profit, first reviews, finding customers on Nextdoor / Yelp /
@@ -195,6 +200,15 @@ placement, not vehicle.
   toggle on the driver page. Adding the driver to the carrier account and sending the
   Stripe Connect link are MANUAL owner steps (the webhook pings Telegram).
 - Never a Premium perk. Not to be confused with the standby $197 coaching program below.
+
+**Abandoned-checkout recovery (live):** new-buyer Checkouts (listing, homepage fleet)
+expire after 60 minutes with Stripe recovery on and a phone field (owner-approved
+personal-data field). `checkout.session.expired` → recovery email + Telegram ping with a
+ready-to-send text. `/admin/recovery` lists abandoned checkouts, unpaid signups, paid
+non-fleet drivers, and Verified-not-Premium drivers with copy/SMS/mailto buttons. All
+message copy lives in `src/lib/recovery.ts`: current price, the real increase date while
+pending, the 30-day guarantee — no discounts, no fake urgency. One text, one follow-up
+two days later, stop on request.
 
 **ON STANDBY — do NOT pitch, build CTAs for, or surface anywhere:**
 - $197 four-week coaching program (a different product from the $197 fleet invite)

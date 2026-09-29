@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { FLEET, getBump, isPremiumTier, PNL_PRO, TIERS, type TierId } from "@/lib/pricing";
+import { FLEET, getBump, isPremiumTier, listingPrice, PNL_PRO, TIERS, type TierId } from "@/lib/pricing";
 import { pnlProActive } from "@/lib/subscription";
 
 export const runtime = "nodejs";
@@ -10,6 +10,20 @@ export const runtime = "nodejs";
 const fleetLineItem = (unitAmount: number) => ({
   price_data: { currency: "usd", unit_amount: unitAmount, product_data: { name: FLEET.name } },
   quantity: 1,
+});
+
+// Abandoned-checkout recovery for NEW buyers (listing + homepage fleet):
+//  - the session expires after 60 minutes instead of Stripe's 24-hour default,
+//    so the `checkout.session.expired` webhook (which emails the buyer and pings
+//    the owner to text them) fires while they're still warm;
+//  - Stripe's recovery flag makes it keep the email the buyer typed on the
+//    Checkout page, which is what the follow-up needs;
+//  - a phone field on the Checkout page, because the owner's best-converting
+//    follow-up is a personal text. (Owner-approved new personal-data field.)
+const RECOVERY_SESSION_OPTIONS = () => ({
+  expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
+  after_expiration: { recovery: { enabled: true, allow_promotion_codes: false } },
+  phone_number_collection: { enabled: true },
 });
 
 export async function POST(req: Request) {
@@ -59,6 +73,7 @@ export async function POST(req: Request) {
 
     const fleet = await stripe.checkout.sessions.create({
       mode: "payment",
+      ...RECOVERY_SESSION_OPTIONS(),
       line_items: [fleetLineItem(FLEET.price * 100)],
       customer_email: email,
       metadata: { type: "fleet", standalone: "1", firstName, lastName, email, ref },
@@ -263,9 +278,11 @@ export async function POST(req: Request) {
   const ref = typeof body.ref === "string" ? body.ref.trim().slice(0, 16) : "";
   const tierId: TierId = body.tier === "premium" ? "premium" : "standard";
   const tier = TIERS[tierId];
+  // The listing has a dated price increase; charge what the site shows right now.
+  const tierAmount = tierId === "standard" ? listingPrice() : tier.price;
 
   const priced = [
-    { name: `FlowSync ${tier.name} listing`, amount: tier.price * 100 },
+    { name: `FlowSync ${tier.name} listing`, amount: tierAmount * 100 },
     ...bumps.map((id) => {
       const b = getBump(id)!;
       return { name: b.name, amount: b.price * 100 };
@@ -274,6 +291,7 @@ export async function POST(req: Request) {
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    ...RECOVERY_SESSION_OPTIONS(),
     line_items: priced.map((item) => ({
       price_data: { currency: "usd", unit_amount: item.amount, product_data: { name: item.name } },
       quantity: 1,

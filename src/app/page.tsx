@@ -9,7 +9,7 @@ import Reveal from "@/components/Reveal";
 import ReviewStrip from "@/components/ReviewStrip";
 import FleetCheckout from "@/components/FleetCheckout";
 import { FleetBiddingStory, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
-import { FLEET } from "@/lib/pricing";
+import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice } from "@/lib/pricing";
 
 // The homepage is the paid-ad landing page, so it must stay fast. Rather than
 // making it dynamic to show reviews, it's regenerated at most once every 5
@@ -147,8 +147,13 @@ export default function Home() {
               </Link>
             </div>
             <p className="mt-3 text-sm text-muted">
-              $17 one-time to get listed · no monthly fees · set your own rates
+              ${listingPrice()} one-time to get listed · no monthly fees · set your own rates
             </p>
+            {listingIncreasePending() && (
+              <p className="mt-1 text-sm font-medium text-accent">
+                Goes to ${LISTING_PRICE_AFTER} on {LISTING_INCREASE_DATE_LABEL}.
+              </p>
+            )}
             <p className="mt-5 text-sm text-muted">
               Need something delivered?{" "}
               <Link href="/find-a-driver" className="font-medium text-accent underline-offset-4 hover:underline">

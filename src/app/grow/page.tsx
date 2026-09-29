@@ -9,6 +9,8 @@ import { hasGuideAccess } from "@/lib/access";
 
 // Member resources — only signed-in paid drivers (and admins) see the library.
 // Reached from inside the driver dashboard, not the public nav.
+import { listingPrice } from "@/lib/pricing";
+
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -48,7 +50,7 @@ export default async function GrowPage() {
           </p>
           <p className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-4 py-1.5 text-xs font-medium text-accent">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><rect x="4" y="11" width="16" height="9" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" strokeLinecap="round" /></svg>
-            Included free with your $17 FlowSync listing
+            Included free with your ${listingPrice()} FlowSync listing
           </p>
         </div>
       </section>
@@ -89,7 +91,7 @@ export default async function GrowPage() {
               <p className="mt-1 text-muted">Get listed in the directory and start taking direct bookings.</p>
             </div>
             <Link href="/pricing" className="btn-primary shrink-0 rounded-full px-7 py-3.5 text-sm">
-              Get listed for $17
+              Get listed for ${listingPrice()}
             </Link>
           </div>
         </Reveal>

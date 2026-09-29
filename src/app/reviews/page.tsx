@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listPublicReviews, reviewSummary } from "@/lib/reviews";
 import { SITE_URL } from "@/lib/site";
+import { listingPrice } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,7 @@ export default async function ReviewsPage() {
         <div className="mt-12 text-center">
           <p className="text-muted">Ready to join them?</p>
           <Link href="/pricing" className="btn-primary mt-4 inline-flex rounded-full px-7 py-3 text-sm">
-            Get listed for $17
+            Get listed for ${listingPrice()}
           </Link>
         </div>
       </div>

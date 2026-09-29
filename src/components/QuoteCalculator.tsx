@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { SERVICES, type ServiceId } from "@/lib/services";
-import { PLATFORM_FEE_PERCENT } from "@/lib/pricing";
+import { listingPrice, PLATFORM_FEE_PERCENT } from "@/lib/pricing";
 
 // Sensible starting hourly suggestion per service (midpoint-ish of its range).
 const SUGGESTED_HOURLY: Record<ServiceId, number> = {
@@ -255,7 +255,7 @@ export default function QuoteCalculator({ alreadyListed = false }: { alreadyList
             </div>
             {!alreadyListed && (
               <Link href="/pricing" className="btn-primary mt-5 flex w-full justify-center rounded-full px-6 py-3 text-sm">
-                Get listed for $17
+                Get listed for ${listingPrice()}
               </Link>
             )}
           </div>

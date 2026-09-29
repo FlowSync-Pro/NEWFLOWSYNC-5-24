@@ -24,14 +24,17 @@ export const CATEGORY_LABEL: Record<GuideCategory, string> = {
   marketing: "Marketing your business",
 };
 
+// No price in these labels on purpose: this module is evaluated once at
+// startup, and the listing price is dated (lib/pricing listingPrice()). Pages
+// that show the number read it at render time.
 const DOT_EIN_CTA = {
-  label: "Get listed for $17",
+  label: "Get listed",
   href: "/pricing",
-  note: "Get listed for a one-time $17 — the full DOT & EIN setup guide is included, and you set your own rates.",
+  note: "Get listed for a one-time fee — the full DOT & EIN setup guide is included, and you set your own rates.",
 };
 
 const GET_LISTED_CTA = {
-  label: "Get listed for $17",
+  label: "Get listed",
   href: "/pricing",
   note: "List your profile in the FlowSync directory and take direct bookings — you set your own rates.",
 };

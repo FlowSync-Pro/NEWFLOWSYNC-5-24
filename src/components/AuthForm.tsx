@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { login, setPassword, requestPasswordReset, resetPasswordWithToken, activateAfterCheckout, type AuthState, type ForgotState, type ActivateState } from "@/app/actions/auth";
+import { listingPrice } from "@/lib/pricing";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition-colors focus:border-accent";
@@ -93,7 +94,7 @@ export function AuthPanel() {
       <p className="mt-5 border-t border-border pt-5 text-center text-sm text-muted">
         New driver?{" "}
         <Link href="/pricing" className="font-medium text-accent hover:underline">
-          Get listed for $17 →
+          Get listed for ${listingPrice()} →
         </Link>
       </p>
     </div>

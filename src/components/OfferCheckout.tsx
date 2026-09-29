@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import {
   BUMPS,
   GUARANTEE_DAYS,
+  LISTING_INCREASE_DATE_LABEL,
+  LISTING_PRICE_AFTER,
+  listingIncreasePending,
+  listingPrice,
   PLATFORM_FEE_PERCENT,
   TIERS,
   VALUE_STACK,
@@ -56,6 +60,9 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
   }, [referralCode]);
 
   const tier = TIERS.standard;
+  // Dated, real price increase: $17 until the date, $47 after (lib/pricing).
+  const price = listingPrice();
+  const increasePending = listingIncreasePending();
   const toggle = (id: string) => setSelected((s) => ({ ...s, [id]: !s[id] }));
 
   async function handleCheckout() {
@@ -84,10 +91,10 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
   }
 
   const { total, lineItems } = useMemo(() => {
-    const items: { label: string; price: number }[] = [{ label: `${tier.name} listing`, price: tier.price }];
+    const items: { label: string; price: number }[] = [{ label: `${tier.name} listing`, price }];
     for (const b of BUMPS) if (selected[b.id]) items.push({ label: b.name, price: b.price });
     return { total: items.reduce((s, i) => s + i.price, 0), lineItems: items };
-  }, [selected, tier]);
+  }, [selected, tier, price]);
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
@@ -129,11 +136,22 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
         <p className="mt-1 text-sm text-muted">
           The FlowSync directory is still being built out in most cities. The drivers who list now are the
           ones customers find first as it grows — and the top spots go to whoever&apos;s already there.
-          Your ${tier.price} also gets you the full setup: DOT &amp; EIN, pricing tools, and 14 guides for
-          landing your own direct customers.{" "}
+          Your ${price}{" "}
+          also gets you the full setup: DOT &amp; EIN, pricing tools, and 14 guides for landing your own
+          direct customers.{" "}
           <span className="text-foreground">You start building from day one instead of waiting on anyone.</span>
         </p>
       </div>
+
+      {/* Real, dated price increase — shown only while it's still ahead. */}
+      {increasePending && (
+        <div className="mx-auto mt-4 max-w-2xl rounded-2xl border border-accent/40 bg-accent-soft p-4 text-center">
+          <p className="text-sm font-semibold text-accent">
+            The listing goes from ${price} to ${LISTING_PRICE_AFTER} on {LISTING_INCREASE_DATE_LABEL}.
+          </p>
+          <p className="mt-1 text-xs text-muted">Get listed before then and you pay ${price}. Same {GUARANTEE_DAYS}-day money-back guarantee either way.</p>
+        </div>
+      )}
 
       {/* Standard offer + value stack */}
       <div className="mx-auto mt-8 max-w-2xl">
@@ -144,7 +162,7 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
               <p className="mt-1 text-sm text-muted">{tier.tagline}</p>
             </div>
             <div className="shrink-0 text-right">
-              <span className="text-3xl font-extrabold text-accent">${tier.price}</span>
+              <span className="text-3xl font-extrabold text-accent">${price}</span>
               <span className="block text-xs text-muted">one-time</span>
             </div>
           </div>
@@ -164,7 +182,7 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
             </div>
             <div className="flex items-center justify-between">
               <span className="font-bold">Your price today</span>
-              <span className="text-2xl font-extrabold text-accent">${tier.price}</span>
+              <span className="text-2xl font-extrabold text-accent">${price}</span>
             </div>
           </div>
         </div>

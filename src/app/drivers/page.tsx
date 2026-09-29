@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import Reveal from "@/components/Reveal";
 import JsonLd, { faqLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/site";
-import { PLATFORM_FEE_PERCENT } from "@/lib/pricing";
+import { listingPrice, PLATFORM_FEE_PERCENT } from "@/lib/pricing";
+
+// Regenerated every 5 minutes so the dated listing price switches on time.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "For Drivers — FlowSync",
@@ -21,13 +24,15 @@ const COMPARE = [
   { label: "Pay shown before you accept", flowsync: "Yes", others: "Varies" },
 ];
 
-const FAQ = [
+// A function, not a constant: the listing price is dated (lib/pricing), so it
+// must be read at render time, not once at startup.
+const faq = (price: number) => [
   {
     q: "How much does it cost to join?",
     // Reads the real fee from lib/pricing so this answer can never drift from
     // what checkout actually charges (a hardcoded "5%" here outlived the fee
     // change to 10%). This text also feeds the FAQ JSON-LD Google indexes.
-    a: `Getting listed is a one-time $17 — no monthly fees. After that FlowSync takes a flat ${PLATFORM_FEE_PERCENT}% per completed job instead of a large percentage commission, so the more you earn the more you keep.`,
+    a: `Getting listed is a one-time $${price} — no monthly fees. After that FlowSync takes a flat ${PLATFORM_FEE_PERCENT}% per completed job instead of a large percentage commission, so the more you earn the more you keep.`,
   },
   {
     q: "Can I offer more than one service?",
@@ -48,6 +53,7 @@ const FAQ = [
 ];
 
 export default function DriversPage() {
+  const FAQ = faq(listingPrice());
   return (
     <div>
       <JsonLd data={faqLd(FAQ)} />

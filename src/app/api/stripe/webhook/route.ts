@@ -7,9 +7,10 @@ import { serviceToEnum } from "@/lib/enums";
 import { attributeReferral } from "@/lib/referrals";
 import { alertOwner } from "@/lib/alerts";
 import { sendCapiPurchase } from "@/lib/meta-capi";
-import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendFleetWelcomeEmail, sendPremiumUpgradeEmail, sendPnlProEmail } from "@/lib/email";
+import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendCheckoutRecoveryEmail, sendFleetWelcomeEmail, sendPremiumUpgradeEmail, sendPnlProEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import { FLEET } from "@/lib/pricing";
+import { recoveryText } from "@/lib/recovery";
 import type { ServiceId } from "@/lib/services";
 
 export const runtime = "nodejs";
@@ -40,6 +41,8 @@ export async function POST(req: Request) {
     else if (session.metadata?.type === "pnl-sub") await fulfillPnlSubscription(session);
     else if (session.metadata?.type === "fleet") await fulfillFleet(session);
     else await fulfillCheckout(session);
+  } else if (event.type === "checkout.session.expired") {
+    await handleAbandonedCheckout(event.data.object);
   } else if (
     event.type === "customer.subscription.updated" ||
     event.type === "customer.subscription.deleted"
@@ -48,6 +51,38 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+// A new buyer opened Stripe Checkout and didn't pay within the hour. If Stripe
+// kept their email (it does once they've typed it, with recovery enabled), send
+// the recovery email and ping the owner with a ready-to-send text — a personal
+// text within the hour is the highest-converting follow-up we have.
+async function handleAbandonedCheckout(session: Stripe.Checkout.Session) {
+  const md = session.metadata ?? {};
+  const product = md.type === "listing" ? "listing" : md.type === "fleet" && md.standalone === "1" ? "fleet" : null;
+  if (!product) return; // signed-in upgrades etc. are followed up in-app, not here
+
+  const email = (session.customer_details?.email ?? session.customer_email ?? md.email ?? "").toLowerCase();
+  const phone = session.customer_details?.phone ?? null;
+  if (!email && !phone) return;
+
+  const firstName = md.firstName || session.customer_details?.name?.split(" ")[0] || "";
+  const amount = (session.amount_total ?? 0) / 100;
+  const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+  const resumeUrl = product === "listing" ? `${base}/pricing?resume=1` : `${base}/#curri-fleet`;
+
+  // Someone who already has a paid account doesn't need a recovery nudge.
+  if (email) {
+    const paid = await prisma.payment.findFirst({ where: { status: "PAID", user: { email } }, select: { id: true } });
+    if (paid) return;
+    await sendCheckoutRecoveryEmail({ to: email, firstName, product, resumeUrl });
+  }
+
+  await alertOwner(
+    `🛒 Abandoned checkout (${product}, $${amount.toFixed(0)})\n` +
+      `Name: ${firstName || "(not given)"}\nEmail: ${email || "(not given)"}\nPhone: ${phone || "(not given)"}\n\n` +
+      (phone ? `Text them now:\n"${recoveryText(product, firstName)}"` : `Recovery email ${email ? "sent" : "not possible (no email)"}.`),
+  );
 }
 
 // Reads `current_period_end` defensively — its exact location shifts across Stripe

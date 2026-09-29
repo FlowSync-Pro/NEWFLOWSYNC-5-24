@@ -4,6 +4,10 @@ import Reveal from "@/components/Reveal";
 import { SERVICES } from "@/lib/services";
 import ServiceIcon from "@/components/ServiceIcon";
 import { SITE_URL } from "@/lib/site";
+import { listingPrice } from "@/lib/pricing";
+
+// Regenerated every 5 minutes so the dated listing price switches on time.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "How it works — FlowSync",
@@ -12,12 +16,12 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/how-it-works` },
 };
 
-const STEPS = [
+const steps = (price: number) => [
   {
     n: "01",
-    title: "Get listed for $17",
+    title: `Get listed for $${price}`,
     body: "Choose a plan and pay the one-time listing fee, then add a few details about you and your vehicle. We verify your identity and license so customers can trust you from day one.",
-    points: ["No interviews or résumé", "Quick identity & vehicle check", "$17 one-time — no monthly fees"],
+    points: ["No interviews or résumé", "Quick identity & vehicle check", `$${price} one-time — no monthly fees`],
   },
   {
     n: "02",
@@ -40,6 +44,7 @@ const STEPS = [
 ];
 
 export default function HowItWorksPage() {
+  const STEPS = steps(listingPrice());
   return (
     <div>
       <section className="relative overflow-hidden border-b border-border">

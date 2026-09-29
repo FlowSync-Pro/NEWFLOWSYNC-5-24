@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { SUPPORT_EMAIL } from "./site";
-import { FLEET, TIERS } from "./pricing";
+import { FLEET, GUARANTEE_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, TIERS } from "./pricing";
 
 // Lazy + graceful: when RESEND_API_KEY isn't set, email sends are skipped (logged)
 // so the rest of the flow still works. Swap nothing to go live — just set the keys.
@@ -260,6 +260,40 @@ export async function sendFleetWelcomeEmail(opts: {
     <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.</p>
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
   return send(opts.to, `You're in the fleet, ${opts.firstName} — next steps`, shell("Welcome to the fleet", body));
+}
+
+/**
+ * Abandoned-checkout recovery. Sent by the webhook when a new buyer's Stripe
+ * Checkout expires unpaid. Personal, one link, the real price (and the real
+ * increase date while it's pending), the guarantee. No discount, no fake timer.
+ */
+export async function sendCheckoutRecoveryEmail(opts: {
+  to: string;
+  firstName?: string;
+  product: "listing" | "fleet";
+  resumeUrl: string;
+}) {
+  const name = opts.firstName || "there";
+  const isFleet = opts.product === "fleet";
+  const price = isFleet ? FLEET.price : listingPrice();
+  const pending = !isFleet && listingIncreasePending();
+  const what = isFleet ? "joining the Curri fleet" : "your FlowSync driver listing";
+  const body = `
+    <p ${P}>Hi ${name} — you started ${what} but didn't finish. No pressure; here's the link to pick up right where you left off.</p>
+    ${
+      pending
+        ? `<p ${P}>One heads-up so you're not surprised later: the listing is <strong style="color:#e7ecef">$${price} until ${LISTING_INCREASE_DATE_LABEL}</strong>, then it goes to $${LISTING_PRICE_AFTER}. Same ${GUARANTEE_DAYS}-day money-back guarantee either way.</p>`
+        : `<p ${P}>It's <strong style="color:#e7ecef">$${price} one-time</strong>, with a ${GUARANTEE_DAYS}-day money-back guarantee.</p>`
+    }
+    <p style="margin:0 0 18px">${button(opts.resumeUrl, isFleet ? `Finish joining — $${price}` : `Finish my listing — $${price}`)}</p>
+    <p ${P}>Stuck on something, or just have a question? Reply to this email — a real person reads it.</p>
+    <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
+  const subject = isFleet
+    ? "Your fleet spot is still open"
+    : pending
+      ? `Your FlowSync listing is still waiting (it's $${price} until ${LISTING_INCREASE_DATE_LABEL})`
+      : "Your FlowSync listing is still waiting";
+  return send(opts.to, subject, shell(isFleet ? "Pick up where you left off" : "Your listing is one click away", body));
 }
 
 /**

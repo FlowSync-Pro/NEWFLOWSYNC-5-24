@@ -5,6 +5,10 @@ import { SERVICES, getService, type Service } from "@/lib/services";
 import { SITE_URL } from "@/lib/site";
 import ServiceIcon from "@/components/ServiceIcon";
 import JsonLd, { breadcrumbLd, faqLd } from "@/components/JsonLd";
+import { listingPrice } from "@/lib/pricing";
+
+// Regenerated every 5 minutes so the dated listing price switches on time.
+export const revalidate = 300;
 
 export function generateStaticParams() {
   return SERVICES.map((s) => ({ id: s.id }));
@@ -41,7 +45,7 @@ function serviceFaqs(s: Service): { q: string; a: string }[] {
     },
     {
       q: `How do I start offering ${s.short.toLowerCase()}?`,
-      a: `Create your driver profile, choose "${s.name}", and get listed in the FlowSync directory for a one-time $17. Customers can then book you directly.`,
+      a: `Create your driver profile, choose "${s.name}", and get listed in the FlowSync directory for a one-time $${listingPrice()}. Customers can then book you directly.`,
     },
   ];
 }

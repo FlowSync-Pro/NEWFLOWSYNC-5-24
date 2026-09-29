@@ -12,6 +12,8 @@ import JsonLd, { breadcrumbLd } from "@/components/JsonLd";
 
 // Guides are a paid member benefit — access depends on the signed-in user, so
 // the page can't be statically prerendered.
+import { listingPrice } from "@/lib/pricing";
+
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
@@ -138,13 +140,14 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
               </span>
               <h2 className="mt-4 text-xl font-bold tracking-tight">The rest of this guide is for FlowSync members</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-                Get listed for a one-time $17 and unlock every guide in the library —
+                Get listed for a one-time ${listingPrice()}{" "}
+                and unlock every guide in the library —
                 including the full DOT &amp; EIN walkthrough, business-setup, insurance,
                 and local-marketing playbooks. You also get your directory listing and tools.
               </p>
               <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link href="/pricing" className="btn-primary rounded-full px-7 py-3 text-sm">
-                  Get listed &amp; unlock all guides — $17
+                  Get listed &amp; unlock all guides — ${listingPrice()}
                 </Link>
                 <Link href="/signin" className="btn-ghost rounded-full px-6 py-3 text-sm">
                   Already a member? Sign in

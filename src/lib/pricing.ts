@@ -75,6 +75,30 @@ export function getTier(id: TierId): Tier {
 }
 
 /**
+ * A REAL, dated price increase for the listing. Until the moment below the site
+ * shows and charges TIERS.standard.price ($17) and says when it goes up; from
+ * that moment it shows and charges LISTING_PRICE_AFTER ($47), automatically.
+ * Every price the visitor sees, and the amount Stripe is told to charge, must
+ * come from listingPrice() so nothing can say $17 while charging $47 or the
+ * reverse. Recovery messages may only mention the increase because it is real.
+ *
+ * After the date, fold the new price into TIERS.standard.price and delete this
+ * block — with the owner's approval, since it's a price change.
+ */
+export const LISTING_PRICE_INCREASE_AT = new Date("2026-10-06T07:00:00Z"); // 12:00 am Pacific, Mon Oct 6 2026
+export const LISTING_PRICE_AFTER = 47;
+export const LISTING_INCREASE_DATE_LABEL = "Monday, October 6";
+
+export function listingIncreasePending(now: Date = new Date()): boolean {
+  return now < LISTING_PRICE_INCREASE_AT;
+}
+
+/** The listing price right now: $17 before the increase, $47 after. */
+export function listingPrice(now: Date = new Date()): number {
+  return listingIncreasePending(now) ? TIERS.standard.price : LISTING_PRICE_AFTER;
+}
+
+/**
  * The Curri fleet invite — a SEPARATE product from the listing tiers. Drivers
  * join the Barham Transport carrier account and get loads dispatched to them.
  *

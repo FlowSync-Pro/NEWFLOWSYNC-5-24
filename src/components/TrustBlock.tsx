@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { SUPPORT_EMAIL } from "@/lib/site";
-import { GUARANTEE_DAYS } from "@/lib/pricing";
+import { GUARANTEE_DAYS, listingPrice } from "@/lib/pricing";
 
 /** Dense, specific trust signals shown above the order summary on /pricing.
  * Every claim is concrete and verifiable on this same site — no badges, no
  * "as seen on TV" filler. The goal is to clear the last skeptical-buyer
  * hurdles right before the buy button. */
 export default function TrustBlock() {
+  const price = listingPrice();
   return (
     <section aria-labelledby="trust-heading" className="mx-auto mt-10 max-w-3xl">
       <h2 id="trust-heading" className="text-center text-sm font-semibold uppercase tracking-widest text-accent">
@@ -42,7 +43,7 @@ export default function TrustBlock() {
                 <path d="M3 12h18M9 6l-3 6 3 6M15 6l3 6-3 6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <p className="font-semibold">One-time $17. Pay once.</p>
+            <p className="font-semibold">One-time ${price}. Pay once.</p>
           </div>
           <p className="mt-2 text-sm text-muted">
             No subscription, no auto-renewal, no &ldquo;we&apos;ll charge you again next month&rdquo;.
@@ -62,8 +63,8 @@ export default function TrustBlock() {
             <p className="font-semibold">{GUARANTEE_DAYS}-day money-back guarantee</p>
           </div>
           <p className="mt-2 text-sm text-muted">
-            Not happy in {GUARANTEE_DAYS} days? Email us, we refund the full $17 — no questions, no
-            hoops. Refunded to your original card within 5–10 days.{" "}
+            Not happy in {GUARANTEE_DAYS} days? Email us, we refund the full ${price}{" "}
+            — no questions, no hoops. Refunded to your original card within 5–10 days.{" "}
             <Link href="/refund-policy" className="text-accent hover:underline">
               See the policy
             </Link>

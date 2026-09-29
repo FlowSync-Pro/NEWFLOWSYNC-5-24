@@ -119,7 +119,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
               <div className="mt-6"><FleetCheckout mode="member" /></div>
               <p className="mt-3 text-xs text-muted">
                 The ${FLEET.addOnPrice}{" "}
-                price is offered once, right after a new $17 listing. From your account it&apos;s ${FLEET.price}.
+                price is offered once, right after a new listing is paid. From your account it&apos;s ${FLEET.price}.
               </p>
             </section>
             <section className="card mt-6 p-6">

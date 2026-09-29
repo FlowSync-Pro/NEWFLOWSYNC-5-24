@@ -3,20 +3,23 @@ import OfferCheckout from "@/components/OfferCheckout";
 import JsonLd from "@/components/JsonLd";
 import ReviewStrip from "@/components/ReviewStrip";
 import TrustBlock from "@/components/TrustBlock";
-import { BUMPS, TIERS } from "@/lib/pricing";
+import { BUMPS, listingPrice, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import { getSocialProof } from "@/lib/social-proof";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Pricing — get listed for $17",
-  description:
-    "Get listed in the FlowSync driver directory for a one-time $17 and set your own rates on every job — your DOT & EIN setup guide is included. Upgrade to Premium ($97) anytime from your account for a premium badge and priority placement.",
-  alternates: { canonical: `${SITE_URL}/pricing` },
-};
+// Computed per request: the listing price is dated (lib/pricing).
+export async function generateMetadata(): Promise<Metadata> {
+  const price = listingPrice();
+  return {
+    title: `Pricing — get listed for $${price}`,
+    description: `Get listed in the FlowSync driver directory for a one-time $${price} and set your own rates on every job — your DOT & EIN setup guide is included. Upgrade to Premium ($${TIERS.premium.price}) anytime from your account for a premium badge and priority placement.`,
+    alternates: { canonical: `${SITE_URL}/pricing` },
+  };
+}
 
-const productLd = {
+const productLd = () => ({
   "@context": "https://schema.org",
   "@type": "Product",
   name: "FlowSync Driver Listing",
@@ -26,7 +29,7 @@ const productLd = {
     ...Object.values(TIERS).map((t) => ({
       "@type": "Offer",
       name: `${t.name} listing`,
-      price: String(t.price),
+      price: String(t.id === "standard" ? listingPrice() : t.price),
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: `${SITE_URL}/pricing`,
@@ -40,7 +43,7 @@ const productLd = {
       url: `${SITE_URL}/pricing`,
     })),
   ],
-};
+});
 
 export default async function PricingPage({ searchParams }: PageProps<"/pricing">) {
   const sp = await searchParams;
@@ -48,7 +51,7 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
   const proof = await getSocialProof();
   return (
     <div className="relative">
-      <JsonLd data={productLd} />
+      <JsonLd data={productLd()} />
       <div className="glow-radial pointer-events-none absolute inset-0 h-80" />
       <div className="relative">
         <OfferCheckout proof={proof} referralCode={ref} />

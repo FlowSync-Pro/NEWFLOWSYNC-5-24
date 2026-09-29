@@ -8,6 +8,7 @@ import { SITE_URL } from "@/lib/site";
 import { citySlug, cityDisplay } from "@/lib/locations";
 import DriverDirectory, { type DirectoryCard } from "@/components/DriverDirectory";
 import { cardExperience } from "@/lib/experience";
+import { listingPrice } from "@/lib/pricing";
 import JsonLd, { breadcrumbLd } from "@/components/JsonLd";
 
 export const dynamic = "force-dynamic";
@@ -123,7 +124,7 @@ export default async function CityServicePage({ params }: PageProps<"/delivery/[
             <h2 className="text-lg font-bold">Drive {svc.name.toLowerCase()} in {cityName}?</h2>
             <p className="mt-1 text-sm text-muted">Get listed here and start taking direct bookings — you set your own rates.</p>
           </div>
-          <Link href="/pricing" className="btn-primary shrink-0 rounded-full px-7 py-3 text-sm">Get listed for $17</Link>
+          <Link href="/pricing" className="btn-primary shrink-0 rounded-full px-7 py-3 text-sm">Get listed for ${listingPrice()}</Link>
         </div>
       </section>
     </div>
