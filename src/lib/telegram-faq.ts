@@ -11,7 +11,7 @@ export const TELEGRAM_BASELINE_FAQS: KnowledgeCandidate[] = [
     // lib/pricing.ts and the guide library in lib/guides.ts). Do not list
     // anything here that a driver cannot open in their account after paying.
     answer:
-      "The one-time Verified listing ($47) includes a public driver profile in the FlowSync directory, your own service menu with custom pricing, the setup guides (how to get your USDOT number and EIN for free, how to file an LLC, medical courier requirements and licenses, and how to sign up with Curri and Dispatch as a carrier instead of a gig driver), the driver roadmap, and Telegram community access. Premium ($97 one-time including the listing, or $50 to upgrade from Verified) adds the bidding calculator, the business profit and loss tracker, every other guide including how to run an ad, the Curri mastermind course, the Premium badge, priority placement, and a website link. Drivers who bought before the change keep everything they had. Both are backed by a 30-day money-back guarantee.",
+      "The one-time Verified listing ($47) includes a public driver profile in the FlowSync directory, your own service menu with custom pricing, the setup guides (how to get your USDOT number and EIN for free, how to file an LLC, medical courier requirements and licenses, and how to sign up with Curri and Dispatch as a carrier instead of a gig driver), the driver roadmap, and Telegram community access. Premium ($97 one-time including the listing; $50 if you take the offer shown right after buying Verified) adds the bidding calculator, the business profit and loss tracker, every other guide including how to run an ad, the Curri mastermind course, the Premium badge, priority placement, and a website link. Drivers who bought before the change keep everything they had. Both are backed by a 30-day money-back guarantee.",
   },
   {
     id: "baseline-vehicles",
@@ -25,7 +25,7 @@ export const TELEGRAM_BASELINE_FAQS: KnowledgeCandidate[] = [
     question: "What is the $97 Premium upgrade?",
     keywords: ["$97", "97 dollars", "premium", "website", "custom site", "upgrade"],
     answer:
-      "Premium is a $97 one-time upgrade. It adds a Premium badge and elevated styling on your public profile, priority placement above other drivers in the directory, the ability to link your own external website, and done-for-you setup where the FlowSync team builds out your profile, service menu, and website for you.",
+      "Premium is $97 one-time and includes the Verified listing. It adds the bidding calculator, the business profit and loss tracker (cost per mile, rate per mile, net income by week, month and quarter), every guide including how to run an ad for your delivery business, the Curri mastermind course, a Premium badge with elevated styling, priority placement above other drivers in the directory, and the ability to link your own external website. Right after buying Verified there is a one-time offer to add Premium for $50; after that it is $97 from your account.",
   },
   {
     id: "baseline-refund",

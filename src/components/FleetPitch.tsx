@@ -18,16 +18,8 @@ export function FleetTerms({ standalone }: { standalone?: boolean }) {
         <strong className="font-semibold text-foreground">{FLEET.dispatchFeePercent}% dispatching fee</strong>{" "}
         on loads we bring you, taken from the load. Paid every Friday.
       </li>
-      <li>
-        Want it faster?{" "}
-        <strong className="font-semibold text-foreground">{FLEET.fastPayoutFeePercent}%</strong> pays out in
-        1–2 business days instead of waiting for Friday.
-      </li>
       <li>We only earn when you do. No loads that week means no fee that week.</li>
-      <li>
-        <strong className="font-semibold text-foreground">Done-for-you setup:</strong> we build your
-        FlowSync profile, service menu, and website — and you get everything in Premium.
-      </li>
+      <li>Everything in Premium is included: the tools, the ads guide, the Curri mastermind course.</li>
       <li>
         <strong className="font-semibold text-foreground">Refund:</strong> {FLEET.refundShort}
       </li>

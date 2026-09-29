@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { premiumOfferPrice } from "@/lib/pricing";
+import { FLEET } from "@/lib/pricing";
 
-/** Offer page A: Premium for the difference from Verified, or skip to sign-in. */
-export default function PremiumOfferButtons({ sessionId }: { sessionId: string }) {
+/** Offer page B: the fleet for the offer price, or skip to sign-in. */
+export default function FleetOfferButtons({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,23 +17,23 @@ export default function PremiumOfferButtons({ sessionId }: { sessionId: string }
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ intent: "oto-upgrade", session_id: sessionId }),
+        body: JSON.stringify({ intent: "oto-fleet", session_id: sessionId }),
       });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
         return;
       }
-      setError(data.error ?? "That offer is temporarily unavailable. You can upgrade later from your account.");
+      setError(data.error ?? "That offer is temporarily unavailable. You can join the fleet later from your account.");
     } catch {
-      setError("Something went wrong. You can upgrade later from your account.");
+      setError("Something went wrong. You can join the fleet later from your account.");
     } finally {
       setLoading(false);
     }
   };
 
   const skip = () => {
-    router.push(`/signin?checkout=success&session_id=${encodeURIComponent(sessionId)}`);
+    router.push(`/signin?checkout=success&session_id=${encodeURIComponent(sessionId)}&upgraded=1`);
   };
 
   return (
@@ -44,7 +44,7 @@ export default function PremiumOfferButtons({ sessionId }: { sessionId: string }
         disabled={loading}
         className="btn-primary w-full rounded-full px-6 py-4 text-base font-bold disabled:opacity-60"
       >
-        {loading ? "Opening secure checkout…" : `Yes — add Premium for $${premiumOfferPrice()}`}
+        {loading ? "Opening secure checkout…" : `Yes — activate me on the fleet for $${FLEET.addOnPrice}`}
       </button>
       {error && <p className="text-center text-sm text-red-400">{error}</p>}
       <button

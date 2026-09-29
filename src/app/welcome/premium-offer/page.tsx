@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getStripe } from "@/lib/stripe";
-import { FLEET, listingPrice, premiumUpgradePrice, TIERS } from "@/lib/pricing";
+import { GUARANTEE_DAYS, listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import TrackEvent from "@/components/TrackEvent";
 import PremiumOfferButtons from "@/components/PremiumOfferButtons";
-import { FleetBiddingStory, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
 
 export const dynamic = "force-dynamic";
 
@@ -23,50 +22,54 @@ function Check() {
   );
 }
 
-const COMPARE: { label: string; standard: string | boolean; premium: string | boolean }[] = [
-  { label: "Listed in the FlowSync driver directory", standard: true, premium: true },
-  { label: "Your own service menu with custom pricing — direct bookings", standard: true, premium: true },
-  { label: "Setup guides: USDOT + EIN free, LLC filing, medical courier, carrier signup", standard: true, premium: true },
-  { label: "Roadmap, Telegram community, referral program", standard: true, premium: true },
-  { label: "★ Bidding calculator — your floor and your bid on every load", standard: false, premium: true },
-  { label: "★ Business P&L tracker — cost per mile, rate per mile, net income", standard: false, premium: true },
-  { label: "★ Curri mastermind course", standard: false, premium: true },
-  { label: "How to run an ad for your delivery business + every other guide", standard: false, premium: true },
-  { label: "Premium badge + featured placement above other drivers", standard: false, premium: true },
-  { label: "Link your external website on your profile", standard: false, premium: true },
+// Offer page A. A driver just paid for Verified. This page has one job: make
+// the $50 Premium decision easy and honest — what it adds, what it costs here,
+// what it costs later, and how long the offer is open. No fake timers.
+const WHY = [
+  {
+    t: "Know what a load is worth before you tap accept",
+    d: "The bidding calculator turns the listed price, the miles, and your real cost per mile into a floor and a bid. Gig drivers accept; carriers bid.",
+  },
+  {
+    t: "See your real cost per mile every week",
+    d: "The business P&L tracker splits business and personal expenses and shows rate per mile, cost per mile, and net income by week, month, and quarter.",
+  },
+  {
+    t: "Learn exactly how one rented van became four Sprinters",
+    d: "The Curri mastermind course: carrier accounts, bidding, vehicle classes, two logins, filling the gaps, getting paid.",
+  },
+  {
+    t: "Stand out in the directory",
+    d: "Premium badge, priority placement above other drivers, and your own website link on your profile.",
+  },
 ];
 
 export default async function PremiumOfferPage({ searchParams }: PageProps<"/welcome/premium-offer">) {
   const sp = await searchParams;
   const sessionId = typeof sp.session_id === "string" ? sp.session_id : Array.isArray(sp.session_id) ? sp.session_id[0] : "";
-
-  // Without a session id this page has nothing to offer. Send people to the
-  // normal post-checkout landing.
   if (!sessionId) redirect("/signin?checkout=success");
 
-  // Validate the original $17 listing session and capture the real amount paid
-  // for the Meta Pixel Purchase event. If the session doesn't exist or wasn't
-  // paid, fall through to the normal sign-in landing.
   let purchaseValue = listingPrice();
-  // Bought Premium outright on the pricing page → only the fleet is offered.
-  let alreadyPremium = false;
   const stripe = getStripe();
   if (stripe) {
     try {
       const cs = await stripe.checkout.sessions.retrieve(sessionId);
-      if (cs.payment_status !== "paid" || cs.metadata?.type !== "listing") {
-        redirect("/signin?checkout=success");
-      }
+      if (cs.payment_status !== "paid" || cs.metadata?.type !== "listing") redirect("/signin?checkout=success");
+      // Bought Premium outright → straight to the fleet offer.
+      if (cs.metadata?.tier === "premium") redirect(`/welcome/fleet-offer?session_id=${encodeURIComponent(sessionId)}`);
+      // The offer is open for a stated window; after that, the account price applies.
+      if (offerExpired(cs.created)) redirect("/signin?checkout=success");
       if (typeof cs.amount_total === "number") purchaseValue = cs.amount_total / 100;
-      alreadyPremium = cs.metadata?.tier === "premium";
     } catch {
       redirect("/signin?checkout=success");
     }
   }
 
+  const offer = premiumOfferPrice();
+  const later = premiumUpgradePrice();
+
   return (
     <div className="relative min-h-[80vh]">
-      {/* Fire the listing Purchase event here (was on /signin?checkout=success). */}
       <TrackEvent event="Purchase" value={purchaseValue} eventId={sessionId} />
       <div className="glow-radial pointer-events-none absolute inset-0 h-72" />
       <div className="relative mx-auto max-w-3xl px-5 py-12">
@@ -76,121 +79,69 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
             <Check />
           </span>
           <div className="flex-1">
-            <p className="text-base font-bold">Payment received.</p>
-            <p className="text-sm text-muted">
-              Your welcome email is on the way — check inbox (and spam) for your sign-in details.
-            </p>
+            <p className="text-base font-bold">Payment received. Your listing is yours.</p>
+            <p className="text-sm text-muted">Your welcome email is on the way — check inbox (and spam) for your sign-in details.</p>
           </div>
         </div>
 
-        {/* OTO header */}
+        {/* The decision */}
         <div className="mt-8 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-300">
-            ★ One-time offer · for new drivers only
+          <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
+            One-time offer · open for {OFFER_WINDOW_HOURS} hours
           </span>
           <h1 className="mx-auto mt-4 max-w-2xl text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
-            {alreadyPremium ? "You're on Premium. One more thing before you sign in." : "Wait — most drivers add Premium right here."}
+            Before you sign in: Premium for ${offer} instead of ${later}.
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-muted">
-            {alreadyPremium ? (
-              <>Everything below is already yours. The only thing left is the fleet invite, at its offer-page price.</>
-            ) : (
-              <>
-                Premium&apos;s ${TIERS.premium.price} price includes the listing you just bought, so adding it now is{" "}
-                <span className="text-foreground">${premiumUpgradePrice()} more, one-time</span> — no subscription.
-              </>
-            )}
+            Premium&apos;s ${TIERS.premium.price} price includes the listing you just bought, so right now it&apos;s the
+            ${offer} difference. From your account later it&apos;s the full ${later}. Same {GUARANTEE_DAYS}-day
+            money-back guarantee either way.
           </p>
         </div>
 
-        {/* Compare */}
-        <div className="card mt-8 overflow-hidden p-0">
-          <div className="grid grid-cols-[1fr_auto_auto] gap-x-5 px-5 py-4 text-xs font-semibold uppercase tracking-widest">
-            <div className="text-muted">&nbsp;</div>
-            <div className="text-center text-muted">Verified</div>
-            <div className="rounded-t-md bg-accent px-3 text-center text-[#04130a]">Premium</div>
-          </div>
-          {COMPARE.map((row, i) => (
-            <div
-              key={row.label}
-              className={`grid grid-cols-[1fr_auto_auto] gap-x-5 px-5 py-3 text-sm ${i % 2 ? "bg-surface" : "bg-surface/40"}`}
-            >
-              <div>{row.label}</div>
-              <div className="flex w-16 items-center justify-center">
-                {row.standard === true ? (
-                  <span className="text-accent"><Check /></span>
-                ) : (
-                  <span className="text-muted/40">—</span>
-                )}
-              </div>
-              <div className="flex w-20 items-center justify-center bg-accent-soft">
-                {row.premium === true ? (
-                  <span className="text-accent"><Check /></span>
-                ) : (
-                  <span className="text-muted/40">—</span>
-                )}
-              </div>
+        {/* Why it's worth it */}
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {WHY.map((w) => (
+            <div key={w.t} className="card p-5">
+              <p className="font-semibold">{w.t}</p>
+              <p className="mt-1 text-sm text-muted">{w.d}</p>
             </div>
           ))}
         </div>
 
-        {/* The tools are the clincher: Premium is what turns a listing into a business. */}
-        <div className="mt-8 rounded-2xl border border-amber-400/30 bg-amber-400/5 p-6">
-          <div className="flex items-start gap-4">
-            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400/15 text-amber-300">
-              <Check />
-            </span>
-            <div>
-              <h2 className="font-semibold text-amber-200">Premium is the business behind the listing</h2>
-              <p className="mt-1 text-sm text-muted">
-                The bidding calculator tells you what a load has to pay before you accept it. The P&amp;L
-                tracker tells you your real cost per mile. The Curri mastermind shows you exactly how we
-                went from one rented van to four Sprinters on one app.{" "}
-                <span className="text-foreground">Verified gets you listed. Premium gets you profitable.</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Second, separate add-on: the Curri fleet invite at its one-time $97.
-            This is the only place it's ever $97 — everywhere else it's $197. */}
-        <div className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft/40 p-6 sm:p-7">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
-                Only on this page
-              </span>
-              <h2 className="mt-3 text-xl font-bold tracking-tight">Also add the Curri fleet invite</h2>
-            </div>
-            <div className="text-right">
-              <span className="text-3xl font-extrabold text-accent">${FLEET.addOnPrice}</span>
-              <span className="ml-2 text-sm text-muted line-through">${FLEET.price}</span>
-            </div>
-          </div>
-          <p className="mt-3 text-sm text-muted">
-            Separate from Premium, and it includes everything in Premium. Get added to our carrier
-            account and have loads dispatched to you — we bid them, you run them, paid every Friday —
-            and we build your profile, service menu, and website for you. Pass on it here and it&apos;s
-            ${FLEET.price} from your account later.
+        {/* Honest framing — the push, without the pressure */}
+        <div className="mt-6 rounded-2xl border border-amber-400/30 bg-amber-400/5 p-6">
+          <p className="font-semibold text-amber-200">Here&apos;s the straight version.</p>
+          <p className="mt-1 text-sm text-muted">
+            The listing gets you found. Premium is what makes the work profitable: it&apos;s the difference
+            between accepting a $100 load and bidding $300 on it because you knew your numbers. Most drivers who
+            take it, take it right here, because ${offer} now is the same product as ${later} next month. If
+            you&apos;d rather see the listing work first, that&apos;s fine too — nothing here renews or charges you later.
           </p>
-          <div className="mt-4"><FleetTerms /></div>
-          <div className="mt-5 border-t border-border pt-5"><FleetBiddingStory compact /></div>
         </div>
 
         {/* CTA */}
         <div className="card mt-8 p-7">
           <div className="flex items-baseline justify-between">
-            <span className="text-base font-semibold">Add to your listing</span>
-            <span className="text-xs text-muted">each one-time · pick one</span>
+            <span className="text-base font-semibold">Add Premium</span>
+            <div className="text-right">
+              <span className="text-3xl font-extrabold text-accent">${offer}</span>
+              <span className="ml-2 text-sm text-muted line-through">${later}</span>
+              <span className="block text-xs text-muted">one-time · this page only</span>
+            </div>
           </div>
-          <p className="mt-2 text-sm text-muted">
-            Same 30-day money-back guarantee. Same secure Stripe checkout. Premium is ${premiumUpgradePrice()}{" "}
-            from your account any time; the fleet invite is ${FLEET.addOnPrice} only here.
-          </p>
+          <ul className="mt-4 space-y-1.5 text-sm text-muted">
+            {TIERS.premium.features.slice(1).map((f) => (
+              <li key={f} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />{f}</li>
+            ))}
+          </ul>
           <div className="mt-6">
-            <PremiumOfferButtons sessionId={sessionId} alreadyPremium={alreadyPremium} />
+            <PremiumOfferButtons sessionId={sessionId} />
           </div>
-          <div className="mt-5"><FleetDisclaimer /></div>
+          <p className="mt-4 text-center text-xs text-muted">
+            Open for {OFFER_WINDOW_HOURS} hours after your purchase. After that, Premium is ${later} from your account.
+            {GUARANTEE_DAYS}-day money-back guarantee. Secure Stripe checkout.
+          </p>
         </div>
       </div>
     </div>

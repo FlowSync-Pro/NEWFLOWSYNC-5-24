@@ -9,6 +9,7 @@ import {
   listingIncreasePending,
   listingPrice,
   PLATFORM_FEE_PERCENT,
+  premiumOfferPrice,
   premiumUpgradePrice,
   TIERS,
   VALUE_STACK,
@@ -242,7 +243,7 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
         </div>
         <p className="mt-3 text-center text-xs text-muted">
           {tierId === "standard"
-            ? `Start with Verified and add Premium later for the $${premiumUpgradePrice()} difference — right after checkout, or any time from your account.`
+            ? `Start with Verified. Right after checkout you'll get a one-time offer to add Premium for the $${premiumOfferPrice()} difference; after that it's $${premiumUpgradePrice()} from your account.`
             : "Premium includes the Verified listing. One payment, everything unlocked the moment you sign in."}
         </p>
       </div>

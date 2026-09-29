@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 // How it works once you're in. Shown to members in full; non-members see the
-// same steps as a preview so they know exactly what the $197 buys.
+// same steps as a preview so they know exactly what the $297 buys.
 const STEPS = [
   {
     title: "Send us your details",
@@ -40,8 +40,8 @@ const STEPS = [
     body: `Curri pays our fleet account, and we pay you — as an independent contractor, by Stripe transfer. Standard pay runs weekly: completed deliveries are paid out every Friday, with a ${FLEET.dispatchFeePercent}% dispatching fee taken from the load. Want it sooner? See the faster-payout option below.`,
   },
   {
-    title: "We build your FlowSync side too",
-    body: "Fleet members get done-for-you setup: we build out your profile, your service menu, and your website, and you get everything in Premium — the bidding calculator, the business P&L tracker, and the Curri mastermind course.",
+    title: "Everything in Premium is yours",
+    body: "Fleet members get the bidding calculator, the business P&L tracker, every guide, and the Curri mastermind course in their account.",
   },
 ];
 
@@ -122,8 +122,6 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
               <div className="mt-4"><FleetTerms /></div>
               <div className="mt-6"><FleetCheckout mode="member" /></div>
               <p className="mt-3 text-xs text-muted">
-                The ${FLEET.addOnPrice}{" "}
-                price is offered once, right after a new listing is paid. From your account it&apos;s ${FLEET.price}.
                 You&apos;ll confirm the refund terms on the checkout page: {FLEET.refundShort}
               </p>
             </section>

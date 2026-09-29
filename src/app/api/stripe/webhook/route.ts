@@ -195,9 +195,9 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
 }
 
 // Curri fleet invite — any of the three ways it's bought:
-//   - homepage, no account yet ($197; metadata.standalone = "1")
+//   - homepage/pricing page, no account yet ($297; metadata.standalone = "1")
 //   - post-checkout offer right after the $17 listing ($97; metadata.userId)
-//   - signed-in driver from the fleet guide ($197; metadata.userId)
+//   - signed-in driver from the fleet guide ($297; metadata.userId)
 // A homepage buyer gets a full account + listing created here, exactly like a
 // listing purchase, so one payment covers both. Everyone gets fleetJoinedAt set,
 // a FLEET payment recorded, the fleet next-steps email, and the owner gets a
@@ -231,7 +231,7 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
         mustResetPassword: true,
         emailVerified: new Date(),
         ...(md.firstName
-          ? { driverProfile: { create: { firstName: md.firstName, lastName: md.lastName ?? "", listedAt: new Date() } } }
+          ? { driverProfile: { create: { firstName: md.firstName, lastName: md.lastName ?? "", phone: md.phone || session.customer_details?.phone || null, listedAt: new Date() } } }
           : {}),
       },
       include: { driverProfile: true },
@@ -255,7 +255,7 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
   if (!user.fleetJoinedAt) {
     await prisma.user.update({ where: { id: user.id }, data: { fleetJoinedAt: new Date() } });
   }
-  // A homepage buyer's $197 includes the listing; make sure they're listed.
+  // A homepage buyer's $297 includes the listing; make sure they're listed.
   if (user.driverProfile && !user.driverProfile.listedAt) {
     await prisma.driverProfile.update({ where: { id: user.driverProfile.id }, data: { listedAt: new Date() } });
   }
@@ -271,7 +271,7 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     });
     if (!welcome.sent) {
       await alertOwner(
-        `⚠️ FlowSync: welcome email FAILED to send (fleet $197 buyer).\n\n` +
+        `⚠️ FlowSync: welcome email FAILED to send (fleet $297 buyer).\n\n` +
           `Driver: ${firstName} ${md.lastName ?? ""}\nEmail: ${user.email}\n\n` +
           `They have paid but may not be able to sign in. Reach out to them.`,
       );
@@ -376,6 +376,9 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
                 create: {
                   firstName: md.firstName,
                   lastName: md.lastName ?? "",
+                  // Stripe Checkout collects a phone (abandoned-checkout follow-up);
+                  // keep it on the profile so the owner can text new drivers.
+                  phone: session.customer_details?.phone ?? null,
                   primaryService: serviceToEnum(primaryService),
                   tier: tierEnum,
                   listedAt: new Date(),

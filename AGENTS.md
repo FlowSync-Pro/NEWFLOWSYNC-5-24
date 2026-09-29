@@ -174,23 +174,30 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   medical courier requirements & licenses, and signing up with Curri & Dispatch as a
   carrier not a gig driver; the Driver Roadmap; Telegram community. Covered by the
   30-day guarantee below.
-- **Tier 2 — Premium: $97 one-time, and that price INCLUDES the Verified listing.** A
-  driver who already paid for Verified upgrades for the difference — `premiumUpgradePrice()`
-  = $97 − listing price = $50 today — on the post-checkout offer page, from the account,
-  the grow pages, emails and recovery texts. Buying Premium outright on `/pricing`
-  charges $97 and creates the listing as PREMIUM. Everything in Verified plus: the bidding
+- **Tier 2 — Premium: $97 one-time, and that price INCLUDES the Verified listing.**
+  Buying Premium outright on `/pricing` charges $97 and creates the listing as PREMIUM.
+  **Offer page A** (`/welcome/premium-offer`, shown once right after a Verified purchase,
+  open for `OFFER_WINDOW_HOURS` = 24h): Premium for `premiumOfferPrice()` = $97 − listing
+  = $50. Decline or let it lapse → `premiumUpgradePrice()` = the full $97 from the
+  account. Everything in Verified plus: the bidding
   calculator (`/account/bidding-calculator`); the business P&L tracker
   (`/account/trips` — cost per mile, rate per mile, net income weekly/monthly/quarterly);
   every other guide including "How to run an ad for your delivery business"; the Curri
   mastermind course (`/account/course`, content from the owner in `src/lib/course.ts`);
   Premium badge, priority placement, external website link. Offered on the post-checkout
   page and any time from the account. Covered by the 30-day guarantee.
-- **Tier 3 — Curri fleet invite: $297 one-time; $197 in exactly ONE place, the
-  post-checkout offer page shown once after the listing is paid.** Homepage purchase
-  also creates the buyer's full account + listing. Includes: added to the Barham
-  Transport carrier account with loads dispatched; we bid the loads; paid every Friday
-  with a 15% dispatching fee (20% for 1–2 business days), no monthly fee, no insurance
-  charge; done-for-you setup (profile, service menu, website); everything in Premium.
+- **Tier 3 — Curri fleet invite: $297 one-time; `FLEET.addOnPrice` = $149 in exactly ONE
+  place, offer page B** (`/welcome/fleet-offer`, shown once right after ANY Premium
+  purchase — outright, via offer page A, or from the account — open 24h). Decline or lapse
+  → $297 from the account. Never mention the offer price anywhere else (the owner removed
+  the "$197 only on the page…" line from the pricing card). Homepage/pricing-page purchase
+  collects name, email AND phone (owner onboards by text; approved personal-data field)
+  and creates the buyer's full account + listing. Includes: added to the Barham Transport
+  carrier account with loads dispatched; we bid the loads; paid every Friday with a 15%
+  dispatching fee (20% for 1–2 business days), no monthly fee, no insurance charge;
+  everything in Premium. **No done-for-you setup** (owner struck it from the fleet card).
+  "Immediate activation" claims must stay conditional: activation is manual (usually same
+  day once details arrive) and load volume depends on the driver's market.
   **Refund: fully refundable until the driver is activated on the carrier account, then
   earned and non-refundable; two violations on the carrier account = removal without
   refund.** Stated on every fleet surface and acknowledged via Stripe's required terms

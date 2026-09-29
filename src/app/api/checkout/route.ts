@@ -3,7 +3,21 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { FLEET, getBump, isPremiumTier, listingPrice, PNL_PRO, premiumUpgradePrice, TIERS, type TierId } from "@/lib/pricing";
+import { FLEET, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, PNL_PRO, premiumOfferPrice, premiumUpgradePrice, TIERS, type TierId } from "@/lib/pricing";
+
+/** Post-checkout offers are open for OFFER_WINDOW_HOURS after the purchase they follow. */
+const offerOpen = (s: Stripe.Checkout.Session) => !offerExpired(s.created);
+
+/** Retrieve a paid session or null. */
+async function paidSession(stripe: Stripe, id: unknown): Promise<Stripe.Checkout.Session | null> {
+  if (typeof id !== "string" || !id) return null;
+  try {
+    const s = await stripe.checkout.sessions.retrieve(id);
+    return s.payment_status === "paid" ? s : null;
+  } catch {
+    return null;
+  }
+}
 import { pnlProActive } from "@/lib/subscription";
 
 export const runtime = "nodejs";
@@ -115,16 +129,19 @@ async function handleCheckout(req: Request) {
     return NextResponse.json({ url: fleet.url });
   }
 
-  // Curri fleet invite from the homepage: no account yet. $197 buys the invite
-  // AND creates their full FlowSync account + listing (the webhook handles it
-  // exactly like a listing purchase, then marks the fleet membership).
+  // Curri fleet invite from the homepage/pricing page: no account yet. $297
+  // buys the invite AND creates their full FlowSync account + listing (the
+  // webhook handles it like a listing purchase, then marks the membership).
   if (body.intent === "fleet-standalone") {
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const firstName = typeof body.firstName === "string" ? body.firstName.trim().slice(0, 60) : "";
     const lastName = typeof body.lastName === "string" ? body.lastName.trim().slice(0, 60) : "";
+    const phone = typeof body.phone === "string" ? body.phone.trim().slice(0, 30) : "";
     const ref = typeof body.ref === "string" ? body.ref.trim().slice(0, 16) : "";
     if (!email || !email.includes("@")) return NextResponse.json({ error: "Enter a valid email." }, { status: 400 });
     if (!firstName) return NextResponse.json({ error: "Enter your first name." }, { status: 400 });
+    // The owner onboards fleet drivers by text, so a phone number is required here.
+    if (phone.replace(/\D/g, "").length < 7) return NextResponse.json({ error: "Enter a phone number we can text." }, { status: 400 });
 
     const existing = await prisma.user.findUnique({ where: { email }, select: { fleetJoinedAt: true } });
     if (existing?.fleetJoinedAt) {
@@ -135,7 +152,7 @@ async function handleCheckout(req: Request) {
       mode: "payment",
       line_items: [fleetLineItem(FLEET.price * 100)],
       customer_email: email,
-      metadata: { type: "fleet", standalone: "1", firstName, lastName, email, ref },
+      metadata: { type: "fleet", standalone: "1", firstName, lastName, email, phone, ref },
       // Same post-payment landing as the listing: on-screen activation if the
       // account is brand new, plus the Purchase pixel with this session's id.
       success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
@@ -144,26 +161,24 @@ async function handleCheckout(req: Request) {
     return NextResponse.json({ url: fleet.url });
   }
 
-  // Post-payment one-time offer for the fleet: $97 instead of $197, offered
-  // exactly once, right after the $17 listing. Identified by the just-completed
-  // listing Stripe session, same as the Premium OTO below.
-  if (body.intent === "oto-fleet" && typeof body.session_id === "string" && body.session_id) {
-    let original: import("stripe").default.Checkout.Session;
-    try {
-      original = await stripe.checkout.sessions.retrieve(body.session_id);
-    } catch {
-      return NextResponse.json({ error: "Invalid checkout session." }, { status: 400 });
-    }
-    if (original.payment_status !== "paid" || original.metadata?.type !== "listing") {
-      return NextResponse.json({ error: "Original payment not found." }, { status: 400 });
+  // Offer page B: the fleet for $149 instead of $297, offered exactly once,
+  // right after a Premium purchase (outright on the pricing page, or the $50
+  // upgrade from offer page A, or a $97 upgrade from the account). Identified
+  // by that Premium purchase's Stripe session; open for OFFER_WINDOW_HOURS.
+  if (body.intent === "oto-fleet") {
+    const original = await paidSession(stripe, body.session_id);
+    const md = original?.metadata ?? {};
+    const isPremiumPurchase = md.type === "upgrade" || (md.type === "listing" && md.tier === "premium");
+    if (!original || !isPremiumPurchase) return NextResponse.json({ error: "Original payment not found." }, { status: 400 });
+    if (!offerOpen(original)) {
+      return NextResponse.json({ error: `That offer was open for ${OFFER_WINDOW_HOURS} hours after your purchase. You can still join the fleet from your account.` }, { status: 400 });
     }
     const email = (original.customer_details?.email ?? "").toLowerCase();
-    if (!email) return NextResponse.json({ error: "Could not identify your account." }, { status: 400 });
 
-    let user = await prisma.user.findUnique({ where: { email } });
-    for (let i = 0; i < 5 && !user; i++) {
-      await new Promise((r) => setTimeout(r, 500));
+    let user = md.userId ? await prisma.user.findUnique({ where: { id: md.userId } }) : null;
+    for (let i = 0; i < 5 && !user && email; i++) {
       user = await prisma.user.findUnique({ where: { email } });
+      if (!user) await new Promise((r) => setTimeout(r, 500));
     }
     if (!user) {
       return NextResponse.json(
@@ -176,15 +191,16 @@ async function handleCheckout(req: Request) {
     const fleet = await createFleetSession(stripe, {
       mode: "payment",
       line_items: [fleetLineItem(FLEET.addOnPrice * 100)],
-      customer_email: email,
+      customer_email: user.email,
       metadata: { type: "fleet", userId: user.id, source: "oto" },
       success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
-      cancel_url: `${base}/welcome/premium-offer?session_id=${encodeURIComponent(body.session_id)}`,
+      cancel_url: `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(original.id)}`,
     });
     return NextResponse.json({ url: fleet.url });
   }
 
-  // Self-serve upgrade: a signed-in Standard driver pays $97 to go Premium.
+  // Self-serve upgrade: a signed-in Verified driver pays the full $97 to go
+  // Premium (the $50 price only exists on offer page A). Lands on offer page B.
   if (body.intent === "upgrade") {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Please sign in to upgrade." }, { status: 401 });
@@ -204,26 +220,24 @@ async function handleCheckout(req: Request) {
         },
       ],
       customer_email: profile.user.email,
-      metadata: { type: "upgrade", userId: session.userId },
-      success_url: `${base}/account/services?upgraded=1`,
+      metadata: { type: "upgrade", userId: session.userId, source: "account" },
+      // A Premium purchase is followed by the fleet offer (page B).
+      success_url: `${base}/welcome/fleet-offer?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/account/services`,
     });
     return NextResponse.json({ url: upgrade.url });
   }
 
-  // Post-payment one-time offer: a driver who just paid $17 takes the $97
-  // Premium upgrade. No sign-in required — we identify them via the just-
-  // completed listing Stripe session id.
-  if (body.intent === "oto-upgrade" && typeof body.session_id === "string" && body.session_id) {
-    // Verify the original listing session is real and paid.
-    let original: import("stripe").default.Checkout.Session;
-    try {
-      original = await stripe.checkout.sessions.retrieve(body.session_id);
-    } catch {
-      return NextResponse.json({ error: "Invalid checkout session." }, { status: 400 });
-    }
-    if (original.payment_status !== "paid" || original.metadata?.type !== "listing") {
+  // Offer page A: a driver who just paid for Verified takes Premium for the
+  // difference ($50). No sign-in required — identified by the just-completed
+  // listing session; open for OFFER_WINDOW_HOURS.
+  if (body.intent === "oto-upgrade") {
+    const original = await paidSession(stripe, body.session_id);
+    if (!original || original.metadata?.type !== "listing") {
       return NextResponse.json({ error: "Original payment not found." }, { status: 400 });
+    }
+    if (!offerOpen(original)) {
+      return NextResponse.json({ error: `That offer was open for ${OFFER_WINDOW_HOURS} hours after your purchase. Premium is $${premiumUpgradePrice()} from your account.` }, { status: 400 });
     }
     const email = (original.customer_details?.email ?? "").toLowerCase();
     if (!email) return NextResponse.json({ error: "Could not identify your account." }, { status: 400 });
@@ -248,19 +262,18 @@ async function handleCheckout(req: Request) {
       mode: "payment",
       line_items: [
         {
-          price_data: { currency: "usd", unit_amount: premiumUpgradePrice() * 100, product_data: { name: "FlowSync Premium upgrade" } },
+          price_data: { currency: "usd", unit_amount: premiumOfferPrice() * 100, product_data: { name: "FlowSync Premium upgrade" } },
           quantity: 1,
         },
       ],
       customer_email: email,
       // Reuses the existing fulfillUpgrade webhook handler.
       metadata: { type: "upgrade", userId: user.id, source: "oto" },
-      // Use the NEW upgrade session id (Stripe substitutes it) so signin
-      // fires Purchase($97) with a distinct Meta eventID. The original $17
-      // Purchase fires on /welcome/premium-offer with its own eventID. Two
-      // events, two values, full attribution.
-      success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&upgraded=1`,
-      cancel_url: `${base}/welcome/premium-offer?session_id=${encodeURIComponent(body.session_id)}`,
+      // The NEW upgrade session id (Stripe substitutes it) lands on offer page
+      // B, which fires Purchase($50) with its own Meta eventID. The listing
+      // Purchase fired on offer page A with the listing session's id.
+      success_url: `${base}/welcome/fleet-offer?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${base}/welcome/premium-offer?session_id=${encodeURIComponent(original.id)}`,
     });
     return NextResponse.json({ url: oto.url });
   }
@@ -356,9 +369,9 @@ async function handleCheckout(req: Request) {
     })),
     customer_email: email || undefined,
     metadata: { type: "listing", tier: tierId, bumps: bumps.join(","), firstName, lastName, primaryService, ref },
-    // Send paid drivers to a dedicated post-payment Premium upsell before they
-    // see their welcome email. They can take it or skip to sign in.
-    success_url: `${base}/welcome/premium-offer?session_id={CHECKOUT_SESSION_ID}`,
+    // Verified buyers get offer page A (Premium for $50); Premium buyers skip
+    // straight to offer page B (the fleet for $149).
+    success_url: `${base}/welcome/${tierId === "premium" ? "fleet-offer" : "premium-offer"}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/pricing?checkout=cancelled`,
   });
 

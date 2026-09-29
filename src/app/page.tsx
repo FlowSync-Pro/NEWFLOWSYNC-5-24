@@ -294,7 +294,7 @@ export default function Home() {
       </section>
 
       {/* Curri fleet — a separate offer from the listing. Visitors can join
-          directly for $197 (which also creates their account); the $97 price
+          directly for $297 (which also creates their account); the offer-page price
           exists only on the post-checkout offer page after a $17 listing. */}
       <section id="curri-fleet" className="border-t border-border bg-surface/30">
         <div className="mx-auto max-w-7xl px-5 py-20">

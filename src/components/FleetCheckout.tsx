@@ -7,15 +7,17 @@ const inputCls =
   "w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition-colors focus:border-accent";
 
 /**
- * Starts a Curri fleet checkout.
- *  - mode="standalone": homepage visitor, no account. Collects name + email and
- *    pays the full $197, which also creates their FlowSync account + listing.
- *  - mode="member": signed-in driver on the fleet guide. One button, $197.
+ * Starts a Curri fleet checkout at the full price.
+ *  - mode="standalone": homepage / pricing-page visitor, no account. Collects
+ *    name, email and phone (the owner onboards fleet drivers by text) and
+ *    pays $297, which also creates their FlowSync account + listing.
+ *  - mode="member": signed-in driver on the fleet guide. One button, $297.
  */
 export default function FleetCheckout({ mode }: { mode: "standalone" | "member" }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +30,7 @@ export default function FleetCheckout({ mode }: { mode: "standalone" | "member" 
       try { ref = localStorage.getItem("fs_ref") || ""; } catch {}
       const payload =
         mode === "standalone"
-          ? { intent: "fleet-standalone", firstName, lastName, email, ref }
+          ? { intent: "fleet-standalone", firstName, lastName, email, phone, ref }
           : { intent: "fleet" };
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -88,18 +90,25 @@ export default function FleetCheckout({ mode }: { mode: "standalone" | "member" 
         required
         type="email"
         autoComplete="email"
-        placeholder="Email (your FlowSync login)"
+        placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        className={inputCls}
+      />
+      <input
+        required
+        type="tel"
+        autoComplete="tel"
+        placeholder="Phone (we text you to get you activated)"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
         className={inputCls}
       />
       <button type="submit" disabled={loading} className="btn-primary w-full rounded-full px-6 py-3.5 text-base font-bold disabled:opacity-60">
         {label}
       </button>
       {error && <p className="text-sm text-red-400">{error}</p>}
-      <p className="text-center text-xs text-muted">
-        Secure Stripe checkout · includes your full FlowSync driver account and listing · 30-day money-back guarantee
-      </p>
+      <p className="text-center text-xs text-muted">Secure Stripe checkout.</p>
     </form>
   );
 }

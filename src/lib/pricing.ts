@@ -131,14 +131,35 @@ export function listingPrice(now: Date = new Date()): number {
 }
 
 /**
- * Premium's price ($97) INCLUDES the Verified listing. So a driver who already
- * paid for Verified upgrades for the difference — $50 today — whether they do
- * it on the post-checkout offer page or later from their account. Buying
- * Premium outright on the pricing page charges the full $97 and creates the
- * listing at the same time. One rule, no "pay $144 for waiting" trap.
+ * The post-checkout offer chain (owner decision, 2026-09-29):
+ *   pay Verified ($47)  → offer page A: Premium for the difference ($50)
+ *   pay Premium ($97)   → offer page B: the fleet for FLEET.addOnPrice ($149)
+ *   take offer A        → offer page B next
+ * Each offer is open for OFFER_WINDOW_HOURS after the purchase it follows, and
+ * the page says so. Decline (or let it lapse) and the full price applies:
+ * Premium is $97 from the account, the fleet is $297. That is the whole FOMO
+ * — a real price, a real window, stated plainly.
  */
-export function premiumUpgradePrice(now: Date = new Date()): number {
+export const OFFER_WINDOW_HOURS = 24;
+
+/** True once an offer that followed a purchase created at `createdUnixSeconds` has lapsed. */
+export function offerExpired(createdUnixSeconds: number, now: Date = new Date()): boolean {
+  return createdUnixSeconds * 1000 + OFFER_WINDOW_HOURS * 3_600_000 < now.getTime();
+}
+
+/** Premium on offer page A: the difference between Premium and the listing ($50). */
+export function premiumOfferPrice(now: Date = new Date()): number {
   return Math.max(0, TIERS.premium.price - listingPrice(now));
+}
+
+/** Premium from the account (offer declined or lapsed): the full price ($97). */
+export function premiumUpgradePrice(): number {
+  return TIERS.premium.price;
+}
+
+/** What offer page B saves versus joining the fleet from the account later. */
+export function fleetOfferSavings(): number {
+  return FLEET.price - FLEET.addOnPrice;
 }
 
 /**
@@ -147,11 +168,12 @@ export function premiumUpgradePrice(now: Date = new Date()): number {
  * them, and the owner builds their profile, service menu, and website for them.
  *
  * Two prices, on purpose:
- *  - `addOnPrice` ($197) is offered exactly once: on the post-checkout offer page
- *    right after a driver pays the listing. Decline it there and it's gone.
- *  - `price` ($297) is what everyone else pays — a homepage visitor (whose $297
- *    also creates their full FlowSync account and listing) or a signed-in driver
- *    who passed on the offer-page price.
+ *  - `addOnPrice` ($149) is offered exactly once: on offer page B, right after a
+ *    driver pays for Premium (outright, or via offer page A). Open for
+ *    OFFER_WINDOW_HOURS; decline it and it's gone. Never shown anywhere else.
+ *  - `price` ($297) is what everyone else pays — a homepage/pricing-page visitor
+ *    (whose $297 also creates their full FlowSync account and listing) or a
+ *    signed-in driver joining from the fleet guide.
  *
  * Refund: fully refundable until the driver is activated on the carrier account;
  * after activation the fee is earned and non-refundable. Two violations on the
@@ -165,7 +187,7 @@ export const FLEET = {
   id: "curri-fleet",
   name: "Curri fleet invite",
   price: 297,
-  addOnPrice: 197,
+  addOnPrice: 149,
   dispatchFeePercent: 15,
   fastPayoutFeePercent: 20,
   refundShort: "Fully refundable until you're activated on our carrier account. After activation the fee is earned and non-refundable.",
@@ -174,7 +196,6 @@ export const FLEET = {
   includes: [
     "Added to our Curri carrier account — loads dispatched to you, no waiting on your own approval",
     "We bid the loads, you run the ones you want; paid every Friday",
-    "Done-for-you setup: we build your FlowSync profile, service menu, and website",
     "Everything in Premium: the tools, the ads guide, the Curri mastermind course",
   ],
 };

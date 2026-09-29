@@ -7,7 +7,6 @@ import {
   listingIncreasePending,
   listingPrice,
   PLATFORM_FEE_PERCENT,
-  premiumUpgradePrice,
   TIERS,
 } from "@/lib/pricing";
 import { SUPPORT_EMAIL } from "@/lib/site";
@@ -58,9 +57,7 @@ export default function TierLadder() {
           {pending && <p className="mt-1 text-xs font-medium text-accent">${LISTING_PRICE_AFTER} from {LISTING_INCREASE_DATE_LABEL}</p>}
           <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
             {TIERS.standard.features.map((f) => <li key={f} className="flex gap-2"><Check />{f}</li>)}
-            <li className="flex gap-2"><Check />Driver Roadmap and the Telegram community</li>
           </ul>
-          <p className="mt-4 text-xs text-muted">{GUARANTEE_DAYS}-day money-back guarantee. Select it above.</p>
         </div>
 
         {/* Tier 2 */}
@@ -68,13 +65,9 @@ export default function TierLadder() {
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">Tier 2 · most drivers add this</p>
           <h3 className="mt-2 text-xl font-bold">{TIERS.premium.name}</h3>
           <p className="mt-1 text-3xl font-extrabold text-accent">${TIERS.premium.price} <span className="text-sm font-normal text-muted">one-time, includes the listing</span></p>
-          <p className="mt-1 text-xs font-medium text-accent">Already Verified? Upgrade for the ${premiumUpgradePrice()} difference</p>
           <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
             {TIERS.premium.features.map((f) => <li key={f} className="flex gap-2"><Check />{f}</li>)}
           </ul>
-          <p className="mt-4 text-xs text-muted">
-            {GUARANTEE_DAYS}-day money-back guarantee. Select it above, or add it right after a Verified checkout or any time from your account.
-          </p>
         </div>
 
         {/* Tier 3 */}
@@ -82,10 +75,9 @@ export default function TierLadder() {
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">Tier 3 · separate</p>
           <h3 className="mt-2 text-xl font-bold">Curri fleet invite</h3>
           <p className="mt-1 text-3xl font-extrabold text-accent">${FLEET.price} <span className="text-sm font-normal text-muted">one-time</span></p>
-          <p className="mt-1 text-xs font-medium text-accent">${FLEET.addOnPrice} only on the page right after your listing checkout</p>
           <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
             {FLEET.includes.map((f) => <li key={f} className="flex gap-2"><Check />{f}</li>)}
-            <li className="flex gap-2"><Check />{FLEET.dispatchFeePercent}% dispatching fee on loads, paid every Friday ({FLEET.fastPayoutFeePercent}% for 1–2 business days). No monthly fee.</li>
+            <li className="flex gap-2"><Check />{FLEET.dispatchFeePercent}% dispatching fee on loads, paid every Friday.</li>
           </ul>
           <p className="mt-4 text-xs text-muted">{FLEET.refundShort}{" "}
             <Link href="/refund-policy" className="text-accent hover:underline">Why →</Link>
