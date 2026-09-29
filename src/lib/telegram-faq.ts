@@ -11,7 +11,7 @@ export const TELEGRAM_BASELINE_FAQS: KnowledgeCandidate[] = [
     // lib/pricing.ts and the guide library in lib/guides.ts). Do not list
     // anything here that a driver cannot open in their account after paying.
     answer:
-      "The one-time listing ($17 until October 6, 2026, then $47) includes a public driver profile in the FlowSync directory, 14 step-by-step guides (DOT and EIN setup, LLC vs sole proprietor, insurance, quarterly taxes and write-offs, pricing for profit, getting your first reviews, and finding customers on Nextdoor, Yelp, Thumbtack, Craigslist, and Indeed), the fair-quote calculator, the profit and loss tracker, your own service menu with custom pricing, the driver roadmap, and Telegram community access. It is backed by a 30-day money-back guarantee.",
+      "The one-time listing ($47) includes a public driver profile in the FlowSync directory, 14 step-by-step guides (DOT and EIN setup, LLC vs sole proprietor, insurance, quarterly taxes and write-offs, pricing for profit, getting your first reviews, and finding customers on Nextdoor, Yelp, Thumbtack, Craigslist, and Indeed), the fair-quote calculator, the profit and loss tracker, your own service menu with custom pricing, the driver roadmap, and Telegram community access. It is backed by a 30-day money-back guarantee.",
   },
   {
     id: "baseline-vehicles",

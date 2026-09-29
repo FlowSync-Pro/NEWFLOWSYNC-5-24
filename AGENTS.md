@@ -163,11 +163,11 @@ given fresh, per specific action.
 ## D. Offers & pricing (must always be exact)
 
 **ACTIVE — only reference or build for these:**
-- **Verified listing — $17 until 12:00 am Pacific, Monday October 6, 2026, then $47**
-  (one-time; any vehicle, sedan through box truck). This is a REAL, dated increase:
-  `listingPrice()` in `src/lib/pricing.ts` returns the current price and every page,
-  the checkout amount, and every message read it. Never hardcode either number in
-  UI. After the date, fold $47 into `TIERS.standard.price` with owner approval. The
+- **Verified listing — $47 one-time** (any vehicle, sedan through box truck). Was $17
+  until 2026-09-29; the owner brought the announced Oct 6 increase forward. Every page,
+  the checkout amount, and every message read `listingPrice()` in `src/lib/pricing.ts`
+  — never hardcode the number in UI. If anyone who received a "$17 until October 6"
+  recovery text or email asks, honor $17 for them (manual Stripe payment link). The
   listing includes: a public
   driver profile in the FlowSync directory with direct customer bookings; 14 step-by-step
   guides (DOT & EIN setup, LLC vs sole proprietor, insurance, quarterly taxes &
