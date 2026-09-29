@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { premiumUpgradePrice } from "@/lib/pricing";
 
 export default function UpgradeButton({
-  label = "Upgrade to Premium — $97",
+  label = `Upgrade to Premium — $${premiumUpgradePrice()}`,
   className = "btn-primary rounded-full px-7 py-3.5 text-sm",
 }: {
   label?: string;

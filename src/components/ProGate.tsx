@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TIERS } from "@/lib/pricing";
+import { premiumUpgradePrice, TIERS } from "@/lib/pricing";
 import UpgradeButton from "@/components/UpgradeButton";
 
 /**
@@ -25,7 +25,7 @@ export default function ProGate({ title, blurb }: { title: string; blurb: string
           ))}
         </ul>
         <div className="mt-6 flex flex-col items-center gap-3">
-          <UpgradeButton label={`Upgrade to Premium — $${TIERS.premium.price} one-time`} />
+          <UpgradeButton label={`Upgrade to Premium — $${premiumUpgradePrice()} one-time`} />
           <p className="text-xs text-muted">30-day money-back guarantee. Same secure Stripe checkout.</p>
         </div>
         <Link href="/account" className="mt-5 inline-block text-sm text-muted hover:text-foreground">

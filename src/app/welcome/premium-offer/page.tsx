@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getStripe } from "@/lib/stripe";
-import { FLEET, listingPrice, TIERS } from "@/lib/pricing";
+import { FLEET, listingPrice, premiumUpgradePrice, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import TrackEvent from "@/components/TrackEvent";
 import PremiumOfferButtons from "@/components/PremiumOfferButtons";
@@ -48,6 +48,8 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
   // for the Meta Pixel Purchase event. If the session doesn't exist or wasn't
   // paid, fall through to the normal sign-in landing.
   let purchaseValue = listingPrice();
+  // Bought Premium outright on the pricing page → only the fleet is offered.
+  let alreadyPremium = false;
   const stripe = getStripe();
   if (stripe) {
     try {
@@ -56,6 +58,7 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
         redirect("/signin?checkout=success");
       }
       if (typeof cs.amount_total === "number") purchaseValue = cs.amount_total / 100;
+      alreadyPremium = cs.metadata?.tier === "premium";
     } catch {
       redirect("/signin?checkout=success");
     }
@@ -86,12 +89,17 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
             ★ One-time offer · for new drivers only
           </span>
           <h1 className="mx-auto mt-4 max-w-2xl text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Wait — most drivers add Premium right here.
+            {alreadyPremium ? "You're on Premium. One more thing before you sign in." : "Wait — most drivers add Premium right here."}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-muted">
-            Premium is a{" "}
-            <span className="text-foreground">${TIERS.premium.price} one-time</span> add-on — no
-            subscription — and it makes your listing stand out from day one.
+            {alreadyPremium ? (
+              <>Everything below is already yours. The only thing left is the fleet invite, at its offer-page price.</>
+            ) : (
+              <>
+                Premium&apos;s ${TIERS.premium.price} price includes the listing you just bought, so adding it now is{" "}
+                <span className="text-foreground">${premiumUpgradePrice()} more, one-time</span> — no subscription.
+              </>
+            )}
           </p>
         </div>
 
@@ -176,11 +184,11 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
             <span className="text-xs text-muted">each one-time · pick one</span>
           </div>
           <p className="mt-2 text-sm text-muted">
-            Same 30-day money-back guarantee. Same secure Stripe checkout. Premium stays ${TIERS.premium.price}{" "}
+            Same 30-day money-back guarantee. Same secure Stripe checkout. Premium is ${premiumUpgradePrice()}{" "}
             from your account any time; the fleet invite is ${FLEET.addOnPrice} only here.
           </p>
           <div className="mt-6">
-            <PremiumOfferButtons sessionId={sessionId} />
+            <PremiumOfferButtons sessionId={sessionId} alreadyPremium={alreadyPremium} />
           </div>
           <div className="mt-5"><FleetDisclaimer /></div>
         </div>

@@ -174,7 +174,11 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   medical courier requirements & licenses, and signing up with Curri & Dispatch as a
   carrier not a gig driver; the Driver Roadmap; Telegram community. Covered by the
   30-day guarantee below.
-- **Tier 2 — Premium: $97 one-time.** Everything in Verified plus: the bidding
+- **Tier 2 — Premium: $97 one-time, and that price INCLUDES the Verified listing.** A
+  driver who already paid for Verified upgrades for the difference — `premiumUpgradePrice()`
+  = $97 − listing price = $50 today — on the post-checkout offer page, from the account,
+  the grow pages, emails and recovery texts. Buying Premium outright on `/pricing`
+  charges $97 and creates the listing as PREMIUM. Everything in Verified plus: the bidding
   calculator (`/account/bidding-calculator`); the business P&L tracker
   (`/account/trips` — cost per mile, rate per mile, net income weekly/monthly/quarterly);
   every other guide including "How to run an ad for your delivery business"; the Curri

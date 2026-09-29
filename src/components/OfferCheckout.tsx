@@ -9,6 +9,7 @@ import {
   listingIncreasePending,
   listingPrice,
   PLATFORM_FEE_PERCENT,
+  premiumUpgradePrice,
   TIERS,
   VALUE_STACK,
   VALUE_STACK_TOTAL,
@@ -59,9 +60,11 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
     }
   }, [referralCode]);
 
-  const tier = TIERS.standard;
-  // Dated, real price increase: $17 until the date, $47 after (lib/pricing).
-  const price = listingPrice();
+  // Verified ($47) or Premium ($97, includes Verified) — both buyable here.
+  const [tierId, setTierId] = useState<"standard" | "premium">("standard");
+  const tier = TIERS[tierId];
+  // Dated, real price increase applies to the listing (lib/pricing).
+  const price = tierId === "standard" ? listingPrice() : TIERS.premium.price;
   const increasePending = listingIncreasePending();
   const toggle = (id: string) => setSelected((s) => ({ ...s, [id]: !s[id] }));
 
@@ -75,14 +78,18 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tier: "standard", bumps, ref }),
+        body: JSON.stringify({ tier: tierId, bumps, ref }),
       });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
         return;
       }
-      setError("Checkout is temporarily unavailable. Please try again in a moment.");
+      setError(
+        typeof data.error === "string"
+          ? `Checkout couldn't start. ${data.error}`
+          : "Checkout is temporarily unavailable. Please try again in a moment.",
+      );
     } catch {
       setError("Something went wrong starting checkout. Please try again.");
     } finally {
@@ -91,10 +98,10 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
   }
 
   const { total, lineItems } = useMemo(() => {
-    const items: { label: string; price: number }[] = [{ label: `${tier.name} listing`, price }];
+    const items: { label: string; price: number }[] = [{ label: tierId === "premium" ? "Premium (includes Verified listing)" : `${tier.name} listing`, price }];
     for (const b of BUMPS) if (selected[b.id]) items.push({ label: b.name, price: b.price });
     return { total: items.reduce((s, i) => s + i.price, 0), lineItems: items };
-  }, [selected, tier, price]);
+  }, [selected, tier, tierId, price]);
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
@@ -153,12 +160,44 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
         </div>
       )}
 
-      {/* Standard offer + value stack */}
-      <div className="mx-auto mt-8 max-w-2xl">
+      {/* Pick a tier: Verified or Premium (which includes Verified). */}
+      <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
+        {(["standard", "premium"] as const).map((id) => {
+          const t = TIERS[id];
+          const p = id === "standard" ? listingPrice() : TIERS.premium.price;
+          const on = tierId === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTierId(id)}
+              className={`rounded-2xl border p-5 text-left transition-colors ${on ? "border-accent bg-accent-soft" : "border-border bg-surface hover:border-accent/50"}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-accent">{id === "standard" ? "Tier 1" : "Tier 2 · most drivers"}</p>
+                  <p className="mt-1 text-lg font-bold">{t.name}{id === "standard" ? " listing" : ""}</p>
+                  <p className="mt-1 text-xs text-muted">{t.tagline}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <span className="text-2xl font-extrabold text-accent">${p}</span>
+                  <span className="block text-[11px] text-muted">one-time</span>
+                </div>
+              </div>
+              <span className={`mt-3 inline-flex h-5 w-5 items-center justify-center rounded-full border ${on ? "border-accent bg-accent text-[#04130a]" : "border-border text-transparent"}`}>
+                <Check className="h-3.5 w-3.5" />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected tier + what's inside */}
+      <div className="mx-auto mt-4 max-w-2xl">
         <div className="rounded-2xl border border-accent bg-accent-soft p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <span className="text-lg font-bold">{tier.name} listing</span>
+              <span className="text-lg font-bold">{tierId === "premium" ? "Premium" : `${tier.name} listing`}</span>
               <p className="mt-1 text-sm text-muted">{tier.tagline}</p>
             </div>
             <div className="shrink-0 text-right">
@@ -167,29 +206,44 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
             </div>
           </div>
 
-          {/* Value stack — everything included, anchored against standalone value */}
-          <div className="mt-5 space-y-2 border-t border-accent/20 pt-5">
-            {VALUE_STACK.map((v) => (
-              <div key={v.label} className="flex items-center gap-2 text-sm">
-                <span className="text-accent"><Check className="h-4 w-4" /></span>
-                <span className="flex-1">{v.label}</span>
-                <span className="text-muted line-through">${v.value}</span>
+          {tierId === "standard" ? (
+            /* Value stack — everything included, anchored against standalone value */
+            <div className="mt-5 space-y-2 border-t border-accent/20 pt-5">
+              {VALUE_STACK.map((v) => (
+                <div key={v.label} className="flex items-center gap-2 text-sm">
+                  <span className="text-accent"><Check className="h-4 w-4" /></span>
+                  <span className="flex-1">{v.label}</span>
+                  <span className="text-muted line-through">${v.value}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between border-t border-accent/20 pt-3 text-sm">
+                <span className="font-semibold">Total value</span>
+                <span className="font-semibold text-muted line-through">${VALUE_STACK_TOTAL}</span>
               </div>
-            ))}
-            <div className="flex items-center justify-between border-t border-accent/20 pt-3 text-sm">
-              <span className="font-semibold">Total value</span>
-              <span className="font-semibold text-muted line-through">${VALUE_STACK_TOTAL}</span>
+              <div className="flex items-center justify-between">
+                <span className="font-bold">Your price today</span>
+                <span className="text-2xl font-extrabold text-accent">${price}</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="font-bold">Your price today</span>
-              <span className="text-2xl font-extrabold text-accent">${price}</span>
+          ) : (
+            <div className="mt-5 space-y-2 border-t border-accent/20 pt-5">
+              {TIERS.premium.features.map((f) => (
+                <div key={f} className="flex items-start gap-2 text-sm">
+                  <span className="mt-0.5 text-accent"><Check className="h-4 w-4" /></span>
+                  <span className="flex-1">{f}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between border-t border-accent/20 pt-3">
+                <span className="font-bold">Your price today</span>
+                <span className="text-2xl font-extrabold text-accent">${price}</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
         <p className="mt-3 text-center text-xs text-muted">
-          Want a premium badge, elevated styling, priority placement &amp; your own website link? Upgrade to{" "}
-          <span className="font-medium text-foreground">Premium (${TIERS.premium.price})</span>{" "}
-          anytime from your account after you&apos;re set up.
+          {tierId === "standard"
+            ? `Start with Verified and add Premium later for the $${premiumUpgradePrice()} difference — right after checkout, or any time from your account.`
+            : "Premium includes the Verified listing. One payment, everything unlocked the moment you sign in."}
         </p>
       </div>
 

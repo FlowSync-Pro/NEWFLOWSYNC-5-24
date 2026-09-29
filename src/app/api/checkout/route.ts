@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { FLEET, getBump, isPremiumTier, listingPrice, PNL_PRO, TIERS, type TierId } from "@/lib/pricing";
+import { FLEET, getBump, isPremiumTier, listingPrice, PNL_PRO, premiumUpgradePrice, TIERS, type TierId } from "@/lib/pricing";
 import { pnlProActive } from "@/lib/subscription";
 
 export const runtime = "nodejs";
@@ -19,22 +19,8 @@ const fleetLineItem = (unitAmount: number) => ({
 // URL set in the Stripe Dashboard → Settings → Public details). If that URL
 // isn't configured yet Stripe rejects the option; we fall back to a plain
 // checkout rather than block the sale, and log loudly so it gets fixed.
-async function createFleetSession(stripe: Stripe, params: Stripe.Checkout.SessionCreateParams) {
-  try {
-    return await stripe.checkout.sessions.create({
-      ...params,
-      consent_collection: { terms_of_service: "required" },
-      custom_text: {
-        terms_of_service_acceptance: {
-          message: `I understand the fleet joining fee is ${FLEET.refundShort.replace("Fully refundable", "fully refundable").replace(/\.$/, "")}.`,
-        },
-      },
-    });
-  } catch (e) {
-    console.error("[checkout] fleet consent checkbox unavailable (set the Terms of Service URL in Stripe → Settings → Public details):", e instanceof Error ? e.message : e);
-    return stripe.checkout.sessions.create(params);
-  }
-}
+type SessionParams = Stripe.Checkout.SessionCreateParams;
+type Extra = { name: string; params: Partial<SessionParams> };
 
 // Abandoned-checkout recovery for NEW buyers (listing + homepage fleet):
 //  - the session expires after 60 minutes instead of Stripe's 24-hour default,
@@ -44,13 +30,63 @@ async function createFleetSession(stripe: Stripe, params: Stripe.Checkout.Sessio
 //    Checkout page, which is what the follow-up needs;
 //  - a phone field on the Checkout page, because the owner's best-converting
 //    follow-up is a personal text. (Owner-approved new personal-data field.)
-const RECOVERY_SESSION_OPTIONS = () => ({
-  expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
-  after_expiration: { recovery: { enabled: true, allow_promotion_codes: false } },
-  phone_number_collection: { enabled: true },
+const RECOVERY_EXTRA = (): Extra => ({
+  name: "abandoned-checkout recovery (expiry + recovery + phone)",
+  params: {
+    expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
+    after_expiration: { recovery: { enabled: true, allow_promotion_codes: false } },
+    phone_number_collection: { enabled: true },
+  },
 });
 
+const CONSENT_EXTRA: Extra = {
+  name: "fleet refund-terms checkbox (needs the Terms of Service URL in Stripe → Settings → Public details)",
+  params: {
+    consent_collection: { terms_of_service: "required" },
+    custom_text: {
+      terms_of_service_acceptance: {
+        message: `I understand the fleet joining fee is ${FLEET.refundShort.replace("Fully refundable", "fully refundable").replace(/\.$/, "")}.`,
+      },
+    },
+  },
+};
+
+// Never let a nice-to-have block a sale. Try the session with every extra;
+// if Stripe rejects it, drop the last extra and try again, down to a plain
+// session. Each rejection is logged with the extra's name so it can be fixed
+// (Vercel → Logs). Only a plain session failing surfaces to the buyer.
+async function createSession(stripe: Stripe, base: SessionParams, extras: Extra[]) {
+  for (let n = extras.length; n >= 0; n--) {
+    const merged = Object.assign({}, base, ...extras.slice(0, n).map((e) => e.params)) as SessionParams;
+    try {
+      return await stripe.checkout.sessions.create(merged);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (n === 0) throw e;
+      console.error(`[checkout] Stripe rejected "${extras[n - 1].name}" — retrying without it. Stripe said: ${msg}`);
+    }
+  }
+  throw new Error("unreachable");
+}
+
+const createListingSession = (stripe: Stripe, base: SessionParams) => createSession(stripe, base, [RECOVERY_EXTRA()]);
+const createFleetSession = (stripe: Stripe, base: SessionParams, opts: { recovery?: boolean } = {}) =>
+  createSession(stripe, base, opts.recovery ? [RECOVERY_EXTRA(), CONSENT_EXTRA] : [CONSENT_EXTRA]);
+
+// Any failure here used to become a bare 500 and a generic "temporarily
+// unavailable" message. Now the real reason is logged and returned, so the
+// owner can read it on the page instead of guessing.
 export async function POST(req: Request) {
+  try {
+    return await handleCheckout(req);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    console.error("[checkout] failed:", msg);
+    return NextResponse.json({ error: `Stripe error: ${msg}` }, { status: 500 });
+  }
+}
+
+async function handleCheckout(req: Request) {
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ configured: false });
 
@@ -97,7 +133,6 @@ export async function POST(req: Request) {
 
     const fleet = await createFleetSession(stripe, {
       mode: "payment",
-      ...RECOVERY_SESSION_OPTIONS(),
       line_items: [fleetLineItem(FLEET.price * 100)],
       customer_email: email,
       metadata: { type: "fleet", standalone: "1", firstName, lastName, email, ref },
@@ -105,7 +140,7 @@ export async function POST(req: Request) {
       // account is brand new, plus the Purchase pixel with this session's id.
       success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
       cancel_url: `${base}/#curri-fleet`,
-    });
+    }, { recovery: true });
     return NextResponse.json({ url: fleet.url });
   }
 
@@ -164,7 +199,7 @@ export async function POST(req: Request) {
       mode: "payment",
       line_items: [
         {
-          price_data: { currency: "usd", unit_amount: TIERS.premium.price * 100, product_data: { name: "FlowSync Premium upgrade" } },
+          price_data: { currency: "usd", unit_amount: premiumUpgradePrice() * 100, product_data: { name: "FlowSync Premium upgrade" } },
           quantity: 1,
         },
       ],
@@ -213,7 +248,7 @@ export async function POST(req: Request) {
       mode: "payment",
       line_items: [
         {
-          price_data: { currency: "usd", unit_amount: TIERS.premium.price * 100, product_data: { name: "FlowSync Premium upgrade" } },
+          price_data: { currency: "usd", unit_amount: premiumUpgradePrice() * 100, product_data: { name: "FlowSync Premium upgrade" } },
           quantity: 1,
         },
       ],
@@ -313,9 +348,8 @@ export async function POST(req: Request) {
     }),
   ];
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await createListingSession(stripe, {
     mode: "payment",
-    ...RECOVERY_SESSION_OPTIONS(),
     line_items: priced.map((item) => ({
       price_data: { currency: "usd", unit_amount: item.amount, product_data: { name: item.name } },
       quantity: 1,

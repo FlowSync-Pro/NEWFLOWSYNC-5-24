@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { getAdminUserId, isAdminEmail } from "@/lib/admin";
 import { getStripe } from "@/lib/stripe";
-import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, TIERS } from "@/lib/pricing";
+import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, premiumUpgradePrice } from "@/lib/pricing";
 import { fleetPitchText, premiumPitchText, recoveryText, unpaidSignupText } from "@/lib/recovery";
 import RecoveryLists, { type RecoveryGroup, type RecoveryRow } from "@/components/RecoveryLists";
 
@@ -129,7 +129,7 @@ export default async function AdminRecoveryPage() {
     {
       key: "premium",
       title: "Verified, not Premium",
-      blurb: `Paid drivers still on Verified. The $${TIERS.premium.price} Premium pitch (done-for-you setup).`,
+      blurb: `Paid drivers still on Verified. The Premium pitch — $${premiumUpgradePrice()} to upgrade (tools, course, badge).`,
       rows: paidNotFleet
         .filter((u) => u.driverProfile && u.driverProfile.tier !== "PREMIUM")
         .map((u) => ({
@@ -138,7 +138,7 @@ export default async function AdminRecoveryPage() {
           email: u.email,
           phone: u.driverProfile!.phone ?? null,
           meta: `Verified driver${u.driverProfile!.city ? ` · ${u.driverProfile!.city}` : ""}`,
-          text: premiumPitchText(u.driverProfile!.firstName, TIERS.premium.price),
+          text: premiumPitchText(u.driverProfile!.firstName, premiumUpgradePrice()),
           mailSubject: "Want me to build your FlowSync profile for you?",
         })),
     },

@@ -131,6 +131,17 @@ export function listingPrice(now: Date = new Date()): number {
 }
 
 /**
+ * Premium's price ($97) INCLUDES the Verified listing. So a driver who already
+ * paid for Verified upgrades for the difference — $50 today — whether they do
+ * it on the post-checkout offer page or later from their account. Buying
+ * Premium outright on the pricing page charges the full $97 and creates the
+ * listing at the same time. One rule, no "pay $144 for waiting" trap.
+ */
+export function premiumUpgradePrice(now: Date = new Date()): number {
+  return Math.max(0, TIERS.premium.price - listingPrice(now));
+}
+
+/**
  * The Curri fleet invite (Tier 3) — a SEPARATE product from the listing tiers.
  * Drivers join the Barham Transport carrier account and get loads dispatched to
  * them, and the owner builds their profile, service menu, and website for them.

@@ -8,7 +8,7 @@ import {
 } from "@/lib/guides";
 import { SITE_URL } from "@/lib/site";
 import { canReadGuide, getEntitlements } from "@/lib/access";
-import { TIERS } from "@/lib/pricing";
+import { premiumUpgradePrice } from "@/lib/pricing";
 import JsonLd, { breadcrumbLd } from "@/components/JsonLd";
 
 // Guides are a paid member benefit — access depends on the signed-in user, so
@@ -146,13 +146,13 @@ export default async function GuidePage({ params }: PageProps<"/grow/[slug]">) {
                 <>
                   <h2 className="mt-4 text-xl font-bold tracking-tight">This guide is part of Premium</h2>
                   <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-                    Your Verified listing includes the setup guides. Premium (${TIERS.premium.price} one-time)
+                    Your Verified listing includes the setup guides. Premium (${premiumUpgradePrice()} more, one-time)
                     unlocks every guide in the library, plus the bidding calculator, the business P&amp;L
                     tracker, and the Curri mastermind course.
                   </p>
                   <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
                     <Link href="/account/edit" className="btn-primary rounded-full px-7 py-3 text-sm">
-                      Upgrade to Premium — ${TIERS.premium.price}
+                      Upgrade to Premium — ${premiumUpgradePrice()}
                     </Link>
                     <Link href="/grow" className="btn-ghost rounded-full px-6 py-3 text-sm">
                       Back to my guides

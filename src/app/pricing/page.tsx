@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const price = listingPrice();
   return {
     title: `Pricing — get listed for $${price}`,
-    description: `Get listed in the FlowSync driver directory for a one-time $${price} and set your own rates on every job — your DOT & EIN setup guide is included. Upgrade to Premium ($${TIERS.premium.price}) anytime from your account for a premium badge and priority placement.`,
+    description: `Get listed in the FlowSync driver directory for a one-time $${price} and set your own rates on every job — your DOT & EIN setup guide is included. Or go Premium ($${TIERS.premium.price}, includes the listing) for the bidding calculator, P&L tracker, Curri mastermind, badge and priority placement.`,
     alternates: { canonical: `${SITE_URL}/pricing` },
   };
 }

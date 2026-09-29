@@ -6,7 +6,7 @@ import Reveal from "@/components/Reveal";
 import { SITE_URL } from "@/lib/site";
 import { getSession } from "@/lib/session";
 import { getEntitlements, hasProAccess } from "@/lib/access";
-import { TIER1_GUIDE_SLUGS, TIERS } from "@/lib/pricing";
+import { premiumUpgradePrice, TIER1_GUIDE_SLUGS } from "@/lib/pricing";
 
 // Member resources — only signed-in paid drivers (and admins) see the library.
 // Reached from inside the driver dashboard, not the public nav.
@@ -112,7 +112,7 @@ export default async function GrowPage() {
                   <p className="mt-1 text-muted">Premium adds the bidding calculator, the P&amp;L tracker, the ads guide, and the Curri mastermind.</p>
                 </div>
                 <Link href="/account/edit" className="btn-primary shrink-0 rounded-full px-7 py-3.5 text-sm">
-                  Upgrade to Premium — ${TIERS.premium.price}
+                  Upgrade to Premium — ${premiumUpgradePrice()}
                 </Link>
               </>
             )}

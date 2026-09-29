@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { SUPPORT_EMAIL } from "./site";
-import { FLEET, GUARANTEE_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, TIERS } from "./pricing";
+import { FLEET, GUARANTEE_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, premiumUpgradePrice } from "./pricing";
 
 // Lazy + graceful: when RESEND_API_KEY isn't set, email sends are skipped (logged)
 // so the rest of the flow still works. Swap nothing to go live — just set the keys.
@@ -92,7 +92,7 @@ export async function sendDriverWelcomeEmail(opts: {
   const base = new URL(opts.signInUrl).origin;
   const upgradeUrl = opts.upgradeUrl || `${base}/account/edit`;
   const telegram = telegramInviteUrl();
-  const premium = TIERS.premium.price;
+  const premium = premiumUpgradePrice();
 
   const body = `
     <p ${P}>Hi ${opts.firstName} — you're in. Your FlowSync driver listing is active, and you set your own rates on every job.</p>
@@ -111,8 +111,8 @@ export async function sendDriverWelcomeEmail(opts: {
 
     <h2 ${H2}>Want to run it like a business? Add Premium.</h2>
     <p ${P}>The listing gets you found. Premium is the business behind it: <strong style="color:#e7ecef">the bidding calculator</strong> (your floor and your bid on every load), <strong style="color:#e7ecef">the business P&amp;L tracker</strong> (cost per mile, rate per mile, net income by week, month, quarter), the guide on running an ad for your delivery business, and <strong style="color:#e7ecef">the Curri mastermind course</strong> — the exact playbook below, lesson by lesson. Plus the Premium badge, priority placement above other drivers, and your own website link.</p>
-    <p ${P}>It's <strong style="color:#e7ecef">$${premium} one-time</strong> — no subscription, same 30-day money-back guarantee. One click below, pay on Stripe, and I'll start on your setup.</p>
-    <p style="margin:0 0 6px">${button(upgradeUrl, `Add Premium — $${premium} one-time`)}</p>
+    <p ${P}>It's <strong style="color:#e7ecef">$${premium} more, one-time</strong> (Premium's price includes the listing you already bought) — no subscription, same 30-day money-back guarantee. One click below and pay on Stripe.</p>
+    <p style="margin:0 0 6px">${button(upgradeUrl, `Add Premium — $${premium} more`)}</p>
 
     <h2 ${H2}>One rental van → four brand-new Sprinters</h2>
     <p ${P}>Quick story, because it's the whole reason FlowSync exists.</p>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { isPremiumTier, TIERS } from "@/lib/pricing";
+import { isPremiumTier, premiumUpgradePrice } from "@/lib/pricing";
 import MyServicesEditor, { type ServiceRow } from "@/components/MyServicesEditor";
 import TrackEvent from "@/components/TrackEvent";
 
@@ -30,7 +30,7 @@ export default async function MyServicesPage({ searchParams }: PageProps<"/accou
 
   return (
     <div className="relative">
-      {justUpgraded && premium && <TrackEvent event="Purchase" value={TIERS.premium.price} />}
+      {justUpgraded && premium && <TrackEvent event="Purchase" value={premiumUpgradePrice()} />}
       <div className="glow-radial pointer-events-none absolute inset-0 h-48" />
       <div className="relative mx-auto max-w-4xl px-5 py-10">
         <div className="flex items-center justify-between">
