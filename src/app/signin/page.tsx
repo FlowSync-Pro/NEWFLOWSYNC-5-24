@@ -3,6 +3,7 @@ import { AuthPanel, ActivateAccountForm } from "@/components/AuthForm";
 import TrackEvent from "@/components/TrackEvent";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
+import { listingPrice } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -18,7 +19,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
   // Report the real amount paid to the Meta Pixel so Meta can optimize for
   // value (a $97 Premium reports 97, a $17+bumps reports its true total) and
   // the lookalike seed is clean. Falls back to the $17 core listing.
-  let purchaseValue = 17;
+  let purchaseValue = listingPrice();
   // Whether to offer on-screen activation: the driver just paid but hasn't set
   // a password yet, so we let them choose one here instead of stranding them
   // if the welcome email is slow, filtered, or never arrives.

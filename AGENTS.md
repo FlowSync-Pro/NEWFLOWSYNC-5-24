@@ -166,9 +166,9 @@ given fresh, per specific action.
 is `src/lib/pricing.ts` (`TIERS`, `FLEET`, `TIER1_GUIDE_SLUGS`, `listingPrice()`); every
 page, checkout amount, email and message reads from it — never hardcode a price in UI.**
 
-- **Tier 1 — Verified listing: $17 until 12:00 am Pacific, Monday October 6, 2026, then
-  $47** (a REAL, dated increase via `listingPrice()`; after the date fold $47 into
-  `TIERS.standard.price` with owner approval). Any vehicle, sedan through box truck.
+- **Tier 1 — Verified listing: $47 one-time** (was $17 until 2026-09-29; the owner
+  brought the announced Oct 6 increase forward — honor $17 for anyone who received a
+  "$17 until October 6" recovery message). Any vehicle, sedan through box truck.
   Includes: the directory listing with direct customer bookings; My Services (own service
   menu with custom pricing); the four setup guides — USDOT free, EIN free, LLC filing,
   medical courier requirements & licenses, and signing up with Curri & Dispatch as a

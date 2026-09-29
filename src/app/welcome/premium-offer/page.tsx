@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getStripe } from "@/lib/stripe";
-import { FLEET, TIERS } from "@/lib/pricing";
+import { FLEET, listingPrice, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import TrackEvent from "@/components/TrackEvent";
 import PremiumOfferButtons from "@/components/PremiumOfferButtons";
@@ -47,7 +47,7 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
   // Validate the original $17 listing session and capture the real amount paid
   // for the Meta Pixel Purchase event. If the session doesn't exist or wasn't
   // paid, fall through to the normal sign-in landing.
-  let purchaseValue = 17;
+  let purchaseValue = listingPrice();
   const stripe = getStripe();
   if (stripe) {
     try {

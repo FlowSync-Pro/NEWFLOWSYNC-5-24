@@ -38,7 +38,7 @@ export interface Tier {
 }
 
 // The ladder (funnel v2, launched with LEGACY_CUTOVER_AT below):
-//   Tier 1 "Verified"  — listingPrice(): $17 until the dated increase, then $47.
+//   Tier 1 "Verified"  — listingPrice(): $47 (the $17 entry price ended 2026-09-29).
 //                        Listing + service menu + the setup guides below.
 //   Tier 2 "Premium"   — $97 one-time. Everything in Verified + the business
 //                        tools + the ads guide + the Curri mastermind course +
@@ -49,7 +49,10 @@ export interface Tier {
 export const TIERS: Record<TierId, Tier> = {
   standard: {
     id: "standard",
-    price: 17,
+    // $47 as of 2026-09-29 (owner decision: the $17 entry price brought signups
+    // but no profit). The dated-increase mechanism below is kept, with its date
+    // in the past, so nothing on the site advertises a pending increase.
+    price: 47,
     // Display name only — the internal id stays "standard" and the DB enum
     // stays STANDARD (id and enum are stable contracts). "Verified" pairs with
     // Premium without sounding like a baseline/lesser tier.
@@ -112,7 +115,9 @@ export function getTier(id: TierId): Tier {
  * After the date, fold the new price into TIERS.standard.price and delete this
  * block — with the owner's approval, since it's a price change.
  */
-export const LISTING_PRICE_INCREASE_AT = new Date("2026-10-06T07:00:00Z"); // 12:00 am Pacific, Mon Oct 6 2026
+// The increase originally announced for Oct 6 was brought forward to Sep 29 by
+// the owner. Date is in the past → listingIncreasePending() is false everywhere.
+export const LISTING_PRICE_INCREASE_AT = new Date("2026-09-29T00:00:00Z");
 export const LISTING_PRICE_AFTER = 47;
 export const LISTING_INCREASE_DATE_LABEL = "Monday, October 6";
 
