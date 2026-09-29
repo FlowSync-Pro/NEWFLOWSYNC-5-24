@@ -13,7 +13,6 @@ import {
   premiumUpgradePrice,
   TIERS,
   VALUE_STACK,
-  VALUE_STACK_TOTAL,
 } from "@/lib/pricing";
 import { SUPPORT_EMAIL } from "@/lib/site";
 import type { SocialProof } from "@/lib/social-proof";
@@ -207,39 +206,16 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
             </div>
           </div>
 
-          {tierId === "standard" ? (
-            /* Value stack — everything included, anchored against standalone value */
-            <div className="mt-5 space-y-2 border-t border-accent/20 pt-5">
-              {VALUE_STACK.map((v) => (
-                <div key={v.label} className="flex items-center gap-2 text-sm">
-                  <span className="text-accent"><Check className="h-4 w-4" /></span>
-                  <span className="flex-1">{v.label}</span>
-                  <span className="text-muted line-through">${v.value}</span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between border-t border-accent/20 pt-3 text-sm">
-                <span className="font-semibold">Total value</span>
-                <span className="font-semibold text-muted line-through">${VALUE_STACK_TOTAL}</span>
+          {/* What's inside — a plain checklist. No made-up "worth $X" anchors:
+              the price is stated once, at the top, and that's it. */}
+          <div className="mt-5 space-y-2 border-t border-accent/20 pt-5">
+            {(tierId === "standard" ? VALUE_STACK.map((v) => v.label) : TIERS.premium.features).map((f) => (
+              <div key={f} className="flex items-start gap-2 text-sm">
+                <span className="mt-0.5 text-accent"><Check className="h-4 w-4" /></span>
+                <span className="flex-1">{f}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="font-bold">Your price today</span>
-                <span className="text-2xl font-extrabold text-accent">${price}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-5 space-y-2 border-t border-accent/20 pt-5">
-              {TIERS.premium.features.map((f) => (
-                <div key={f} className="flex items-start gap-2 text-sm">
-                  <span className="mt-0.5 text-accent"><Check className="h-4 w-4" /></span>
-                  <span className="flex-1">{f}</span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between border-t border-accent/20 pt-3">
-                <span className="font-bold">Your price today</span>
-                <span className="text-2xl font-extrabold text-accent">${price}</span>
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
         <p className="mt-3 text-center text-xs text-muted">
           {tierId === "standard"

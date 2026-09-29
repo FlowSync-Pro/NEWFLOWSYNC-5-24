@@ -216,9 +216,10 @@ export function getBump(id: string): Bump | undefined {
 }
 
 /**
- * Value stack shown on checkout. Every item is really included with the $17
- * Standard listing — the "value" figures anchor what each piece would cost on
- * its own, so $17 reads as the steal it is. Keep these honest/defensible.
+ * What's inside the Verified listing, as shown on checkout. Only the labels
+ * are rendered — the owner removed the "worth $X" anchor figures (2026-09-29)
+ * because invented comparison prices next to a $47 product look fake. Keep
+ * the numbers out of the UI.
  */
 export const VALUE_STACK: { label: string; value: number }[] = [
   { label: "Driver directory listing — get found by local customers", value: 97 },
