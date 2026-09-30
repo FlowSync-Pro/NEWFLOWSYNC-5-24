@@ -42,13 +42,22 @@ function DocCard({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const handleFile = async (file?: File) => {
     if (!file) return;
     setBusy(true);
+    setFileError(null);
     // Profile photos are square-cropped so they fill the avatar frame correctly.
     const url = square ? await fileToSquareDataUrl(file) : await fileToScaledDataUrl(file);
     setBusy(false);
+    // The reader returns null for anything the browser can't decode as a photo
+    // (PDFs, HEIC on most browsers). That used to be passed on as "remove", which
+    // silently deleted the document already on file. Tell the driver instead.
+    if (!url) {
+      setFileError("Please upload a photo — JPG or PNG.");
+      return;
+    }
     onChange(url);
   };
 
@@ -78,7 +87,18 @@ function DocCard({
           {required && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] text-accent">Required</span>}
         </div>
         <p className="mt-1 text-xs text-muted">{description}</p>
-        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            // Reset so picking the same file again after an error fires onChange.
+            e.target.value = "";
+            handleFile(file);
+          }}
+        />
         <div className="mt-3 flex gap-2">
           <button type="button" onClick={() => inputRef.current?.click()} className="btn-ghost flex-1 rounded-lg px-3 py-2 text-xs">
             {value ? "Replace" : "Upload"}
@@ -89,6 +109,11 @@ function DocCard({
             </button>
           )}
         </div>
+        {fileError && (
+          <p className="mt-2 text-xs text-red-400" role="alert">
+            {fileError}
+          </p>
+        )}
       </div>
     </div>
   );

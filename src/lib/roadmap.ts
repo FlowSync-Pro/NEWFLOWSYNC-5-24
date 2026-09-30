@@ -23,7 +23,7 @@ export interface Milestone {
 export const LAUNCH_CHECKLIST: RoadmapTask[] = [
   { id: "profile", label: "Complete your profile", detail: "Add your photo, bio, vehicle, and the services you offer.", href: "/account" },
   { id: "rates", label: "Set your rates", detail: "Use the quote calculator to price your services fairly.", href: "/calculator" },
-  { id: "documents", label: "Upload your license & documents", detail: "Get verified so customers trust you from day one.", href: "/account" },
+  { id: "documents", label: "Upload your license & documents", detail: "Get verified so customers trust you from day one.", href: "/account/edit" },
   { id: "services", label: "List your services", detail: "Pick every service you can offer to get found for more jobs.", href: "/account/services" },
   { id: "first-customers", label: "Invite your first customers", detail: "Share your profile with friends, family, and neighbors.", href: "/account" },
   { id: "share-experience", label: "Earn your review invite", detail: "Stay active and every review on our site stays real — once you're a regular, we'll personally invite you to share your experience.", href: "/account/share-experience" },
