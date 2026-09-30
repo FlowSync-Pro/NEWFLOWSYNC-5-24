@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
-import { serviceToEnum } from "@/lib/enums";
+import { serviceToEnum, serviceFromEnum } from "@/lib/enums";
 import { attributeReferral } from "@/lib/referrals";
 import { alertOwner } from "@/lib/alerts";
 import { sendCapiPurchase } from "@/lib/meta-capi";
@@ -178,6 +178,12 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     to: profile.user.email,
     firstName: profile.firstName,
     accountUrl: `${base}/account`,
+    // Personalization: names what's already on the profile (read-only).
+    city: profile.city,
+    vehicleYear: profile.vehicleYear,
+    vehicleMakeModel: profile.vehicleMakeModel,
+    vehicleType: profile.vehicleType,
+    serviceId: serviceFromEnum(profile.primaryService),
     // Offer page B follows every Premium purchase; the email repeats it for
     // anyone who closed the tab. The page enforces the 24h window itself.
     fleetOfferUrl: `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(session.id)}`,
@@ -289,7 +295,15 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     }
   }
 
-  await sendFleetWelcomeEmail({ to: user.email, firstName, fleetUrl: `${base}/account/curri-fleet` });
+  await sendFleetWelcomeEmail({
+    to: user.email,
+    firstName,
+    fleetUrl: `${base}/account/curri-fleet`,
+    city: user.driverProfile?.city,
+    vehicleYear: user.driverProfile?.vehicleYear,
+    vehicleMakeModel: user.driverProfile?.vehicleMakeModel,
+    vehicleType: user.driverProfile?.vehicleType,
+  });
 
   // The carrier-account add and the Stripe Connect link are manual steps.
   await alertOwner(
@@ -412,6 +426,7 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
       // Only a Verified buyer gets the offer chain; a Premium buyer (tier
       // "premium") is sent to offer page B by the checkout success URL instead.
       fleetOfferUrl: tierEnum === "PREMIUM" ? undefined : `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(session.id)}`,
+      serviceId: primaryService,
     });
     // A paying driver whose welcome email didn't send can't sign in. That used
     // to fail silently; now it pings the owner over Telegram (a channel that
