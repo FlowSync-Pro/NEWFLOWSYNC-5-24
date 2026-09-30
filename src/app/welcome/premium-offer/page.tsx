@@ -139,8 +139,8 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
             <PremiumOfferButtons sessionId={sessionId} />
           </div>
           <p className="mt-4 text-center text-xs text-muted">
-            Open for {OFFER_WINDOW_HOURS} hours after your purchase. After that, Premium is ${later} from your account.
-            {GUARANTEE_DAYS}-day money-back guarantee. Secure Stripe checkout.
+            Open for {OFFER_WINDOW_HOURS} hours after your purchase. After that, Premium is ${later} from your account.{" "}
+            {GUARANTEE_DAYS}-day money-back guarantee. Secure Stripe checkout with your email pre-filled.
           </p>
         </div>
       </div>

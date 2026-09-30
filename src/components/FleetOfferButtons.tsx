@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FLEET } from "@/lib/pricing";
 
-/** Offer page B: the fleet for the offer price, or skip to sign-in. */
-export default function FleetOfferButtons({ sessionId }: { sessionId: string }) {
+/** Offer page B: the fleet at this buyer's offer price, or skip to sign-in. */
+export default function FleetOfferButtons({ sessionId, price }: { sessionId: string; price: number }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +32,7 @@ export default function FleetOfferButtons({ sessionId }: { sessionId: string }) 
   };
 
   const skip = () => {
-    router.push(`/signin?checkout=success&session_id=${encodeURIComponent(sessionId)}&upgraded=1`);
+    router.push(`/signin?checkout=success&session_id=${encodeURIComponent(sessionId)}`);
   };
 
   return (
@@ -44,7 +43,7 @@ export default function FleetOfferButtons({ sessionId }: { sessionId: string }) 
         disabled={loading}
         className="btn-primary w-full rounded-full px-6 py-4 text-base font-bold disabled:opacity-60"
       >
-        {loading ? "Opening secure checkout…" : `Yes — activate me on the fleet for $${FLEET.addOnPrice}`}
+        {loading ? "Opening secure checkout…" : `Yes — activate me on the fleet for $${price} more`}
       </button>
       {error && <p className="text-center text-sm text-red-400">{error}</p>}
       <button

@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { premiumOfferPrice } from "@/lib/pricing";
 
-/** Offer page A: Premium for the difference from Verified, or skip to sign-in. */
+/**
+ * Offer page A: Premium for the difference from Verified. Declining goes to
+ * offer page B (the fleet at its without-Premium price), not straight to
+ * sign-in, so both paths reach the fleet offer.
+ */
 export default function PremiumOfferButtons({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -32,8 +36,8 @@ export default function PremiumOfferButtons({ sessionId }: { sessionId: string }
     }
   };
 
-  const skip = () => {
-    router.push(`/signin?checkout=success&session_id=${encodeURIComponent(sessionId)}`);
+  const decline = () => {
+    router.push(`/welcome/fleet-offer?session_id=${encodeURIComponent(sessionId)}`);
   };
 
   return (
@@ -49,11 +53,11 @@ export default function PremiumOfferButtons({ sessionId }: { sessionId: string }
       {error && <p className="text-center text-sm text-red-400">{error}</p>}
       <button
         type="button"
-        onClick={skip}
+        onClick={decline}
         disabled={loading}
         className="w-full text-center text-sm text-muted underline-offset-4 hover:text-foreground hover:underline disabled:opacity-60"
       >
-        No thanks, take me to sign in
+        No thanks, I&apos;ll stay on Verified
       </button>
     </div>
   );

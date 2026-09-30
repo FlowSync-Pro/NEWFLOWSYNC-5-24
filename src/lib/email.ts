@@ -88,9 +88,14 @@ export async function sendDriverWelcomeEmail(opts: {
   tempPassword: string;
   signInUrl: string;
   upgradeUrl?: string;
+  /** Offer page B for a Verified buyer (fleet for $200 more, 24h). */
+  fleetOfferUrl?: string;
 }) {
   const base = new URL(opts.signInUrl).origin;
   const upgradeUrl = opts.upgradeUrl || `${base}/account/edit`;
+  const fleetOffer = opts.fleetOfferUrl
+    ? `<p ${P}>Same window for the fleet: for ${OFFER_WINDOW_HOURS} hours it's <strong style="color:#e7ecef">$${FLEET.addOnPriceWithoutPremium} more</strong> to get activated on our Curri carrier account (that includes everything in Premium). After that it's $${FLEET.price} from your account. <a href="${opts.fleetOfferUrl}" style="color:#25e07a">See the fleet offer →</a></p>`
+    : "";
   const telegram = telegramInviteUrl();
   const premium = premiumOfferPrice();
 
@@ -113,6 +118,7 @@ export async function sendDriverWelcomeEmail(opts: {
     <p ${P}>The listing gets you found. Premium is the business behind it: <strong style="color:#e7ecef">the bidding calculator</strong> (your floor and your bid on every load), <strong style="color:#e7ecef">the business P&amp;L tracker</strong> (cost per mile, rate per mile, net income by week, month, quarter), the guide on running an ad for your delivery business, and <strong style="color:#e7ecef">the Curri mastermind course</strong> — the exact playbook below, lesson by lesson. Plus the Premium badge, priority placement above other drivers, and your own website link.</p>
     <p ${P}>For <strong style="color:#e7ecef">${OFFER_WINDOW_HOURS} hours after your purchase</strong> it's <strong style="color:#e7ecef">$${premium} more, one-time</strong> (Premium's price includes the listing you already bought). After that it's $${premiumUpgradePrice()} from your account. No subscription, same 30-day money-back guarantee.</p>
     <p style="margin:0 0 6px">${button(upgradeUrl, `Add Premium — $${premium} more`)}</p>
+    ${fleetOffer}
 
     <h2 ${H2}>One rental van → four brand-new Sprinters</h2>
     <p ${P}>Quick story, because it's the whole reason FlowSync exists.</p>
@@ -216,7 +222,12 @@ export async function sendPremiumUpgradeEmail(opts: {
   to: string;
   firstName: string;
   accountUrl: string;
+  /** Offer page B (fleet for $150 more, 24h) — set by the Stripe webhook only. */
+  fleetOfferUrl?: string;
 }) {
+  const ps = opts.fleetOfferUrl
+    ? `<p ${P}>P.S. For ${OFFER_WINDOW_HOURS} hours after your Premium purchase, getting activated on our Curri carrier account is <strong style="color:#e7ecef">$${FLEET.addOnPrice} more</strong> instead of $${FLEET.price}. <a href="${opts.fleetOfferUrl}" style="color:#25e07a">See the fleet offer →</a></p>`
+    : "";
   const body = `
     <p ${P}>Hey ${opts.firstName},</p>
     <p ${P}>You're in as a FlowSync Premium member. Log into your account and you'll see your status marked <strong style="color:#25e07a">Premium</strong>. That unlocks the tools we've built for members so far: mileage tracker, profit &amp; loss tracker, bidding calculator, with more rolling out.</p>
@@ -231,7 +242,8 @@ export async function sendPremiumUpgradeEmail(opts: {
       <li ${LI}>What's the one thing slowing you down or making this harder than it should be right now?</li>
     </ol>
     <p ${P}><strong style="color:#e7ecef">Reply to this email with those three</strong> and I'll come back with a plan built specifically around where you actually are.</p>
-    <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
+    <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>
+    ${ps}`;
   return send(opts.to, "You're in — FlowSync Premium (3 quick questions)", shell("Welcome to Premium", body));
 }
 

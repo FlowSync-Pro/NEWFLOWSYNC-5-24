@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { FLEET, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, PNL_PRO, premiumOfferPrice, premiumUpgradePrice, TIERS, type TierId } from "@/lib/pricing";
+import { FLEET, fleetOfferPrice, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, PNL_PRO, premiumOfferPrice, premiumUpgradePrice, TIERS, type TierId } from "@/lib/pricing";
 
 /** Post-checkout offers are open for OFFER_WINDOW_HOURS after the purchase they follow. */
 const offerOpen = (s: Stripe.Checkout.Session) => !offerExpired(s.created);
@@ -161,23 +161,27 @@ async function handleCheckout(req: Request) {
     return NextResponse.json({ url: fleet.url });
   }
 
-  // Offer page B: the fleet for $149 instead of $297, offered exactly once,
-  // right after a Premium purchase (outright on the pricing page, or the $50
-  // upgrade from offer page A, or a $97 upgrade from the account). Identified
-  // by that Premium purchase's Stripe session; open for OFFER_WINDOW_HOURS.
+  // Offer page B: the fleet, offered exactly once, right after the funnel's
+  // previous step — $150 more for a buyer who has Premium (took offer A, or
+  // bought Premium from the account), $200 more for a Verified buyer who
+  // declined offer A. Both total $247. Identified by that previous purchase's
+  // Stripe session (listing or upgrade); open for OFFER_WINDOW_HOURS.
   if (body.intent === "oto-fleet") {
     const original = await paidSession(stripe, body.session_id);
     const md = original?.metadata ?? {};
-    const isPremiumPurchase = md.type === "upgrade" || (md.type === "listing" && md.tier === "premium");
-    if (!original || !isPremiumPurchase) return NextResponse.json({ error: "Original payment not found." }, { status: 400 });
+    if (!original || (md.type !== "upgrade" && md.type !== "listing")) {
+      return NextResponse.json({ error: "Original payment not found." }, { status: 400 });
+    }
     if (!offerOpen(original)) {
       return NextResponse.json({ error: `That offer was open for ${OFFER_WINDOW_HOURS} hours after your purchase. You can still join the fleet from your account.` }, { status: 400 });
     }
     const email = (original.customer_details?.email ?? "").toLowerCase();
 
-    let user = md.userId ? await prisma.user.findUnique({ where: { id: md.userId } }) : null;
+    let user = md.userId
+      ? await prisma.user.findUnique({ where: { id: md.userId }, include: { driverProfile: { select: { tier: true } } } })
+      : null;
     for (let i = 0; i < 5 && !user && email; i++) {
-      user = await prisma.user.findUnique({ where: { email } });
+      user = await prisma.user.findUnique({ where: { email }, include: { driverProfile: { select: { tier: true } } } });
       if (!user) await new Promise((r) => setTimeout(r, 500));
     }
     if (!user) {
@@ -188,11 +192,16 @@ async function handleCheckout(req: Request) {
     }
     if (user.fleetJoinedAt) return NextResponse.json({ error: "You're already in the fleet." }, { status: 400 });
 
+    // Premium status from the purchase that led here, or from the account
+    // (the $50 upgrade's webhook may already have landed).
+    const hasPremium = md.type === "upgrade" || md.tier === "premium" || isPremiumTier(user.driverProfile?.tier);
+    const amount = fleetOfferPrice(hasPremium);
+
     const fleet = await createFleetSession(stripe, {
       mode: "payment",
-      line_items: [fleetLineItem(FLEET.addOnPrice * 100)],
+      line_items: [fleetLineItem(amount * 100)],
       customer_email: user.email,
-      metadata: { type: "fleet", userId: user.id, source: "oto" },
+      metadata: { type: "fleet", userId: user.id, source: hasPremium ? "oto-premium" : "oto-verified" },
       success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
       cancel_url: `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(original.id)}`,
     });

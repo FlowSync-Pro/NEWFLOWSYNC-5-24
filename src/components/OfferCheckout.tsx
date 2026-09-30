@@ -60,11 +60,13 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
     }
   }, [referralCode]);
 
-  // Verified ($47) or Premium ($97, includes Verified) — both buyable here.
-  const [tierId, setTierId] = useState<"standard" | "premium">("standard");
+  // The pricing page sells Verified only (owner decision, 2026-09-30). Premium
+  // and the fleet are offered after checkout and from the account; their data
+  // stays in lib/pricing as the single source of truth.
+  const tierId = "standard" as const;
   const tier = TIERS[tierId];
   // Dated, real price increase applies to the listing (lib/pricing).
-  const price = tierId === "standard" ? listingPrice() : TIERS.premium.price;
+  const price = listingPrice();
   const increasePending = listingIncreasePending();
   const toggle = (id: string) => setSelected((s) => ({ ...s, [id]: !s[id] }));
 
@@ -98,10 +100,10 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
   }
 
   const { total, lineItems } = useMemo(() => {
-    const items: { label: string; price: number }[] = [{ label: tierId === "premium" ? "Premium (includes Verified listing)" : `${tier.name} listing`, price }];
+    const items: { label: string; price: number }[] = [{ label: `${tier.name} listing`, price }];
     for (const b of BUMPS) if (selected[b.id]) items.push({ label: b.name, price: b.price });
     return { total: items.reduce((s, i) => s + i.price, 0), lineItems: items };
-  }, [selected, tier, tierId, price]);
+  }, [selected, tier, price]);
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
@@ -160,44 +162,12 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
         </div>
       )}
 
-      {/* Pick a tier: Verified or Premium (which includes Verified). */}
-      <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
-        {(["standard", "premium"] as const).map((id) => {
-          const t = TIERS[id];
-          const p = id === "standard" ? listingPrice() : TIERS.premium.price;
-          const on = tierId === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTierId(id)}
-              className={`rounded-2xl border p-5 text-left transition-colors ${on ? "border-accent bg-accent-soft" : "border-border bg-surface hover:border-accent/50"}`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-accent">{id === "standard" ? "Tier 1" : "Tier 2 · most drivers"}</p>
-                  <p className="mt-1 text-lg font-bold">{t.name}{id === "standard" ? " listing" : ""}</p>
-                  <p className="mt-1 text-xs text-muted">{t.tagline}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <span className="text-2xl font-extrabold text-accent">${p}</span>
-                  <span className="block text-[11px] text-muted">one-time</span>
-                </div>
-              </div>
-              <span className={`mt-3 inline-flex h-5 w-5 items-center justify-center rounded-full border ${on ? "border-accent bg-accent text-[#04130a]" : "border-border text-transparent"}`}>
-                <Check className="h-3.5 w-3.5" />
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Selected tier + what's inside */}
-      <div className="mx-auto mt-4 max-w-2xl">
+      {/* The listing + what's inside */}
+      <div className="mx-auto mt-8 max-w-2xl">
         <div className="rounded-2xl border border-accent bg-accent-soft p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <span className="text-lg font-bold">{tierId === "premium" ? "Premium" : `${tier.name} listing`}</span>
+              <span className="text-lg font-bold">{tier.name} listing</span>
               <p className="mt-1 text-sm text-muted">{tier.tagline}</p>
             </div>
             <div className="shrink-0 text-right">
@@ -209,7 +179,7 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
           {/* What's inside — a plain checklist. No made-up "worth $X" anchors:
               the price is stated once, at the top, and that's it. */}
           <div className="mt-5 space-y-2 border-t border-accent/20 pt-5">
-            {(tierId === "standard" ? VALUE_STACK.map((v) => v.label) : TIERS.premium.features).map((f) => (
+            {VALUE_STACK.map((v) => v.label).map((f) => (
               <div key={f} className="flex items-start gap-2 text-sm">
                 <span className="mt-0.5 text-accent"><Check className="h-4 w-4" /></span>
                 <span className="flex-1">{f}</span>
@@ -218,9 +188,8 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
           </div>
         </div>
         <p className="mt-3 text-center text-xs text-muted">
-          {tierId === "standard"
-            ? `Start with Verified. Right after checkout you'll get a one-time offer to add Premium for the $${premiumOfferPrice()} difference; after that it's $${premiumUpgradePrice()} from your account.`
-            : "Premium includes the Verified listing. One payment, everything unlocked the moment you sign in."}
+          Right after checkout you&apos;ll see two optional one-time offers: Premium for the ${premiumOfferPrice()} difference
+          (${premiumUpgradePrice()} from your account after that), and the Curri fleet. Both are open for 24 hours.
         </p>
       </div>
 

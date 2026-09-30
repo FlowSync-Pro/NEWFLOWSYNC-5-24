@@ -131,16 +131,28 @@ export function listingPrice(now: Date = new Date()): number {
 }
 
 /**
- * The post-checkout offer chain (owner decision, 2026-09-29):
- *   pay Verified ($47)  → offer page A: Premium for the difference ($50)
- *   pay Premium ($97)   → offer page B: the fleet for FLEET.addOnPrice ($149)
- *   take offer A        → offer page B next
+ * The post-checkout offer chain (owner decision, 2026-09-30):
+ *   pay Verified ($47)      → offer page A: Premium for the difference ($50)
+ *   accept A                → offer page B: the fleet for $150 more (total $247)
+ *   decline A               → offer page B: the fleet for $200 more (total $247)
+ *   pay Premium from the account ($97) → offer page B at $150
+ * Both paths total $247, so skipping Premium never makes the fleet cheaper.
  * Each offer is open for OFFER_WINDOW_HOURS after the purchase it follows, and
  * the page says so. Decline (or let it lapse) and the full price applies:
  * Premium is $97 from the account, the fleet is $297. That is the whole FOMO
  * — a real price, a real window, stated plainly.
  */
 export const OFFER_WINDOW_HOURS = 24;
+
+/** What the fleet costs on offer page B, given whether the buyer already has Premium. */
+export function fleetOfferPrice(hasPremium: boolean): number {
+  return hasPremium ? FLEET.addOnPrice : FLEET.addOnPriceWithoutPremium;
+}
+
+/** The buyer's total spend on the funnel when they take the fleet on offer page B. */
+export function fleetOfferTotal(now: Date = new Date()): number {
+  return listingPrice(now) + premiumOfferPrice(now) + FLEET.addOnPrice; // = listing + FLEET.addOnPriceWithoutPremium
+}
 
 /** True once an offer that followed a purchase created at `createdUnixSeconds` has lapsed. */
 export function offerExpired(createdUnixSeconds: number, now: Date = new Date()): boolean {
@@ -157,9 +169,9 @@ export function premiumUpgradePrice(): number {
   return TIERS.premium.price;
 }
 
-/** What offer page B saves versus joining the fleet from the account later. */
-export function fleetOfferSavings(): number {
-  return FLEET.price - FLEET.addOnPrice;
+/** What the buyer saves versus the full account price, given their path. */
+export function fleetOfferSavings(hasPremium: boolean): number {
+  return FLEET.price - fleetOfferPrice(hasPremium);
 }
 
 /**
@@ -167,13 +179,16 @@ export function fleetOfferSavings(): number {
  * Drivers join the Barham Transport carrier account and get loads dispatched to
  * them, and the owner builds their profile, service menu, and website for them.
  *
- * Two prices, on purpose:
- *  - `addOnPrice` ($149) is offered exactly once: on offer page B, right after a
- *    driver pays for Premium (outright, or via offer page A). Open for
- *    OFFER_WINDOW_HOURS; decline it and it's gone. Never shown anywhere else.
- *  - `price` ($297) is what everyone else pays — a homepage/pricing-page visitor
- *    (whose $297 also creates their full FlowSync account and listing) or a
- *    signed-in driver joining from the fleet guide.
+ * Three prices, on purpose (offer prices exist ONLY on offer page B, open for
+ * OFFER_WINDOW_HOURS after the purchase they follow):
+ *  - `addOnPrice` ($150): the buyer already has Premium (took offer A, bought
+ *    Premium from the account). Total funnel spend $47 + $50 + $150 = $247.
+ *  - `addOnPriceWithoutPremium` ($200): the buyer declined offer A. Total
+ *    $47 + $200 = $247 — the same, so skipping Premium never makes the fleet
+ *    cheaper. The fleet includes Premium, so this buyer becomes Premium too.
+ *  - `price` ($297): everyone else — a homepage visitor (whose $297 also creates
+ *    their full account and listing) or a signed-in driver joining from the
+ *    fleet guide after the window.
  *
  * Refund: fully refundable until the driver is activated on the carrier account;
  * after activation the fee is earned and non-refundable. Two violations on the
@@ -187,7 +202,8 @@ export const FLEET = {
   id: "curri-fleet",
   name: "Curri fleet invite",
   price: 297,
-  addOnPrice: 149,
+  addOnPrice: 150,
+  addOnPriceWithoutPremium: 200,
   dispatchFeePercent: 15,
   fastPayoutFeePercent: 20,
   refundShort: "Fully refundable until you're activated on our carrier account. After activation the fee is earned and non-refundable.",

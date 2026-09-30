@@ -174,23 +174,28 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   medical courier requirements & licenses, and signing up with Curri & Dispatch as a
   carrier not a gig driver; the Driver Roadmap; Telegram community. Covered by the
   30-day guarantee below.
+- **`/pricing` sells the Verified listing ONLY** (owner decision, 2026-09-30). Premium
+  and the fleet are described there without prices and are bought on the offer pages or
+  from the account. The homepage keeps its $297 fleet section.
 - **Tier 2 — Premium: $97 one-time, and that price INCLUDES the Verified listing.**
-  Buying Premium outright on `/pricing` charges $97 and creates the listing as PREMIUM.
   **Offer page A** (`/welcome/premium-offer`, shown once right after a Verified purchase,
   open for `OFFER_WINDOW_HOURS` = 24h): Premium for `premiumOfferPrice()` = $97 − listing
-  = $50. Decline or let it lapse → `premiumUpgradePrice()` = the full $97 from the
-  account. Everything in Verified plus: the bidding
+  = $50. Decline → offer page B still shows (see Tier 3). Lapse → `premiumUpgradePrice()`
+  = the full $97 from the account. Everything in Verified plus: the bidding
   calculator (`/account/bidding-calculator`); the business P&L tracker
   (`/account/trips` — cost per mile, rate per mile, net income weekly/monthly/quarterly);
   every other guide including "How to run an ad for your delivery business"; the Curri
   mastermind course (`/account/course`, content from the owner in `src/lib/course.ts`);
   Premium badge, priority placement, external website link. Offered on the post-checkout
   page and any time from the account. Covered by the 30-day guarantee.
-- **Tier 3 — Curri fleet invite: $297 one-time; `FLEET.addOnPrice` = $149 in exactly ONE
-  place, offer page B** (`/welcome/fleet-offer`, shown once right after ANY Premium
-  purchase — outright, via offer page A, or from the account — open 24h). Decline or lapse
-  → $297 from the account. Never mention the offer price anywhere else (the owner removed
-  the "$197 only on the page…" line from the pricing card). Homepage/pricing-page purchase
+- **Tier 3 — Curri fleet invite: $297 one-time.** **Offer page B** (`/welcome/fleet-offer`,
+  shown once after the funnel's previous step, open 24h) is the ONLY place with offer
+  prices: `FLEET.addOnPrice` = **$150 more** for a buyer who has Premium (took offer A, or
+  bought Premium from the account) and `FLEET.addOnPriceWithoutPremium` = **$200 more** for
+  a Verified buyer who declined offer A. Both paths total $247 — skipping Premium must
+  never make the fleet cheaper. Decline or lapse → $297 from the account. A fleet purchase
+  also sets the driver's tier to PREMIUM (the fleet includes everything in Premium).
+  Never mention the offer prices anywhere else. Homepage/pricing-page purchase
   collects name, email AND phone (owner onboards by text; approved personal-data field)
   and creates the buyer's full account + listing. Includes: added to the Barham Transport
   carrier account with loads dispatched; we bid the loads; paid every Friday with a 15%

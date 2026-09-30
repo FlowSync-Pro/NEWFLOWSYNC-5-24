@@ -178,6 +178,9 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     to: profile.user.email,
     firstName: profile.firstName,
     accountUrl: `${base}/account`,
+    // Offer page B follows every Premium purchase; the email repeats it for
+    // anyone who closed the tab. The page enforces the 24h window itself.
+    fleetOfferUrl: `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(session.id)}`,
   });
 
   // Server-side Purchase event to Meta (CAPI). Same event_id as the browser
@@ -255,9 +258,17 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
   if (!user.fleetJoinedAt) {
     await prisma.user.update({ where: { id: user.id }, data: { fleetJoinedAt: new Date() } });
   }
-  // A homepage buyer's $297 includes the listing; make sure they're listed.
-  if (user.driverProfile && !user.driverProfile.listedAt) {
-    await prisma.driverProfile.update({ where: { id: user.driverProfile.id }, data: { listedAt: new Date() } });
+  // The fleet includes everything in Premium (every fleet surface says so), so
+  // a fleet purchase also makes the driver Premium: badge, placement, website
+  // link. And a homepage buyer's $297 includes the listing; make sure they're
+  // listed. Normal fulfilment writes on this buyer's own profile only.
+  if (user.driverProfile) {
+    const data: { listedAt?: Date; tier?: "PREMIUM" } = {};
+    if (!user.driverProfile.listedAt) data.listedAt = new Date();
+    if (user.driverProfile.tier !== "PREMIUM") data.tier = "PREMIUM";
+    if (Object.keys(data).length) {
+      await prisma.driverProfile.update({ where: { id: user.driverProfile.id }, data });
+    }
   }
 
   const firstName = user.driverProfile?.firstName || md.firstName || user.name?.split(" ")[0] || "there";
@@ -398,6 +409,9 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
       // The one-time-offer page identifies the driver by this paid listing
       // session, so the email's upgrade button works without signing in.
       upgradeUrl: `${base}/welcome/premium-offer?session_id=${encodeURIComponent(session.id)}`,
+      // Only a Verified buyer gets the offer chain; a Premium buyer (tier
+      // "premium") is sent to offer page B by the checkout success URL instead.
+      fleetOfferUrl: tierEnum === "PREMIUM" ? undefined : `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(session.id)}`,
     });
     // A paying driver whose welcome email didn't send can't sign in. That used
     // to fail silently; now it pings the owner over Telegram (a channel that
