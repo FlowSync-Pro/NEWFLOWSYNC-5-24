@@ -26,15 +26,17 @@ const productLd = () => ({
   name: "FlowSync Driver Listing",
   description: "Get listed and take direct bookings — you set your own rates.",
   brand: { "@type": "Brand", name: "FlowSync" },
+  // Only what this page sells: the Verified listing. Premium and the fleet are
+  // offered after checkout and from the account, not here.
   offers: [
-    ...Object.values(TIERS).map((t) => ({
+    {
       "@type": "Offer",
-      name: `${t.name} listing`,
-      price: String(t.id === "standard" ? listingPrice() : t.price),
+      name: `${TIERS.standard.name} listing`,
+      price: String(listingPrice()),
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: `${SITE_URL}/pricing`,
-    })),
+    },
     ...BUMPS.map((b) => ({
       "@type": "Offer",
       name: b.name,
