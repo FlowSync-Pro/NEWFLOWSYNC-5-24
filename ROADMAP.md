@@ -109,12 +109,12 @@ writing the code against env placeholders + setup docs; provisioning + secrets h
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
 ## 📍 Checkpoint — 2026-10-01
-Restore point: commit `1484112` (the merge of PR #14 into the default branch), live on
-flowsyncdriver.com. To roll back, promote that deployment in Vercel → Deployments, or
+Restore point: commit `62bd1c3` (the merge of PR #16 into the default branch), live on
+flowsyncdriver.com. Earlier same-day point, before the alert change: `1484112` (PR #14). To roll back, promote that deployment in Vercel → Deployments, or
 redeploy that commit. Today's changes added no migrations, schema changes or new env var
 names, so rolling back to it is code-only for them.
 
-Shipped today (all copy or admin-only; pixel, Stripe, auth and data untouched):
+Shipped today (pixel, Stripe charging/pricing, auth and data untouched):
 - **Admin "Newest signups"** on `/admin` — reads the User table, so a buyer shows up the
   moment they pay, before they finish `/account/setup` (the old list only showed profiles).
 - **Telegram is fleet-only** — removed from `/account` and the driver welcome email; shown
@@ -126,12 +126,28 @@ Shipped today (all copy or admin-only; pixel, Stripe, auth and data untouched):
 - **`scripts/find-missing-documents.mjs`** (read-only) ran on 2026-10-01: 8 drivers,
   12 documents lost to the old PDF-upload bug. Outreach is the owner's; the CSV is in the
   owner's local `backups/` folder (PII, never committed).
+- **Owner alerts moved from Telegram to email** (PR #16) — `src/lib/alerts.ts` emails
+  `SUPPORT_EMAIL` (support@flowsyncdriver.com) plus `ADMIN_EMAILS`, always logs `[alert]`
+  first. The support inbox is a recipient in code, deliberately NOT in `ADMIN_EMAILS`
+  (that list grants admin, and a buyer can claim an account for any email at checkout).
+  Trade-off: the "welcome email FAILED" alert now rides the same email service.
+- **`support@flowsyncpro.io` retired** (owner has no access), alongside the already-dead
+  `drivers@flowsyncpro.io`. No code used either; all mail already replies to
+  support@flowsyncdriver.com.
+- **`scripts/send-test-email.mjs`** — sends one Resend test email to the support inbox,
+  key read from `RESEND_API_KEY` (never hardcoded). Not yet run by the owner.
 
 Open, owner-side:
 - Approval still gates the public directory; buyers can sign in, upload and use their
   tools without it.
-- `src/lib/alerts.ts` owner alerts still go over Telegram (abandoned checkouts, fleet
-  buyers, failed welcome emails) — keep or move to email is an open decision.
+- Run `node --env-file=.env.local scripts/send-test-email.mjs` locally to prove the Resend
+  key works. If this is a new Resend account: put the new key in Vercel `RESEND_API_KEY`,
+  verify `flowsyncdriver.com` in Resend → Domains, set `RESEND_FROM_EMAIL` to an address on
+  it, and redeploy.
+- In Stripe → Settings → Public details, make sure the support email is
+  support@flowsyncdriver.com, not the retired flowsyncpro.io address.
+- Confirm a real abandoned-checkout alert reaches the support inbox (use an email that has
+  never paid; the alert is skipped for paid accounts).
 
 ## ⚠️ Blocked / needs owner decision
 - **Email blast to Stripe customers** — deferred to Phase 2 step 4 (needs auth + Resend +
