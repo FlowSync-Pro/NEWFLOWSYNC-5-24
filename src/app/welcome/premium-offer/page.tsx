@@ -79,7 +79,7 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
             <Check />
           </span>
           <div className="flex-1">
-            <p className="text-base font-bold">Payment received. Your listing is yours.</p>
+            <p className="text-base font-bold">Payment received. You&apos;re in.</p>
             <p className="text-sm text-muted">Your welcome email is on the way — check inbox (and spam) for your sign-in details.</p>
           </div>
         </div>
