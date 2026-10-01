@@ -11,7 +11,7 @@ export function FleetTerms({ standalone }: { standalone?: boolean }) {
     <ul className="space-y-2 text-sm leading-relaxed text-muted">
       <li>
         <strong className="font-semibold text-foreground">${FLEET.price} one-time</strong> to join
-        {standalone ? " — includes your full FlowSync driver account and directory listing" : ""}. No
+        {standalone ? " — includes your full FlowSync driver account" : ""}. No
         monthly fee, no insurance charges.
       </li>
       <li>
