@@ -76,7 +76,7 @@ export default async function FleetOfferPage({ searchParams }: PageProps<"/welco
             <Check />
           </span>
           <div className="flex-1">
-            <p className="text-base font-bold">{hasPremium ? "You're on Premium." : "You're listed."}</p>
+            <p className="text-base font-bold">{hasPremium ? "You're on Premium." : "Payment received. You're in."}</p>
             <p className="text-sm text-muted">
               {hasPremium
                 ? "The tools, the guides, and the course are unlocked the moment you sign in."
