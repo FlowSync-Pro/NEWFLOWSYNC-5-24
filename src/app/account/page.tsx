@@ -10,7 +10,6 @@ import { SITE_URL } from "@/lib/site";
 import RoadmapTracker from "@/components/RoadmapTracker";
 import ReferralCard from "@/components/ReferralCard";
 import FounderLoom from "@/components/FounderLoom";
-import TelegramCTA from "@/components/TelegramCTA";
 import TrackEvent from "@/components/TrackEvent";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +63,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         {/* Start here — single focus block at the top */}
         <div className="mx-auto mt-6 max-w-3xl space-y-5 px-5">
           <FounderLoom firstName={profile.firstName} />
-          <TelegramCTA />
           <Link
             href="/account/curri-fleet"
             className="flex items-center justify-between gap-4 rounded-2xl border border-accent/30 bg-accent-soft p-5 transition-colors hover:bg-accent-soft/80"

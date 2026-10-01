@@ -129,18 +129,6 @@ function knownDetailsPhrase(d: DriverDetails): string | null {
   return null;
 }
 
-/** Telegram invite link, only when it's configured and really a Telegram URL. */
-function telegramInviteUrl(): string | null {
-  const raw = process.env.NEXT_PUBLIC_TELEGRAM_INVITE_URL?.trim();
-  if (!raw) return null;
-  try {
-    const u = new URL(raw);
-    return u.protocol === "https:" && /(^|\.)t(elegram)?\.me$/.test(u.hostname) ? u.toString() : null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * The $17 buyer's first email. Fires from the Stripe webhook the moment the
  * listing is paid. Three jobs, in order of importance:
@@ -172,7 +160,6 @@ export async function sendDriverWelcomeEmail(opts: {
   const fleetOffer = opts.fleetOfferUrl
     ? `<p ${P}>Same window for the fleet: for ${OFFER_WINDOW_HOURS} hours it's <strong style="color:#e7ecef">$${FLEET.addOnPriceWithoutPremium} more</strong> to get activated on our Curri carrier account (that includes everything in Premium). After that it's $${FLEET.price} from your account. <a href="${opts.fleetOfferUrl}" style="color:#25e07a">See the fleet offer →</a></p>`
     : "";
-  const telegram = telegramInviteUrl();
   const premium = premiumOfferPrice();
 
   const body = `
@@ -187,7 +174,6 @@ export async function sendDriverWelcomeEmail(opts: {
       <li ${LI}><strong style="color:#e7ecef">Finish your profile</strong> — photo, vehicle, city, and the services you offer. That's what customers see in the directory.</li>
       <li ${LI}><strong style="color:#e7ecef">Open your Driver Roadmap.</strong> It's the 30-day action plan, one box at a time. Do a box a day and you'll be set up properly, with a real shot at your first direct customer.</li>
       <li ${LI}><strong style="color:#e7ecef">Follow the setup guides.</strong> USDOT and EIN for free (no filing service), LLC filing, medical courier requirements, and how to sign up with Curri and Dispatch as a carrier instead of a gig driver. Plus your own service menu with your prices.</li>
-      ${telegram ? `<li ${LI}><strong style="color:#e7ecef">Join the driver community</strong> on Telegram — real drivers, real answers, free. <a href="${telegram}" style="color:#25e07a">Open the group →</a></li>` : ""}
     </ol>
 
     <h2 ${H2}>Want to run it like a business? Add Premium.</h2>
