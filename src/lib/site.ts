@@ -11,3 +11,9 @@ export const SITE_URL =
 // dead — never use them — and drivers who can't reach support go to Stripe
 // disputes instead. Owner alerts (lib/alerts.ts) also go here.
 export const SUPPORT_EMAIL = "support@flowsyncdriver.com";
+
+// Postal address printed in the footer of MARKETING emails (fix 7). The law
+// (CAN-SPAM) requires a valid physical postal address in every commercial
+// email — a PO box or a registered-agent address works. Marketing email stays
+// switched OFF while this is empty; transactional email is unaffected.
+export const MARKETING_POSTAL_ADDRESS = "";

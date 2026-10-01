@@ -28,9 +28,17 @@ export interface EmailResult {
   reason?: "not-configured" | "failed";
   to: string;
   subject: string;
+  /** Resend's id for the email — needed to cancel a scheduled one. */
+  id?: string;
 }
 
-async function send(to: string, subject: string, html: string): Promise<EmailResult> {
+interface SendOptions {
+  headers?: Record<string, string>;
+  /** ISO time to deliver later (Resend scheduling); cancel with cancelScheduledEmail. */
+  scheduledAt?: string;
+}
+
+async function send(to: string, subject: string, html: string, opts: SendOptions = {}): Promise<EmailResult> {
   const resend = getResend();
   if (!resend || !process.env.RESEND_FROM_EMAIL) {
     // A warning, not a quiet log: in production this means no customer email
@@ -41,19 +49,27 @@ async function send(to: string, subject: string, html: string): Promise<EmailRes
   try {
     // Several emails say "just reply" — replies must land in the inbox a
     // human actually reads, not whatever RESEND_FROM_EMAIL happens to be.
-    const { error } = await resend.emails.send({ from: from(), to, subject, html, replyTo: SUPPORT_EMAIL });
+    const { data, error } = await resend.emails.send({
+      from: from(),
+      to,
+      subject,
+      html,
+      replyTo: SUPPORT_EMAIL,
+      ...(opts.headers ? { headers: opts.headers } : {}),
+      ...(opts.scheduledAt ? { scheduledAt: opts.scheduledAt } : {}),
+    });
     if (error) {
       console.error(`[email] Resend refused "${subject}" -> ${to}:`, error.message ?? error);
       return { sent: false, reason: "failed", to, subject };
     }
-    return { sent: true, to, subject };
+    return { sent: true, to, subject, id: data?.id };
   } catch (e) {
     console.error(`[email] send failed "${subject}" -> ${to}:`, e);
     return { sent: false, reason: "failed", to, subject };
   }
 }
 
-function shell(heading: string, body: string): string {
+function shell(heading: string, body: string, footer = "You're receiving this because you signed up at flowsyncdriver.com."): string {
   return `<!doctype html><html><body style="margin:0;background:#07090b;font-family:Arial,Helvetica,sans-serif;color:#e7ecef">
   <div style="max-width:520px;margin:0 auto;padding:32px 24px">
     <div style="font-size:20px;font-weight:800;color:#25e07a;margin-bottom:24px">FlowSync</div>
@@ -61,12 +77,58 @@ function shell(heading: string, body: string): string {
       <h1 style="font-size:22px;margin:0 0 12px">${heading}</h1>
       ${body}
     </div>
-    <p style="color:#7c8a92;font-size:12px;margin-top:20px">You're receiving this because you signed up at flowsyncdriver.com.</p>
+    <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin-top:20px">${footer}</p>
   </div></body></html>`;
 }
 
 const escapeHtml = (t: string) =>
   t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/**
+ * A MARKETING email (fix 7): the usual look plus the legally required footer —
+ * business name, postal address, unsubscribe link — and the one-click
+ * unsubscribe headers Gmail and Yahoo require of bulk senders. Don't call this
+ * directly: go through lib/marketing.ts, which checks who may receive it.
+ */
+export async function sendMarketingEmail(opts: {
+  to: string;
+  subject: string;
+  heading: string;
+  body: string;
+  unsubscribeUrl: string;
+  postalAddress: string;
+  scheduledAt?: string;
+}): Promise<EmailResult> {
+  const footer =
+    `Barham Transport LLC · ${escapeHtml(opts.postalAddress)}<br>` +
+    `You're getting this because you have a FlowSync driver account. ` +
+    `<a href="${opts.unsubscribeUrl}" style="color:#7c8a92;text-decoration:underline">Unsubscribe</a> from tips and offers — ` +
+    `you'll still get emails about your account and payments.`;
+  return send(opts.to, opts.subject, shell(opts.heading, opts.body, footer), {
+    headers: {
+      "List-Unsubscribe": `<${opts.unsubscribeUrl}>, <mailto:${SUPPORT_EMAIL}?subject=unsubscribe>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+    scheduledAt: opts.scheduledAt,
+  });
+}
+
+/** Cancel an email scheduled with Resend. True if Resend accepted the cancel. */
+export async function cancelScheduledEmail(id: string): Promise<boolean> {
+  const resend = getResend();
+  if (!resend) return false;
+  try {
+    const { error } = await resend.emails.cancel(id);
+    if (error) {
+      console.error(`[email] Resend couldn't cancel ${id}:`, error.message ?? error);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error(`[email] cancel failed ${id}:`, e);
+    return false;
+  }
+}
 
 /**
  * Owner alert (lib/alerts.ts). Plain and internal: the first line of the

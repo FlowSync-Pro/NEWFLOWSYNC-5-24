@@ -1,4 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npx prisma migrate deploy && next build"
+  "buildCommand": "npx prisma migrate deploy && next build",
+  "crons": [
+    {
+      "path": "/api/cron/followups",
+      "schedule": "0 14 * * *"
+    }
+  ]
 }
