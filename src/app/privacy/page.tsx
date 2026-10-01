@@ -36,6 +36,11 @@ export default function PrivacyPage() {
         verify drivers, provide support, and send service-related emails (such as your login details,
         receipts, and account updates).
       </p>
+      <p>
+        If you have a FlowSync account, we may also email you occasional setup tips and offers related to
+        it. Every one of those emails has an unsubscribe link, and unsubscribing never stops emails about
+        your account, payments, or bookings.
+      </p>
 
       <h2>Sharing</h2>
       <p>

@@ -114,9 +114,36 @@ model User {
   payments      Payment[]
   bookings      Booking[]      @relation("CustomerBookings")
 
+  // Marketing email (fix 7, additive). Set by the one-click unsubscribe link;
+  // null means the driver may get marketing email. Transactional email —
+  // receipts, sign-in details, approvals — is never affected by this.
+  marketingOptOutAt DateTime?
+  emailLogs         EmailLog[]
+
   // Auth.js adapter relations
   accounts Account[]
   sessions Session[]
+}
+
+/// One row per marketing email a user has been sent (or has scheduled), so each
+/// follow-up goes to a user at most once and a scheduled one can be cancelled.
+/// Additive (fix 7). Transactional emails are not logged here.
+model EmailLog {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Which follow-up, e.g. "m1-finish-setup". One per user per kind.
+  kind         String
+  sentAt       DateTime  @default(now())
+  /// Set when the email was scheduled for later with Resend.
+  scheduledFor DateTime?
+  /// Resend's email id, needed to cancel a scheduled email.
+  resendId     String?
+  cancelledAt  DateTime?
+
+  @@unique([userId, kind])
+  @@index([sentAt])
 }
 
 model DriverProfile {

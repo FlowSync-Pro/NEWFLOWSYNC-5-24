@@ -50,6 +50,7 @@ const MODELS = [
   "telegramEscalation",
   "telegramProcessedUpdate",
   "telegramBotSetting",
+  "emailLog",
 ];
 
 async function main() {
@@ -72,7 +73,25 @@ async function main() {
       console.warn(`! skipping unknown model: ${model}`);
       continue;
     }
-    const rows = await prisma[model].findMany();
+    let rows;
+    try {
+      rows = await prisma[model].findMany();
+    } catch (e) {
+      // This script may be newer than the database it's backing up — that's
+      // the normal case, since the backup runs BEFORE a migration is deployed.
+      //  P2021: the table doesn't exist yet → nothing to back up, skip it.
+      //  P2022: a column the code expects doesn't exist yet → read the table
+      //         exactly as it is in the database instead (every column it has).
+      // Any other error still fails the whole backup, loudly.
+      if (e?.code === "P2021") {
+        console.warn(`! skipping ${model}: table doesn't exist in this database yet`);
+        continue;
+      }
+      if (e?.code !== "P2022") throw e;
+      const table = model.charAt(0).toUpperCase() + model.slice(1); // Prisma's default table name
+      rows = await prisma.$queryRawUnsafe(`SELECT * FROM "${table}"`);
+      console.warn(`! ${model}: read as stored (database is older than this code)`);
+    }
     dump[model] = rows;
     dump._meta.counts[model] = rows.length;
     total += rows.length;
