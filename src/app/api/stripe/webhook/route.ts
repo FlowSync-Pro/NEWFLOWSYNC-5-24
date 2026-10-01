@@ -48,9 +48,59 @@ export async function POST(req: Request) {
     event.type === "customer.subscription.deleted"
   ) {
     await syncPnlSubscription(event.data.object as Stripe.Subscription);
+  } else if (event.type === "charge.refunded") {
+    await recordRefund(event.data.object as Stripe.Charge);
   }
 
   return NextResponse.json({ received: true });
+}
+
+/**
+ * A charge was refunded (from the Stripe Dashboard or the API). Record it and
+ * tell the owner — nothing else. Fully refunded → the matching Payment becomes
+ * REFUNDED, so it stops counting as a sale and as "paid" (a driver whose only
+ * payment was refunded no longer gets the Tier 1 guides). Premium tier, fleet
+ * membership, the listing, the account and every bit of data are untouched:
+ * the owner decides those in /admin. A partial refund leaves the Payment PAID
+ * and is reported for the owner to judge. Needs the `charge.refunded` event
+ * enabled on the webhook endpoint in the Stripe Dashboard.
+ */
+async function recordRefund(charge: Stripe.Charge) {
+  const pi = typeof charge.payment_intent === "string" ? charge.payment_intent : (charge.payment_intent?.id ?? null);
+  const payment = pi
+    ? await prisma.payment.findUnique({
+        where: { stripePaymentIntentId: pi },
+        include: {
+          user: { select: { email: true, name: true, fleetJoinedAt: true, driverProfile: { select: { firstName: true, lastName: true, tier: true } } } },
+        },
+      })
+    : null;
+  const amounts = `$${(charge.amount_refunded / 100).toFixed(2)} of $${(charge.amount / 100).toFixed(2)}`;
+
+  if (!payment) {
+    await alertOwner(
+      `💸 Refund in Stripe (${amounts}) for a payment FlowSync has no record of.\n` +
+        `Email: ${charge.billing_details?.email ?? charge.receipt_email ?? "(none)"}\nPayment intent: ${pi ?? "(none)"}\n\nNothing was changed.`,
+    );
+    return;
+  }
+  if (payment.status === "REFUNDED") return; // retried event: already recorded and reported
+
+  // `refunded` is true only once the whole charge has been refunded.
+  const full = charge.refunded;
+  if (full) await prisma.payment.update({ where: { id: payment.id }, data: { status: "REFUNDED" } });
+
+  const u = payment.user;
+  const name = (u.driverProfile ? `${u.driverProfile.firstName} ${u.driverProfile.lastName}`.trim() : "") || u.name || u.email;
+  const still = [isPremiumTier(u.driverProfile?.tier) ? "on Premium" : "", u.fleetJoinedAt ? "in the Curri fleet" : ""].filter(Boolean);
+  await alertOwner(
+    `💸 ${full ? "Refund" : "Partial refund"}: ${amounts} (${payment.type === "BOOKING" ? "a customer's booking with this driver" : `${payment.type.toLowerCase()} payment`})\n` +
+      `Account: ${name}\nEmail: ${u.email}\n\n` +
+      (full
+        ? "The payment is now marked REFUNDED, so it no longer counts as a sale or as paid."
+        : "The payment is still marked PAID. Decide whether that's right.") +
+      `\nNothing else was changed${still.length ? ` — they are still ${still.join(" and ")}` : ""}. If they should lose access, change it in /admin.`,
+  );
 }
 
 // A new buyer opened Stripe Checkout and didn't pay within the hour. If Stripe
