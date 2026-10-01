@@ -7,9 +7,9 @@ import { serviceToEnum, serviceFromEnum } from "@/lib/enums";
 import { attributeReferral } from "@/lib/referrals";
 import { alertOwner } from "@/lib/alerts";
 import { sendCapiPurchase } from "@/lib/meta-capi";
-import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendCheckoutRecoveryEmail, sendFleetWelcomeEmail, sendPremiumUpgradeEmail, sendPnlProEmail } from "@/lib/email";
+import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendCheckoutRecoveryEmail, sendFleetWelcomeEmail, sendPremiumUpgradeEmail, sendPnlProEmail, sendPurchaseConfirmationEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
-import { FLEET } from "@/lib/pricing";
+import { FLEET, isPremiumTier } from "@/lib/pricing";
 import { recoveryText } from "@/lib/recovery";
 import type { ServiceId } from "@/lib/services";
 
@@ -498,6 +498,24 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
           `and check the Resend dashboard / RESEND_* env vars.`,
       );
     }
+  } else {
+    // Existing account (admin-added, imported, or a returning buyer). No new
+    // password is made, so the welcome email doesn't apply — but they still
+    // need to know the payment landed, how to sign in, and the 24h offer links.
+    // Offers are skipped for anyone already on Premium or in the fleet.
+    const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+    const offersApply = tierEnum === "STANDARD" && !isPremiumTier(user.driverProfile?.tier) && !user.fleetJoinedAt;
+    const sid = encodeURIComponent(session.id);
+    await sendPurchaseConfirmationEmail({
+      to: email,
+      firstName: user.driverProfile?.firstName || md.firstName || user.name?.split(" ")[0] || "there",
+      amountCents: session.amount_total ?? 0,
+      needsPassword: user.mustResetPassword,
+      signInUrl: `${base}/signin`,
+      forgotPasswordUrl: `${base}/forgot-password`,
+      upgradeUrl: offersApply ? `${base}/welcome/premium-offer?session_id=${sid}` : undefined,
+      fleetOfferUrl: offersApply ? `${base}/welcome/fleet-offer?session_id=${sid}` : undefined,
+    });
   }
 
   if (user.driverProfile) {

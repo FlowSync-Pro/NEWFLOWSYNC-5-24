@@ -24,6 +24,9 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
   // a password yet, so we let them choose one here instead of stranding them
   // if the welcome email is slow, filtered, or never arrives.
   let canActivate = false;
+  // The account already had a password before this purchase (admin-added and
+  // activated, imported, or a returning buyer): no temp password was emailed.
+  let hasPassword = false;
 
   if (paid && sessionId) {
     const stripe = getStripe();
@@ -41,6 +44,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
           // Only while the account is still un-activated — once a password is
           // set this offer disappears (the action enforces this too).
           canActivate = !!user?.mustResetPassword;
+          hasPassword = !!user && !user.mustResetPassword;
         }
       } catch {
         // Retrieval can fail (test/live key mismatch, expired session) — keep the
@@ -61,6 +65,8 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
           <p className="mt-2 text-center text-accent">
             Payment received! Choose a password below and you&apos;ll go straight to your dashboard.
           </p>
+        ) : paid && hasPassword ? (
+          <p className="mt-2 text-center text-accent">Payment received! It&apos;s on your existing account — sign in below with your password.</p>
         ) : paid ? (
           <p className="mt-2 text-center text-accent">Payment received! Check your email for your temporary password, then sign in below.</p>
         ) : (

@@ -234,6 +234,64 @@ export async function sendDriverWelcomeEmail(opts: {
   );
 }
 
+/**
+ * Listing bought by someone who ALREADY had an account (admin-added, imported,
+ * or a returning buyer). The webhook doesn't create a password for them, so they
+ * don't get the welcome email — this tells them the payment landed, how to sign
+ * in, and repeats the 24h offer links the welcome email would have carried.
+ * Transactional. Offers only when the caller passes their links.
+ */
+export interface PurchaseConfirmationOpts {
+  to: string;
+  firstName: string;
+  amountCents: number;
+  /** True when the account exists but never set a password (admin-added / imported). */
+  needsPassword: boolean;
+  signInUrl: string;
+  forgotPasswordUrl: string;
+  /** Offer page A (Premium for the difference, 24h). Omit when not offered. */
+  upgradeUrl?: string;
+  /** Offer page B (fleet without Premium, 24h). Omit when not offered. */
+  fleetOfferUrl?: string;
+}
+
+export function purchaseConfirmationEmail(opts: PurchaseConfirmationOpts): { subject: string; html: string } {
+  const amount = `$${(opts.amountCents / 100).toFixed(2)}`;
+  const signIn = opts.needsPassword
+    ? `<p ${P}>Your account doesn't have a password yet. Set one on the page you landed on right after paying, or use <a href="${opts.forgotPasswordUrl}" style="color:#25e07a">"Forgot password?"</a> and we'll email you a link.</p>`
+    : `<p ${P}>Sign in with your existing password — there's nothing new to set up. Forgot it? Use <a href="${opts.forgotPasswordUrl}" style="color:#25e07a">"Forgot password?"</a> on the sign-in page.</p>`;
+  const premium = premiumOfferPrice();
+  const offers = opts.upgradeUrl
+    ? `
+    <h2 ${H2}>Two offers, open for ${OFFER_WINDOW_HOURS} hours</h2>
+    <p ${P}>For ${OFFER_WINDOW_HOURS} hours after your purchase, Premium is <strong style="color:#e7ecef">$${premium} more, one-time</strong> instead of $${premiumUpgradePrice()} from your account later. Premium's price includes the listing you just bought. It adds the bidding calculator, the business P&amp;L tracker, the Curri mastermind course, every guide, and the Premium badge with priority placement. Same ${GUARANTEE_DAYS}-day money-back guarantee.</p>
+    <p style="margin:0 0 6px">${button(opts.upgradeUrl, `Add Premium — $${premium} more`)}</p>
+    ${
+      opts.fleetOfferUrl
+        ? `<p ${P}>Same window for the fleet: <strong style="color:#e7ecef">$${FLEET.addOnPriceWithoutPremium} more</strong> to get activated on our Curri carrier account (that includes everything in Premium), instead of $${FLEET.price} from your account later. <a href="${opts.fleetOfferUrl}" style="color:#25e07a">See the fleet offer →</a></p>
+    <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">Fleet refund terms: ${FLEET.refundShort} FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.</p>`
+        : ""
+    }`
+    : "";
+  const body = `
+    <p ${P}>Hi ${opts.firstName}, your ${amount} payment went through, and it's on the FlowSync account you already have (${opts.to}).</p>
+    ${signIn}
+    <p style="margin:0 0 18px">${button(opts.signInUrl, "Sign in to FlowSync")}</p>
+    <p ${P}>To go live in the directory: finish your profile, upload your driver's license and insurance, and we'll review you. You'll get an email the moment you're approved.</p>
+    ${offers}
+    <p ${P}>Got a question? Just reply — a real person reads it.</p>
+    <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
+  return {
+    subject: "Payment received — your FlowSync listing is paid for",
+    html: shell("Payment received", body),
+  };
+}
+
+export async function sendPurchaseConfirmationEmail(opts: PurchaseConfirmationOpts) {
+  const { subject, html } = purchaseConfirmationEmail(opts);
+  return send(opts.to, subject, html);
+}
+
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
 export async function sendBookingRequestEmail(opts: {
