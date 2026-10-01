@@ -108,6 +108,31 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-01
+Restore point: commit `1484112` (the merge of PR #14 into the default branch), live on
+flowsyncdriver.com. To roll back, promote that deployment in Vercel → Deployments, or
+redeploy that commit. Today's changes added no migrations, schema changes or new env var
+names, so rolling back to it is code-only for them.
+
+Shipped today (all copy or admin-only; pixel, Stripe, auth and data untouched):
+- **Admin "Newest signups"** on `/admin` — reads the User table, so a buyer shows up the
+  moment they pay, before they finish `/account/setup` (the old list only showed profiles).
+- **Telegram is fleet-only** — removed from `/account` and the driver welcome email; shown
+  on `/account/curri-fleet` (members) and in the fleet welcome email via
+  `src/lib/telegram-invite.ts`. `NEXT_PUBLIC_TELEGRAM_INVITE_URL` now points at the Curri
+  relay group (set by the owner in Vercel as a Config variable).
+- **No "listed"/"active" claims before approval** — welcome email, both offer pages, the
+  fleet guide and the homepage fleet card now say "paid for" / "You're in".
+- **`scripts/find-missing-documents.mjs`** (read-only) ran on 2026-10-01: 8 drivers,
+  12 documents lost to the old PDF-upload bug. Outreach is the owner's; the CSV is in the
+  owner's local `backups/` folder (PII, never committed).
+
+Open, owner-side:
+- Approval still gates the public directory; buyers can sign in, upload and use their
+  tools without it.
+- `src/lib/alerts.ts` owner alerts still go over Telegram (abandoned checkouts, fleet
+  buyers, failed welcome emails) — keep or move to email is an open decision.
+
 ## ⚠️ Blocked / needs owner decision
 - **Email blast to Stripe customers** — deferred to Phase 2 step 4 (needs auth + Resend +
   tested template + explicit sign-off). Irreversible; will not run without confirmation.
