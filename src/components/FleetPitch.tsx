@@ -27,6 +27,18 @@ export function FleetTerms({ standalone }: { standalone?: boolean }) {
   );
 }
 
+/** The honest capacity note, shown only where someone can join (not to members). */
+export function FleetCapNote() {
+  return (
+    <p className="rounded-xl border border-accent/30 bg-accent-soft px-4 py-3 text-sm leading-relaxed text-foreground/90">
+      <strong className="font-semibold text-accent">Up to {FLEET.monthlyCap} new fleet drivers a month.</strong>{" "}
+      I personally activate every driver on our carrier account, so I cap how many I take on. If this
+      month&apos;s spots are taken when you join, you&apos;re first in line for next month, and your fee
+      stays fully refundable until you&apos;re activated.
+    </p>
+  );
+}
+
 export function FleetBiddingStory({ compact }: { compact?: boolean }) {
   return (
     <div className="space-y-3 text-sm leading-relaxed text-muted">

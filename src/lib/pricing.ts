@@ -206,6 +206,11 @@ export const FLEET = {
   addOnPriceWithoutPremium: 200,
   dispatchFeePercent: 15,
   fastPayoutFeePercent: 20,
+  // The owner personally activates every fleet driver, so the site states a
+  // monthly cap. It limits ACTIVATIONS, not sales: a buyer after the cap is
+  // first in line for next month (and refundable until activated). Only true
+  // while the owner activates no more than this many new drivers a month.
+  monthlyCap: 10,
   refundShort: "Fully refundable until you're activated on our carrier account. After activation the fee is earned and non-refundable.",
   refundWhy:
     "Activation is real work on our side and on Curri's — we add you to the carrier account, set up your vehicle and paperwork, and vouch for you. Once that's done it can't be undone, so the fee isn't refundable after activation. Two violations on the carrier account means removal from the fleet, without a refund, because violations put every driver on the account at risk.",

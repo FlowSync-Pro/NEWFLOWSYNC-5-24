@@ -8,7 +8,7 @@ import ServiceIcon from "@/components/ServiceIcon";
 import Reveal from "@/components/Reveal";
 import ReviewStrip from "@/components/ReviewStrip";
 import FleetCheckout from "@/components/FleetCheckout";
-import { FleetBiddingStory, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
+import { FleetBiddingStory, FleetCapNote, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
 import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice } from "@/lib/pricing";
 
 // The homepage is the paid-ad landing page, so it must stay fast. Rather than
@@ -321,6 +321,7 @@ export default function Home() {
                     <span className="ml-1 text-xs text-muted">one-time</span>
                   </div>
                 </div>
+                <div className="mt-4"><FleetCapNote /></div>
                 <div className="mt-4"><FleetTerms standalone /></div>
                 <div className="mt-6"><FleetCheckout mode="standalone" /></div>
                 <p className="mt-4 text-center text-xs text-muted">
