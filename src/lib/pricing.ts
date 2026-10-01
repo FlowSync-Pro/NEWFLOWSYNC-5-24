@@ -43,8 +43,8 @@ export interface Tier {
 //   Tier 2 "Premium"   — $97 one-time. Everything in Verified + the business
 //                        tools + the ads guide + the Curri mastermind course +
 //                        badge / priority placement / website link.
-//   Tier 3 "Curri fleet" — FLEET below ($297; $197 only on the post-checkout
-//                        offer page). Includes done-for-you setup.
+//   Tier 3 "Curri fleet" — FLEET below ($297; $150/$200 more only on offer
+//                        page B). No done-for-you setup (owner struck it).
 // Drivers who paid before the cutover keep everything they had (lib/access.ts).
 export const TIERS: Record<TierId, Tier> = {
   standard: {
@@ -177,7 +177,7 @@ export function fleetOfferSavings(hasPremium: boolean): number {
 /**
  * The Curri fleet invite (Tier 3) — a SEPARATE product from the listing tiers.
  * Drivers join the Barham Transport carrier account and get loads dispatched to
- * them, and the owner builds their profile, service menu, and website for them.
+ * them. There is no done-for-you setup (the owner struck it from the offer).
  *
  * Three prices, on purpose (offer prices exist ONLY on offer page B, open for
  * OFFER_WINDOW_HOURS after the purchase they follow):
