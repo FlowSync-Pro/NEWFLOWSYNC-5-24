@@ -8,7 +8,7 @@ import { FLEET } from "@/lib/pricing";
 import { fleetTelegramInviteUrl } from "@/lib/telegram-invite";
 import FleetCheckout from "@/components/FleetCheckout";
 import TrackEvent from "@/components/TrackEvent";
-import { FleetBiddingStory, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
+import { FleetBiddingStory, FleetCapNote, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
 
 export const dynamic = "force-dynamic";
 
@@ -139,6 +139,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
                   <span className="ml-1 text-xs text-muted">one-time</span>
                 </div>
               </div>
+              <div className="mt-4"><FleetCapNote /></div>
               <div className="mt-4"><FleetTerms /></div>
               <div className="mt-6"><FleetCheckout mode="member" /></div>
               <p className="mt-3 text-xs text-muted">

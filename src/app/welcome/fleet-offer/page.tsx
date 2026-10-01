@@ -14,7 +14,7 @@ import {
 import { SITE_URL } from "@/lib/site";
 import TrackEvent from "@/components/TrackEvent";
 import FleetOfferButtons from "@/components/FleetOfferButtons";
-import { FleetBiddingStory, FleetDisclaimer } from "@/components/FleetPitch";
+import { FleetBiddingStory, FleetCapNote, FleetDisclaimer } from "@/components/FleetPitch";
 
 export const dynamic = "force-dynamic";
 
@@ -131,6 +131,7 @@ export default async function FleetOfferPage({ searchParams }: PageProps<"/welco
               <span className="block text-xs text-muted">more, one-time · this page only</span>
             </div>
           </div>
+          <div className="mt-4"><FleetCapNote /></div>
           <ul className="mt-4 space-y-1.5 text-sm text-muted">
             {!hasPremium && (
               <li className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />Includes everything in Premium: the bidding calculator, the business P&amp;L tracker, every guide, the Curri mastermind, the badge and priority placement.</li>
