@@ -7,7 +7,7 @@ import { serviceToEnum, serviceFromEnum } from "@/lib/enums";
 import { attributeReferral } from "@/lib/referrals";
 import { alertOwner, alertIfEmailFailed } from "@/lib/alerts";
 import { sendCapiPurchase } from "@/lib/meta-capi";
-import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendCheckoutRecoveryEmail, sendFleetWelcomeEmail, sendPremiumUpgradeEmail, sendPnlProEmail, sendPurchaseConfirmationEmail } from "@/lib/email";
+import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendCheckoutRecoveryEmail, sendFleetWelcomeEmail, sendPremiumUpgradeEmail, sendPurchaseConfirmationEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import { FLEET, isPremiumTier } from "@/lib/pricing";
 import { recoveryText } from "@/lib/recovery";
@@ -92,7 +92,9 @@ function subPeriodEnd(sub: Stripe.Subscription): Date | null {
   return typeof ts === "number" ? new Date(ts * 1000) : null;
 }
 
-// First payment/trial start for P&L Tracker Pro → record the subscription on the user.
+// P&L Tracker Pro is retired (no new checkouts), but a checkout opened before that
+// can still complete — record it so the driver gets what they started. No email:
+// the old one promised a $17/mo plan we no longer sell.
 async function fulfillPnlSubscription(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId;
   if (!userId) return;
@@ -116,16 +118,6 @@ async function fulfillPnlSubscription(session: Stripe.Checkout.Session) {
     where: { id: userId },
     data: { pnlSubId: subId, pnlSubStatus: status, pnlSubCurrentPeriodEnd: periodEnd },
   });
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (user) {
-    const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-    await alertIfEmailFailed(await sendPnlProEmail({
-      to: user.email,
-      firstName: user.name?.split(" ")[0] || "there",
-      trackerUrl: `${base}/tools/profit-loss`,
-    }));
-  }
 }
 
 // Keep the user's entitlement in sync as the subscription trials → renews → cancels.

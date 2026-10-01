@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { FLEET, fleetOfferPrice, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, PNL_PRO, premiumOfferPrice, premiumUpgradePrice, TIERS, type TierId } from "@/lib/pricing";
+import { FLEET, fleetOfferPrice, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, TIERS, type TierId } from "@/lib/pricing";
 
 /** Post-checkout offers are open for OFFER_WINDOW_HOURS after the purchase they follow. */
 const offerOpen = (s: Stripe.Checkout.Session) => !offerExpired(s.created);
@@ -18,7 +18,6 @@ async function paidSession(stripe: Stripe, id: unknown): Promise<Stripe.Checkout
     return null;
   }
 }
-import { pnlProActive } from "@/lib/subscription";
 
 export const runtime = "nodejs";
 
@@ -287,41 +286,11 @@ async function handleCheckout(req: Request) {
     return NextResponse.json({ url: oto.url });
   }
 
-  // P&L Tracker Pro: a signed-in driver starts the $17/mo subscription (1st month free).
-  // Subscription mode + a trial collects a card up front by default (card required).
+  // P&L Tracker Pro ($17/mo after a free month) is retired: no monthly P&L
+  // subscription is sold. The business P&L tracker comes with Premium. Refuse
+  // explicitly so a stale request can't fall through to another checkout.
   if (body.intent === "pnl-subscribe") {
-    const session = await getSession();
-    if (!session) return NextResponse.json({ error: "Please sign in to subscribe." }, { status: 401 });
-    const user = await prisma.user.findUnique({ where: { id: session.userId } });
-    if (!user) return NextResponse.json({ error: "Account not found." }, { status: 400 });
-    if (pnlProActive(user.pnlSubStatus)) {
-      return NextResponse.json({ error: "You already have P&L Tracker Pro." }, { status: 400 });
-    }
-
-    // Use a real Price if one is configured; otherwise build the recurring price inline.
-    const priceId = process.env.STRIPE_PRICE_PNL_MONTHLY;
-    const sub = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      line_items: [
-        priceId
-          ? { price: priceId, quantity: 1 }
-          : {
-              price_data: {
-                currency: "usd",
-                unit_amount: PNL_PRO.price * 100,
-                recurring: { interval: "month" },
-                product_data: { name: PNL_PRO.name },
-              },
-              quantity: 1,
-            },
-      ],
-      subscription_data: { trial_period_days: PNL_PRO.trialDays },
-      customer_email: user.email,
-      metadata: { type: "pnl-sub", userId: user.id },
-      success_url: `${base}/tools/profit-loss?pro=active`,
-      cancel_url: `${base}/account?pro=cancelled`,
-    });
-    return NextResponse.json({ url: sub.url });
+    return NextResponse.json({ error: "The P&L tracker is now included with Premium." }, { status: 410 });
   }
 
   // Booking payment: customer pays a driver's quote.
