@@ -16,4 +16,4 @@ export const SUPPORT_EMAIL = "support@flowsyncdriver.com";
 // (CAN-SPAM) requires a valid physical postal address in every commercial
 // email — a PO box or a registered-agent address works. Marketing email stays
 // switched OFF while this is empty; transactional email is unaffected.
-export const MARKETING_POSTAL_ADDRESS = "";
+export const MARKETING_POSTAL_ADDRESS = "8217 Sheffield Ln, Bakersfield, CA 93311";
