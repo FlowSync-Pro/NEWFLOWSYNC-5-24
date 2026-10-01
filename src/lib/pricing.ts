@@ -211,6 +211,13 @@ export const FLEET = {
   // first in line for next month (and refundable until activated). Only true
   // while the owner activates no more than this many new drivers a month.
   monthlyCap: 10,
+  // Fleet referral bonus (owner decision, 2026-10-01): $50 to the referrer once
+  // a driver they referred is ACTIVATED on the carrier account — not at payment.
+  // Paid manually by the owner; nothing here touches Stripe. No retroactive
+  // payouts: the referred driver must have first signed up through the link on
+  // or after referralBonusStartsAt. Stacks with the 3-referrals Premium reward.
+  referralBonus: 50,
+  referralBonusStartsAt: new Date("2026-10-01T22:00:00Z"),
   refundShort: "Fully refundable until you're activated on our carrier account. After activation the fee is earned and non-refundable.",
   refundWhy:
     "Activation is real work on our side and on Curri's — we add you to the carrier account, set up your vehicle and paperwork, and vouch for you. Once that's done it can't be undone, so the fee isn't refundable after activation. Two violations on the carrier account means removal from the fleet, without a refund, because violations put every driver on the account at risk.",

@@ -155,6 +155,7 @@ export default async function AdminPage() {
               )}
             </Link>
             <Link href="/admin/recovery" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Recovery</Link>
+            <Link href="/admin/referrals" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Fleet referrals</Link>
             <Link href="/admin/experience" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Experience &amp; ratings</Link>
             <Link href="/find-a-driver" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Directory</Link>
           </div>

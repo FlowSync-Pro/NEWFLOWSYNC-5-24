@@ -92,6 +92,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
             referred={ref.referred}
             remaining={ref.remaining}
             rewarded={ref.rewarded}
+            fleetReferred={ref.fleetReferred}
             threshold={REWARD_THRESHOLD}
             shareBase={shareBase}
           />
