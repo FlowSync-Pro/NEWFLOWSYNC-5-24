@@ -138,6 +138,51 @@ async function syncPnlSubscription(sub: Stripe.Subscription) {
   });
 }
 
+/** "JOHN  SMITH" → { firstName: "John", lastName: "Smith" }. Empty input → empty parts. */
+function nameParts(raw: string | null | undefined): { firstName: string; lastName: string } {
+  const words = (raw ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  return { firstName: words[0] ?? "", lastName: words.slice(1).join(" ") };
+}
+
+/**
+ * A driver paid for Premium (or the fleet, which includes Premium) before
+ * creating a driver profile. That is the normal path: the pricing-page checkout
+ * doesn't ask for a name, and offer page A comes straight after payment, before
+ * sign-in and /account/setup. Previously the upgrade was dropped here, so the
+ * driver paid for Premium but stayed on Verified.
+ *
+ * Creates a minimal profile on the PREMIUM tier, named from the account (if the
+ * buyer gave a name) or else the cardholder name Stripe collected. The driver
+ * can correct the name and pick a service under /account/edit, which already
+ * prompts for a missing service. Upsert, so a profile created at the same
+ * moment by /account/setup is upgraded rather than duplicated.
+ *
+ * Returns null only if the user row itself no longer exists.
+ */
+async function ensurePremiumProfile(userId: string, cardholderName: string | null | undefined) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+  if (!user) return null;
+  const fromAccount = nameParts(user.name);
+  const fromCard = nameParts(cardholderName);
+  const chosen = fromAccount.firstName ? fromAccount : fromCard;
+  return prisma.driverProfile.upsert({
+    where: { userId },
+    create: {
+      userId,
+      firstName: chosen.firstName || "Driver",
+      lastName: chosen.lastName,
+      tier: "PREMIUM",
+      listedAt: new Date(),
+    },
+    update: { tier: "PREMIUM" },
+    include: { user: true },
+  });
+}
+
 async function fulfillUpgrade(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId;
   if (!userId) return;
@@ -161,17 +206,23 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     },
   });
 
-  const profile = await prisma.driverProfile.findUnique({
+  let profile = await prisma.driverProfile.findUnique({
     where: { userId },
     include: { user: true },
   });
-  if (!profile) {
-    // Payment recorded above; flag for manual follow-up rather than dropping it.
-    console.error(`fulfillUpgrade: paid upgrade for user ${userId} has no driver profile (session ${session.id})`);
-    return;
+  if (profile) {
+    await prisma.driverProfile.update({ where: { id: profile.id }, data: { tier: "PREMIUM" } });
+  } else {
+    // Paid before finishing setup (the normal offer-page-A path). Create the
+    // profile on Premium rather than dropping the upgrade.
+    profile = await ensurePremiumProfile(userId, session.customer_details?.name);
+    if (!profile) {
+      // Payment recorded above; the account itself is gone. Flag for manual follow-up.
+      console.error(`fulfillUpgrade: paid upgrade for user ${userId}, but the account no longer exists (session ${session.id})`);
+      return;
+    }
+    console.log(`fulfillUpgrade: created a Premium profile for user ${userId}, who paid before finishing setup (session ${session.id})`);
   }
-
-  await prisma.driverProfile.update({ where: { id: profile.id }, data: { tier: "PREMIUM" } });
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
   await sendPremiumUpgradeEmail({
@@ -275,6 +326,11 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     if (Object.keys(data).length) {
       await prisma.driverProfile.update({ where: { id: user.driverProfile.id }, data });
     }
+  } else {
+    // Bought the fleet on offer page B before finishing setup: create the
+    // profile on Premium (fleet includes Premium) instead of leaving none.
+    const created = await ensurePremiumProfile(user.id, session.customer_details?.name);
+    if (created) user.driverProfile = created;
   }
 
   const firstName = user.driverProfile?.firstName || md.firstName || user.name?.split(" ")[0] || "there";
