@@ -7,6 +7,7 @@ export const SITE_URL =
 
 // Support / contact address shown in the footer, on checkout next to the
 // guarantee, and on the legal pages. Must be a mailbox someone actually reads —
-// the previous address (drivers@flowsyncpro.io) wasn't receiving mail, and
-// drivers who can't reach support go to Stripe disputes instead.
+// the previous addresses (drivers@flowsyncpro.io, support@flowsyncpro.io) are
+// dead — never use them — and drivers who can't reach support go to Stripe
+// disputes instead. Owner alerts (lib/alerts.ts) also go here.
 export const SUPPORT_EMAIL = "support@flowsyncdriver.com";

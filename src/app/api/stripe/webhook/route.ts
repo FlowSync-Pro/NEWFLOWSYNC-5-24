@@ -210,7 +210,7 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
 // A homepage buyer gets a full account + listing created here, exactly like a
 // listing purchase, so one payment covers both. Everyone gets fleetJoinedAt set,
 // a FLEET payment recorded, the fleet next-steps email, and the owner gets a
-// Telegram ping because the carrier-account add and Stripe link are manual.
+// alert email (lib/alerts.ts) because the carrier-account add and Stripe link are manual.
 async function fulfillFleet(session: Stripe.Checkout.Session) {
   const already = await prisma.payment.findUnique({ where: { stripeSessionId: session.id } });
   if (already) return;
@@ -429,9 +429,9 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
       serviceId: primaryService,
     });
     // A paying driver whose welcome email didn't send can't sign in. That used
-    // to fail silently; now it pings the owner over Telegram (a channel that
-    // still works when email is the thing that's broken) so they can reach out
-    // before the driver gives up or asks for a refund.
+    // to fail silently; now it alerts the owner (lib/alerts.ts: email to
+    // ADMIN_EMAILS, plus the server log in case email itself is down) so they
+    // can reach out before the driver gives up or asks for a refund.
     if (!welcome.sent) {
       await alertOwner(
         `⚠️ FlowSync: welcome email FAILED to send.\n\n` +

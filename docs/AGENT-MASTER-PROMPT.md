@@ -37,14 +37,14 @@ Nasser is a self-taught beginner at software. He has broken the site before by a
 
 **Repository:** GitHub `FlowSync-Pro/NEWFLOWSYNC-5-24`. The default and production branch is `claude/nice-allen-aFq38`. **Every push to it deploys to production automatically.** There is no staging. The rulebook is `AGENTS.md` (also loaded as `CLAUDE.md`).
 
-**Support inbox:** `support@flowsyncdriver.com` (constant `SUPPORT_EMAIL` in `src/lib/site.ts`). Every outgoing email sets this as reply-to. The old address `drivers@flowsyncpro.io` is dead; never use it.
+**Support inbox:** `support@flowsyncdriver.com` (constant `SUPPORT_EMAIL` in `src/lib/site.ts`). Every outgoing email sets this as reply-to. The old addresses `drivers@flowsyncpro.io` and `support@flowsyncpro.io` are dead (no access); never use them. Do NOT add the support inbox to `ADMIN_EMAILS`: that list grants admin access, and a buyer can claim an account for any email at checkout.
 
 **Money flow, $17 listing:**
 1. Visitor pays on `/pricing` (component `OfferCheckout`) → Stripe Checkout with `metadata.type = "listing"`.
-2. Stripe webhook (`src/app/api/stripe/webhook/route.ts`, `fulfillCheckout`) creates the user with a temporary password, creates the driver profile, records the payment, sends the welcome email (password on top, first-10-minutes guide, Premium button, founder story, Curri disclaimer), fires a Telegram alert if that email fails, and sends a server-side Purchase event to Meta.
+2. Stripe webhook (`src/app/api/stripe/webhook/route.ts`, `fulfillCheckout`) creates the user with a temporary password, creates the driver profile, records the payment, sends the welcome email (password on top, first-10-minutes guide, Premium button, founder story, Curri disclaimer), emails an owner alert if that email fails, and sends a server-side Purchase event to Meta.
 3. Stripe returns the buyer to `/welcome/premium-offer`, the one-time offer page with two separate $97 buttons: Premium (`intent: "oto-upgrade"`) and the fleet invite (`intent: "oto-fleet"`). Either purchase lands on `/signin?checkout=success`, where the buyer can set a password on screen without waiting for email.
 4. Premium upgrade fulfilment (`fulfillUpgrade`) sets the tier and sends the Premium email (Nasser's three-question onboarding copy).
-5. Fleet fulfilment (`fulfillFleet`) records a `FLEET` payment, sets `User.fleetJoinedAt`, creates the account if the buyer came from the homepage, sends the "you're in the fleet, next steps" email, and pings Nasser on Telegram because the next two steps are manual.
+5. Fleet fulfilment (`fulfillFleet`) records a `FLEET` payment, sets `User.fleetJoinedAt`, creates the account if the buyer came from the homepage, sends the "you're in the fleet, next steps" email, and emails Nasser an owner alert because the next two steps are manual.
 
 **Fleet onboarding after payment (manual today):** the driver replies with city, vehicle, the email for Stripe, and standard vs faster pay. Nasser adds them on the Curri carrier account, then creates a Stripe Connect Express account for them from the Stripe dashboard and sends the onboarding link. First two or three payouts can go another way if Stripe isn't set up yet. Drivers who paid the joining fee by text before the checkout existed must be marked with the admin "Mark as fleet member" toggle.
 
@@ -54,7 +54,7 @@ Nasser is a self-taught beginner at software. He has broken the site before by a
 
 **Admin (`/admin`, gated by `ADMIN_EMAILS`):** sales, pipeline, engagement triage, per-driver page with trips, verified loads, credentials, fleet toggle, review invite, tier and verification controls, manual driver creation, and temp-password reset.
 
-**Telegram bot:** answers driver questions from an approved knowledge base and escalates to Nasser. `alertOwner()` in `src/lib/alerts.ts` sends owner alerts (failed welcome email, new fleet member).
+**Telegram bot:** answers driver questions from an approved knowledge base and escalates to Nasser. `alertOwner()` in `src/lib/alerts.ts` emails owner alerts to `SUPPORT_EMAIL` plus `ADMIN_EMAILS` (failed welcome email, new fleet member, abandoned checkout); it moved off Telegram on 2026-10-01.
 
 **Ad page:** `public/curri-fleet.html` is a static landing page for running Facebook ads about the fleet. It converts by text (WhatsApp link), not by call. Both Meta pixels fire there. Do not change its event names or tracking; wording edits only with approval.
 
@@ -125,7 +125,7 @@ These are the places Nasser spends time by hand today. Each is a candidate for y
 - `src/lib/pricing.ts` — every price and fee (`TIERS`, `FLEET`, `PLATFORM_FEE_PERCENT`, `GUARANTEE_DAYS`).
 - `src/lib/site.ts` — site URL and support email.
 - `src/lib/email.ts` — every email template.
-- `src/lib/alerts.ts` — Telegram owner alerts.
+- `src/lib/alerts.ts` — owner alerts by email (to `SUPPORT_EMAIL` + `ADMIN_EMAILS`), always logged.
 - `src/app/api/checkout/route.ts` — every Stripe Checkout intent.
 - `src/app/api/stripe/webhook/route.ts` — fulfilment for listing, upgrade, fleet, bookings, subscriptions.
 - `src/app/welcome/premium-offer/page.tsx` — the post-checkout offer page.
