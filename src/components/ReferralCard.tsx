@@ -21,7 +21,7 @@ const bonusStart = FLEET.referralBonusStartsAt.toLocaleDateString("en-US", { mon
 // Short bonus terms, shown under the fleet link. Owner-approved; flagged for an
 // attorney's review alongside the other terms.
 const FLEET_BONUS_TERMS = [
-  `You earn $${FLEET.referralBonus} for each driver who first signs up through your referral link on or after ${bonusStart}, joins the Curri fleet, and is then activated on our carrier account.`,
+  `You earn $${FLEET.referralBonus} for each driver who first signs up through your referral link after the program launched on ${bonusStart}, joins the Curri fleet, and is then activated on our carrier account.`,
   "The bonus is paid after they're activated, not when they pay. We'll contact you to arrange payment.",
   "No bonus if their fleet fee is refunded before activation.",
   "Your link has to be used when they sign up — we can't add a referral afterwards.",
