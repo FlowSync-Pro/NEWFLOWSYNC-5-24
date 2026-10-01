@@ -11,6 +11,8 @@ import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, 
 import { SITE_URL } from "@/lib/site";
 import { FLEET, isPremiumTier } from "@/lib/pricing";
 import { recoveryText } from "@/lib/recovery";
+import { cancelOfferClosingReminder, scheduleOfferClosingReminder } from "@/lib/offer-reminders";
+import { cancelScheduledMarketing } from "@/lib/marketing";
 import type { ServiceId } from "@/lib/services";
 
 export const runtime = "nodejs";
@@ -88,7 +90,15 @@ async function recordRefund(charge: Stripe.Charge) {
 
   // `refunded` is true only once the whole charge has been refunded.
   const full = charge.refunded;
-  if (full) await prisma.payment.update({ where: { id: payment.id }, data: { status: "REFUNDED" } });
+  if (full) {
+    await prisma.payment.update({ where: { id: payment.id }, data: { status: "REFUNDED" } });
+    // A refunded driver gets no marketing email: cancel anything already scheduled.
+    try {
+      await cancelScheduledMarketing(payment.userId);
+    } catch (e) {
+      console.error("[refund] couldn't cancel scheduled marketing:", e);
+    }
+  }
 
   const u = payment.user;
   const name = (u.driverProfile ? `${u.driverProfile.firstName} ${u.driverProfile.lastName}`.trim() : "") || u.name || u.email;
@@ -247,6 +257,8 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
       stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
     },
   });
+  // They bought Premium, so the "offer closing" reminder (M1) no longer applies.
+  await cancelOfferClosingReminder(userId);
 
   let profile = await prisma.driverProfile.findUnique({
     where: { userId },
@@ -353,6 +365,9 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
       stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
     },
   });
+
+  // They joined the fleet, so the "offer closing" reminder (M1) no longer applies.
+  await cancelOfferClosingReminder(user.id);
 
   if (!user.fleetJoinedAt) {
     await prisma.user.update({ where: { id: user.id }, data: { fleetJoinedAt: new Date() } });
@@ -584,6 +599,18 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
 
   // Credit the referrer (if this driver came through a referral link).
   if (md.ref) await attributeReferral(user.id, md.ref);
+
+  // M1: remind a Verified buyer before the 24h offers close. Only when the
+  // offers apply (same rule as the emails above); cancelled if they buy
+  // Premium or the fleet first. Never throws.
+  if (tierEnum === "STANDARD" && !isPremiumTier(user.driverProfile?.tier) && !user.fleetJoinedAt) {
+    await scheduleOfferClosingReminder({
+      userId: user.id,
+      firstName: user.driverProfile?.firstName || md.firstName || user.name?.split(" ")[0] || "there",
+      listingSessionId: session.id,
+      purchasedAt: new Date(session.created * 1000),
+    });
+  }
 
   // Server-side Purchase event to Meta (CAPI). Same event_id as the browser
   // pixel that fires on /welcome/premium-offer -> Meta dedupes into one event.

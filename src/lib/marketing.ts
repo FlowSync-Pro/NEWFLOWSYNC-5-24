@@ -56,6 +56,11 @@ export function unsubscribeUrl(userId: string): string {
 /** Opt a user out of marketing email and cancel anything already scheduled. Idempotent. */
 export async function optOutOfMarketing(userId: string): Promise<void> {
   await prisma.user.updateMany({ where: { id: userId, marketingOptOutAt: null }, data: { marketingOptOutAt: new Date() } });
+  await cancelScheduledMarketing(userId);
+}
+
+/** Cancel every marketing email still scheduled for a user (e.g. after a refund). */
+export async function cancelScheduledMarketing(userId: string): Promise<void> {
   const pending = await prisma.emailLog.findMany({
     where: { userId, cancelledAt: null, resendId: { not: null }, scheduledFor: { gt: new Date() } },
   });
