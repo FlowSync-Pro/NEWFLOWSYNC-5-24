@@ -1,5 +1,5 @@
 import { adminEmails } from "@/lib/admin";
-import { sendOwnerAlertEmail } from "@/lib/email";
+import { sendOwnerAlertEmail, type EmailResult } from "@/lib/email";
 import { SUPPORT_EMAIL } from "@/lib/site";
 
 // Owner alerts for things that need a human soon: an abandoned checkout worth
@@ -30,4 +30,25 @@ export async function alertOwner(message: string): Promise<void> {
   } catch (e) {
     console.error("[alert] email notify failed:", e instanceof Error ? e.message : e);
   }
+}
+
+/**
+ * Customer email didn't go out → tell the owner who it was for and why, so a
+ * driver or customer isn't left waiting in silence. Never throws.
+ *
+ * Note: owner alerts are themselves emails. If email isn't configured at all,
+ * this alert can't be emailed either — it still lands in Vercel → Logs as
+ * "[alert]", next to the "[email:skipped]" warning.
+ */
+export async function alertIfEmailFailed(result: EmailResult): Promise<void> {
+  if (result.sent) return;
+  const why =
+    result.reason === "not-configured"
+      ? "Email isn't configured: RESEND_API_KEY or RESEND_FROM_EMAIL is missing in Vercel."
+      : 'Resend refused or errored. Vercel → Logs, search "[email]" for the reason.';
+  await alertOwner(
+    `📭 FlowSync: a customer email didn't send.\n\n` +
+      `Email: ${result.subject}\nTo: ${result.to}\n${why}\n\n` +
+      `They may be waiting on it. Reach out if it matters.`,
+  );
 }

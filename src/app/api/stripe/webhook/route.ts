@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { generateTempPassword, hashPassword } from "@/lib/password";
 import { serviceToEnum, serviceFromEnum } from "@/lib/enums";
 import { attributeReferral } from "@/lib/referrals";
-import { alertOwner } from "@/lib/alerts";
+import { alertOwner, alertIfEmailFailed } from "@/lib/alerts";
 import { sendCapiPurchase } from "@/lib/meta-capi";
 import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendCheckoutRecoveryEmail, sendFleetWelcomeEmail, sendPremiumUpgradeEmail, sendPnlProEmail, sendPurchaseConfirmationEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
@@ -75,7 +75,7 @@ async function handleAbandonedCheckout(session: Stripe.Checkout.Session) {
   if (email) {
     const paid = await prisma.payment.findFirst({ where: { status: "PAID", user: { email } }, select: { id: true } });
     if (paid) return;
-    await sendCheckoutRecoveryEmail({ to: email, firstName, product, resumeUrl });
+    await alertIfEmailFailed(await sendCheckoutRecoveryEmail({ to: email, firstName, product, resumeUrl }));
   }
 
   await alertOwner(
@@ -120,11 +120,11 @@ async function fulfillPnlSubscription(session: Stripe.Checkout.Session) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (user) {
     const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-    await sendPnlProEmail({
+    await alertIfEmailFailed(await sendPnlProEmail({
       to: user.email,
       firstName: user.name?.split(" ")[0] || "there",
       trackerUrl: `${base}/tools/profit-loss`,
-    });
+    }));
   }
 }
 
@@ -225,7 +225,7 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
   }
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-  await sendPremiumUpgradeEmail({
+  await alertIfEmailFailed(await sendPremiumUpgradeEmail({
     to: profile.user.email,
     firstName: profile.firstName,
     accountUrl: `${base}/account`,
@@ -238,7 +238,7 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     // Offer page B follows every Premium purchase; the email repeats it for
     // anyone who closed the tab. The page enforces the 24h window itself.
     fleetOfferUrl: `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(session.id)}`,
-  });
+  }));
 
   // Server-side Purchase event to Meta (CAPI). Same event_id as the browser
   // pixel that fires on /signin?checkout=success&upgraded=1 -> Meta dedupes
@@ -351,7 +351,7 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     }
   }
 
-  await sendFleetWelcomeEmail({
+  await alertIfEmailFailed(await sendFleetWelcomeEmail({
     to: user.email,
     firstName,
     fleetUrl: `${base}/account/curri-fleet`,
@@ -359,7 +359,7 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     vehicleYear: user.driverProfile?.vehicleYear,
     vehicleMakeModel: user.driverProfile?.vehicleMakeModel,
     vehicleType: user.driverProfile?.vehicleType,
-  });
+  }));
 
   // The carrier-account add and the Stripe Connect link are manual steps.
   await alertOwner(
@@ -407,18 +407,18 @@ async function fulfillBooking(session: Stripe.Checkout.Session) {
   });
 
   const driverName = `${booking.driverProfile.firstName} ${booking.driverProfile.lastName}`.trim();
-  await sendBookingPaidEmail({
+  await alertIfEmailFailed(await sendBookingPaidEmail({
     to: booking.driverProfile.user.email,
     driverFirstName: booking.driverProfile.firstName,
     customerName: booking.customer.name ?? "A customer",
     amountCents: amount,
-  });
-  await sendBookingReceiptEmail({
+  }));
+  await alertIfEmailFailed(await sendBookingReceiptEmail({
     to: booking.customer.email,
     customerName: booking.customer.name ?? "there",
     driverName,
     amountCents: amount,
-  });
+  }));
 }
 
 async function fulfillCheckout(session: Stripe.Checkout.Session) {
@@ -506,7 +506,7 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
     const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
     const offersApply = tierEnum === "STANDARD" && !isPremiumTier(user.driverProfile?.tier) && !user.fleetJoinedAt;
     const sid = encodeURIComponent(session.id);
-    await sendPurchaseConfirmationEmail({
+    await alertIfEmailFailed(await sendPurchaseConfirmationEmail({
       to: email,
       firstName: user.driverProfile?.firstName || md.firstName || user.name?.split(" ")[0] || "there",
       amountCents: session.amount_total ?? 0,
@@ -515,7 +515,7 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
       forgotPasswordUrl: `${base}/forgot-password`,
       upgradeUrl: offersApply ? `${base}/welcome/premium-offer?session_id=${sid}` : undefined,
       fleetOfferUrl: offersApply ? `${base}/welcome/fleet-offer?session_id=${sid}` : undefined,
-    });
+    }));
   }
 
   if (user.driverProfile) {

@@ -7,6 +7,7 @@ import { serviceFromEnum } from "@/lib/enums";
 import { getService } from "@/lib/services";
 import { SITE_URL } from "@/lib/site";
 import { sendBookingRequestEmail, sendQuoteEmail } from "@/lib/email";
+import { alertIfEmailFailed } from "@/lib/alerts";
 
 function baseUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
@@ -49,14 +50,14 @@ export async function requestBooking(_prev: RequestState, formData: FormData): P
   });
 
   const svc = getService(serviceFromEnum(driver.primaryService));
-  await sendBookingRequestEmail({
+  await alertIfEmailFailed(await sendBookingRequestEmail({
     to: driver.user.email,
     driverFirstName: driver.firstName,
     customerName: name,
     service: svc?.name ?? "delivery",
     details,
     bookingsUrl: `${baseUrl()}/account/bookings`,
-  });
+  }));
 
   return { ok: true };
 }
@@ -81,13 +82,13 @@ export async function sendQuote(bookingId: string, amountDollars: number): Promi
   const amountCents = Math.round(amountDollars * 100);
   await prisma.booking.update({ where: { id: bookingId }, data: { quoteAmount: amountCents, status: "QUOTED" } });
 
-  await sendQuoteEmail({
+  await alertIfEmailFailed(await sendQuoteEmail({
     to: booking.customer.email,
     customerName: booking.customer.name ?? "there",
     driverName: `${booking.driverProfile.firstName} ${booking.driverProfile.lastName}`.trim(),
     amountCents,
     payUrl: `${baseUrl()}/book/${booking.id}/pay`,
-  });
+  }));
 
   revalidatePath("/account/bookings");
   return { ok: true };
