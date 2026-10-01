@@ -47,23 +47,31 @@ const WHY = [
 export default async function PremiumOfferPage({ searchParams }: PageProps<"/welcome/premium-offer">) {
   const sp = await searchParams;
   const sessionId = typeof sp.session_id === "string" ? sp.session_id : Array.isArray(sp.session_id) ? sp.session_id[0] : "";
-  if (!sessionId) redirect("/signin?checkout=success");
+  // No purchase to show an offer for. Plain sign-in: "checkout=success" there
+  // fires a Purchase pixel, which must only happen for a real payment.
+  if (!sessionId) redirect("/signin");
 
   let purchaseValue = listingPrice();
+  // redirect() works by throwing, so a try/catch would swallow it: decide the
+  // destination inside the try, redirect after it.
+  let dest: string | null = null;
   const stripe = getStripe();
   if (stripe) {
     try {
       const cs = await stripe.checkout.sessions.retrieve(sessionId);
-      if (cs.payment_status !== "paid" || cs.metadata?.type !== "listing") redirect("/signin?checkout=success");
+      if (cs.payment_status !== "paid" || cs.metadata?.type !== "listing") dest = "/signin";
       // Bought Premium outright → straight to the fleet offer.
-      if (cs.metadata?.tier === "premium") redirect(`/welcome/fleet-offer?session_id=${encodeURIComponent(sessionId)}`);
+      else if (cs.metadata?.tier === "premium") dest = `/welcome/fleet-offer?session_id=${encodeURIComponent(sessionId)}`;
       // The offer is open for a stated window; after that, the account price applies.
-      if (offerExpired(cs.created)) redirect("/signin?checkout=success");
-      if (typeof cs.amount_total === "number") purchaseValue = cs.amount_total / 100;
+      else if (offerExpired(cs.created)) dest = "/signin?offer=ended";
+      else if (typeof cs.amount_total === "number") purchaseValue = cs.amount_total / 100;
     } catch {
-      redirect("/signin?checkout=success");
+      // Stripe didn't answer. Sign-in retries with the session id, so a real
+      // buyer's Purchase still fires once and Meta can de-duplicate it.
+      dest = `/signin?checkout=success&session_id=${encodeURIComponent(sessionId)}`;
     }
   }
+  if (dest) redirect(dest);
 
   const offer = premiumOfferPrice();
   const later = premiumUpgradePrice();

@@ -3,7 +3,7 @@ import { AuthPanel, ActivateAccountForm } from "@/components/AuthForm";
 import TrackEvent from "@/components/TrackEvent";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
-import { listingPrice } from "@/lib/pricing";
+import { FLEET, listingPrice, OFFER_WINDOW_HOURS, premiumUpgradePrice } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -15,6 +15,8 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
   const sp = await searchParams;
   const paid = sp.checkout === "success";
   const sessionId = typeof sp.session_id === "string" ? sp.session_id : undefined;
+  // An offer page link opened after its window closed (e.g. from the welcome email).
+  const offerEnded = sp.offer === "ended";
 
   // Report the real amount paid to the Meta Pixel so Meta can optimize for
   // value (a $97 Premium reports 97, a $17+bumps reports its true total) and
@@ -55,13 +57,20 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
 
   return (
     <div className="relative min-h-[70vh]">
-      {paid && <TrackEvent event="Purchase" value={purchaseValue} eventId={sessionId} />}
+      {/* Only for a real checkout: without a session id Meta can't de-duplicate
+          the event, and there's no proof anything was bought. */}
+      {paid && sessionId && <TrackEvent event="Purchase" value={purchaseValue} eventId={sessionId} />}
       <div className="glow-radial pointer-events-none absolute inset-0 h-72" />
       <div className="relative mx-auto flex max-w-md flex-col px-5 py-20">
         <h1 className="text-center text-3xl font-bold tracking-tight">
           {canActivate ? "You're in — set your password" : "Your driver account"}
         </h1>
-        {canActivate ? (
+        {offerEnded ? (
+          <p className="mt-2 text-center text-muted">
+            That offer has ended — it was open for {OFFER_WINDOW_HOURS} hours after your purchase. Premium is $
+            {premiumUpgradePrice()} and the Curri fleet is ${FLEET.price}, both from your account. Sign in below to see them.
+          </p>
+        ) : canActivate ? (
           <p className="mt-2 text-center text-accent">
             Payment received! Choose a password below and you&apos;ll go straight to your dashboard.
           </p>

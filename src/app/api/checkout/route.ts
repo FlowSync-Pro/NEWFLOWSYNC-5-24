@@ -8,6 +8,19 @@ import { FLEET, fleetOfferPrice, getBump, isPremiumTier, listingPrice, OFFER_WIN
 /** Post-checkout offers are open for OFFER_WINDOW_HOURS after the purchase they follow. */
 const offerOpen = (s: Stripe.Checkout.Session) => !offerExpired(s.created);
 
+/**
+ * A discounted offer checkout must not outlive the offer. Stripe's default
+ * expiry is 24h after the checkout is created, so one opened at hour 23 of the
+ * window could be paid at hour 47. End it when the window closes instead,
+ * clamped to what Stripe accepts (30 minutes to 24 hours from now) — so the
+ * worst case is a checkout opened in the last half hour running ~30 min over.
+ */
+function offerCheckoutExpiry(original: Stripe.Checkout.Session): number {
+  const now = Math.floor(Date.now() / 1000);
+  const windowEnd = original.created + OFFER_WINDOW_HOURS * 3600;
+  return Math.min(Math.max(windowEnd, now + 31 * 60), now + 24 * 3600 - 60);
+}
+
 /** Retrieve a paid session or null. */
 async function paidSession(stripe: Stripe, id: unknown): Promise<Stripe.Checkout.Session | null> {
   if (typeof id !== "string" || !id) return null;
@@ -200,6 +213,7 @@ async function handleCheckout(req: Request) {
       mode: "payment",
       line_items: [fleetLineItem(amount * 100)],
       customer_email: user.email,
+      expires_at: offerCheckoutExpiry(original),
       metadata: { type: "fleet", userId: user.id, source: hasPremium ? "oto-premium" : "oto-verified" },
       success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
       cancel_url: `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(original.id)}`,
@@ -275,6 +289,7 @@ async function handleCheckout(req: Request) {
         },
       ],
       customer_email: email,
+      expires_at: offerCheckoutExpiry(original),
       // Reuses the existing fulfillUpgrade webhook handler.
       metadata: { type: "upgrade", userId: user.id, source: "oto" },
       // The NEW upgrade session id (Stripe substitutes it) lands on offer page
