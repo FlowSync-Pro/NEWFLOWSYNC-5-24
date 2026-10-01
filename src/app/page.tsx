@@ -8,6 +8,7 @@ import ServiceIcon from "@/components/ServiceIcon";
 import Reveal from "@/components/Reveal";
 import ReviewStrip from "@/components/ReviewStrip";
 import FleetCheckout from "@/components/FleetCheckout";
+import RefCapture from "@/components/RefCapture";
 import { FleetBiddingStory, FleetCapNote, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
 import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice } from "@/lib/pricing";
 
@@ -296,6 +297,8 @@ export default function Home() {
       {/* Curri fleet — a separate offer from the listing. Visitors can join
           directly for $297 (which also creates their account); the offer-page price
           exists only on the post-checkout offer page after a $17 listing. */}
+      {/* Fleet referral links land here (/?ref=CODE#curri-fleet). */}
+      <RefCapture />
       <section id="curri-fleet" className="border-t border-border bg-surface/30">
         <div className="mx-auto max-w-7xl px-5 py-20">
           <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-start">

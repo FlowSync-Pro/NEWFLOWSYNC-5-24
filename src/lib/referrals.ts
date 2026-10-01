@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
+import { FLEET } from "@/lib/pricing";
 
 // Referral program: drivers share a link, and when someone they refer gets
 // listed (pays), it's attributed. Hitting REWARD_THRESHOLD paid referrals
@@ -37,16 +38,63 @@ export interface ReferralStats {
   referred: number; // people who signed up & paid under this code
   rewarded: boolean; // has the referrer already earned the Premium reward
   remaining: number; // referrals left until the next reward
+  fleetReferred: number; // referred drivers who joined the fleet and count toward the fleet bonus
 }
+
+/**
+ * Who counts toward the fleet referral bonus: signed up through the link on or
+ * after the bonus launched (no retroactive payouts) and has joined the fleet.
+ * Activation — when the $50 is actually owed — isn't tracked in the app; the
+ * owner pays manually after activating them.
+ */
+const fleetBonusWhere = (code: string) => ({
+  referredByCode: code,
+  createdAt: { gte: FLEET.referralBonusStartsAt },
+  fleetJoinedAt: { gte: FLEET.referralBonusStartsAt },
+});
 
 export async function referralStats(userId: string): Promise<ReferralStats> {
   const code = await ensureReferralCode(userId);
-  const [referred, me] = await Promise.all([
+  const [referred, fleetReferred, me] = await Promise.all([
     prisma.user.count({ where: { referredByCode: code } }),
+    prisma.user.count({ where: fleetBonusWhere(code) }),
     prisma.user.findUnique({ where: { id: userId }, include: { driverProfile: true } }),
   ]);
   const rewarded = me?.driverProfile?.tier === "PREMIUM";
-  return { code, referred, rewarded, remaining: Math.max(0, REWARD_THRESHOLD - referred) };
+  return { code, referred, rewarded, remaining: Math.max(0, REWARD_THRESHOLD - referred), fleetReferred };
+}
+
+export interface FleetBonusRow {
+  driver: { name: string; email: string; joinedFleetAt: Date };
+  referrer: { name: string; email: string; phone: string | null; code: string } | null;
+}
+
+/** Admin, read-only: every fleet join that earns a referrer the bonus once activated. Newest first. */
+export async function fleetBonusRows(): Promise<FleetBonusRow[]> {
+  const joined = await prisma.user.findMany({
+    where: {
+      referredByCode: { not: null },
+      createdAt: { gte: FLEET.referralBonusStartsAt },
+      fleetJoinedAt: { gte: FLEET.referralBonusStartsAt },
+    },
+    select: { email: true, name: true, referredByCode: true, fleetJoinedAt: true, driverProfile: { select: { firstName: true, lastName: true } } },
+    orderBy: { fleetJoinedAt: "desc" },
+  });
+  const codes = [...new Set(joined.map((u) => u.referredByCode!))];
+  const referrers = await prisma.user.findMany({
+    where: { referralCode: { in: codes } },
+    select: { referralCode: true, email: true, name: true, driverProfile: { select: { firstName: true, lastName: true, phone: true } } },
+  });
+  const byCode = new Map(referrers.map((r) => [r.referralCode!, r]));
+  const nameOf = (u: { name: string | null; email: string; driverProfile: { firstName: string; lastName: string } | null }) =>
+    (u.driverProfile ? `${u.driverProfile.firstName} ${u.driverProfile.lastName}`.trim() : "") || u.name || u.email;
+  return joined.map((u) => {
+    const r = byCode.get(u.referredByCode!);
+    return {
+      driver: { name: nameOf(u), email: u.email, joinedFleetAt: u.fleetJoinedAt! },
+      referrer: r ? { name: nameOf(r), email: r.email, phone: r.driverProfile?.phone ?? null, code: r.referralCode! } : null,
+    };
+  });
 }
 
 /**
