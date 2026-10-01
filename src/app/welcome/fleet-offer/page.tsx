@@ -14,7 +14,7 @@ import {
 import { SITE_URL } from "@/lib/site";
 import TrackEvent from "@/components/TrackEvent";
 import FleetOfferButtons from "@/components/FleetOfferButtons";
-import { FleetBiddingStory, FleetCapNote, FleetDisclaimer } from "@/components/FleetPitch";
+import { FleetBiddingStory, FleetCapNote, FleetDisclaimer, FleetPayLaterNote } from "@/components/FleetPitch";
 
 export const dynamic = "force-dynamic";
 
@@ -152,6 +152,7 @@ export default async function FleetOfferPage({ searchParams }: PageProps<"/welco
           </ul>
           <div className="mt-6">
             <FleetOfferButtons sessionId={sessionId} price={price} />
+            <div className="mt-3"><FleetPayLaterNote /></div>
           </div>
           <p className="mt-4 text-center text-xs text-muted">
             Open for {OFFER_WINDOW_HOURS} hours after your purchase. After that, the fleet is ${FLEET.price} from your account.

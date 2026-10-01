@@ -39,6 +39,22 @@ export function FleetCapNote() {
   );
 }
 
+/**
+ * Pay-over-time note (option A, owner decision 2026-10-01): Klarna, Afterpay
+ * and Affirm are switched on in the Stripe Dashboard. The lender pays the full
+ * price up front, so nothing here changes the price, the checkout or what Meta
+ * is told. "If you're eligible": the lenders decide, and each has its own
+ * minimum. Bank-transfer methods (ACH) must stay OFF — the webhook activates
+ * on checkout completion, before a bank transfer has cleared.
+ */
+export function FleetPayLaterNote() {
+  return (
+    <p className="text-center text-xs text-muted">
+      Prefer to pay over time? Klarna, Afterpay or Affirm at checkout, if you&apos;re eligible.
+    </p>
+  );
+}
+
 export function FleetBiddingStory({ compact }: { compact?: boolean }) {
   return (
     <div className="space-y-3 text-sm leading-relaxed text-muted">
