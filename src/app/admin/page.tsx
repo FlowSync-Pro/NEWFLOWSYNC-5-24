@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { getAdminUserId } from "@/lib/admin";
+import { getAdminUserId, isAdminEmail } from "@/lib/admin";
 import { serviceFromEnum } from "@/lib/enums";
 import { getService } from "@/lib/services";
 import { money } from "@/lib/trips";
@@ -82,6 +82,29 @@ export default async function AdminPage() {
   const pendingReviewCount = await prisma.review.count({ where: { status: "PENDING" } });
   const paidUserIds = new Set(paidPayments.map((p) => p.userId));
 
+  // Newest signups, read from the User table rather than DriverProfile: the
+  // pricing-page checkout no longer asks for a name or service, so the
+  // webhook creates the account WITHOUT a profile. Until the driver signs in
+  // and finishes /account/setup they don't exist in the driver list below —
+  // this is the only place the owner can see them right after they pay.
+  const newest = await prisma.user.findMany({
+    where: { role: "DRIVER" },
+    orderBy: { createdAt: "desc" },
+    take: 12,
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      createdAt: true,
+      mustResetPassword: true,
+      fleetJoinedAt: true,
+      payments: { where: { status: "PAID" }, select: { amount: true } },
+      driverProfile: {
+        select: { id: true, firstName: true, lastName: true, phone: true, city: true, verified: true, tier: true, _count: { select: { documents: true } } },
+      },
+    },
+  });
+
   const drivers: AdminDriverRow[] = rows.map((p) => {
     const eng = engagementFrom(parseProgress(p.user.roadmapData));
     return {
@@ -155,6 +178,49 @@ export default async function AdminPage() {
           <PipeStat label="Premium" value={premium} />
           <PipeStat label="Drivers" value={drivers.length} />
           <PipeStat label="Trips logged" value={totalTrips} />
+        </div>
+
+        {/* Newest signups — every new account, paid or not, the moment it exists */}
+        <h2 className="mt-8 text-sm font-semibold uppercase tracking-widest text-accent">Newest signups</h2>
+        <p className="mt-1 text-xs text-muted">
+          Newest first. A driver who paid but hasn&apos;t finished setup yet is listed here and nowhere else — they move to
+          &ldquo;Paid · to verify&rdquo; below once they sign in and enter their name and service.
+        </p>
+        <div className="mt-3 space-y-2">
+          {newest.filter((u) => !isAdminEmail(u.email)).map((u) => {
+            const p = u.driverProfile;
+            const paidCents = u.payments.reduce((n, x) => n + x.amount, 0);
+            const name = p ? `${p.firstName} ${p.lastName}`.trim() : u.name?.trim() || "";
+            const chips: { label: string; cls: string }[] = [];
+            if (paidCents > 0) chips.push({ label: `Paid ${money(paidCents)}`, cls: "bg-accent-soft text-accent" });
+            else chips.push({ label: "Unpaid", cls: "bg-surface-2 text-muted" });
+            if (u.mustResetPassword) chips.push({ label: "Hasn't set a password", cls: "bg-amber-400/20 text-amber-300" });
+            if (!p) chips.push({ label: "Hasn't finished setup", cls: "bg-amber-400/20 text-amber-300" });
+            else {
+              chips.push({ label: `${p._count.documents}/5 documents`, cls: "bg-surface-2 text-muted" });
+              chips.push(p.verified ? { label: "Verified", cls: "bg-accent text-[#04130a]" } : { label: "Pending approval", cls: "bg-surface-2 text-muted" });
+              if (p.tier === "PREMIUM") chips.push({ label: "★ Premium", cls: "bg-amber-400/20 text-amber-300" });
+            }
+            if (u.fleetJoinedAt) chips.push({ label: "🚚 Fleet", cls: "bg-accent-soft text-accent" });
+            return (
+              <div key={u.id} className="card flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
+                <div className="min-w-0">
+                  <p className="font-semibold">{name || <span className="text-muted">(no name yet)</span>}</p>
+                  <p className="truncate text-xs text-muted">
+                    {u.email}{p?.phone ? ` · ${p.phone}` : ""}{p?.city ? ` · ${p.city}` : ""} · joined {u.createdAt.toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {chips.map((c) => (
+                    <span key={c.label} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${c.cls}`}>{c.label}</span>
+                  ))}
+                  {p && (
+                    <Link href={`/admin/drivers/${p.id}`} className="rounded-full border border-border px-3 py-0.5 text-[11px] text-muted hover:text-foreground">View ops</Link>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Engagement — who to reach out to */}

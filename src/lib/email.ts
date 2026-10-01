@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { SUPPORT_EMAIL } from "./site";
+import { fleetTelegramInviteUrl } from "./telegram-invite";
 import { FLEET, GUARANTEE_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, OFFER_WINDOW_HOURS, premiumOfferPrice, premiumUpgradePrice } from "./pricing";
 
 // Lazy + graceful: when RESEND_API_KEY isn't set, email sends are skipped (logged)
@@ -129,18 +130,6 @@ function knownDetailsPhrase(d: DriverDetails): string | null {
   return null;
 }
 
-/** Telegram invite link, only when it's configured and really a Telegram URL. */
-function telegramInviteUrl(): string | null {
-  const raw = process.env.NEXT_PUBLIC_TELEGRAM_INVITE_URL?.trim();
-  if (!raw) return null;
-  try {
-    const u = new URL(raw);
-    return u.protocol === "https:" && /(^|\.)t(elegram)?\.me$/.test(u.hostname) ? u.toString() : null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * The $17 buyer's first email. Fires from the Stripe webhook the moment the
  * listing is paid. Three jobs, in order of importance:
@@ -172,7 +161,6 @@ export async function sendDriverWelcomeEmail(opts: {
   const fleetOffer = opts.fleetOfferUrl
     ? `<p ${P}>Same window for the fleet: for ${OFFER_WINDOW_HOURS} hours it's <strong style="color:#e7ecef">$${FLEET.addOnPriceWithoutPremium} more</strong> to get activated on our Curri carrier account (that includes everything in Premium). After that it's $${FLEET.price} from your account. <a href="${opts.fleetOfferUrl}" style="color:#25e07a">See the fleet offer →</a></p>`
     : "";
-  const telegram = telegramInviteUrl();
   const premium = premiumOfferPrice();
 
   const body = `
@@ -187,7 +175,6 @@ export async function sendDriverWelcomeEmail(opts: {
       <li ${LI}><strong style="color:#e7ecef">Finish your profile</strong> — photo, vehicle, city, and the services you offer. That's what customers see in the directory.</li>
       <li ${LI}><strong style="color:#e7ecef">Open your Driver Roadmap.</strong> It's the 30-day action plan, one box at a time. Do a box a day and you'll be set up properly, with a real shot at your first direct customer.</li>
       <li ${LI}><strong style="color:#e7ecef">Follow the setup guides.</strong> USDOT and EIN for free (no filing service), LLC filing, medical courier requirements, and how to sign up with Curri and Dispatch as a carrier instead of a gig driver. Plus your own service menu with your prices.</li>
-      ${telegram ? `<li ${LI}><strong style="color:#e7ecef">Join the driver community</strong> on Telegram — real drivers, real answers, free. <a href="${telegram}" style="color:#25e07a">Open the group →</a></li>` : ""}
     </ol>
 
     <h2 ${H2}>Want to run it like a business? Add Premium.</h2>
@@ -336,6 +323,8 @@ export async function sendFleetWelcomeEmail(opts: {
   fleetUrl: string;
 } & DriverDetails) {
   const known = knownDetailsPhrase(opts);
+  // Fleet buyers are the only drivers who get the Telegram invite.
+  const telegram = fleetTelegramInviteUrl();
   const fleetStep1 = known
     ? `<strong style="color:#e7ecef">Reply to this email</strong> to confirm your details — I've got ${known} on file — plus the email for your Stripe payouts, and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}% dispatching fee) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`
     : `<strong style="color:#e7ecef">Reply to this email</strong> with your city, your vehicle (year, make, model), and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}% dispatching fee) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`;
@@ -348,6 +337,7 @@ export async function sendFleetWelcomeEmail(opts: {
       <li ${LI}><strong style="color:#e7ecef">You get a Stripe setup link</strong> from us. That's where every payout lands, and it's what your 1099 comes from at year end. Don't have Stripe yet? We can send your first two or three payouts another way while you set it up.</li>
       <li ${LI}><strong style="color:#e7ecef">Loads start showing up.</strong> Claim, bid, or pass — you're never required to take one.</li>
       <li ${LI}><strong style="color:#e7ecef">Everything in Premium is unlocked in your account.</strong> The bidding calculator, the P&amp;L tracker, every guide, and the Curri mastermind — use them from day one.</li>
+      ${telegram ? `<li ${LI}><strong style="color:#e7ecef">Join the fleet Telegram group</strong> once you're activated — dispatch updates and the other fleet drivers are there. <a href="${telegram}" style="color:#25e07a">Open the group →</a></li>` : ""}
     </ol>
     <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">Refund terms you agreed to at checkout: ${FLEET.refundShort} Two violations on the carrier account means removal from the fleet without a refund.</p>
     <p ${P}>The full walkthrough, including how we bid loads instead of claiming them at the listed price, is in your account:</p>
