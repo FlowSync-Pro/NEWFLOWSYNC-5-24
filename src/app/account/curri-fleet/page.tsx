@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { SUPPORT_EMAIL } from "@/lib/site";
 import { FLEET } from "@/lib/pricing";
+import { fleetTelegramInviteUrl } from "@/lib/telegram-invite";
 import FleetCheckout from "@/components/FleetCheckout";
 import TrackEvent from "@/components/TrackEvent";
 import { FleetBiddingStory, FleetDisclaimer, FleetTerms } from "@/components/FleetPitch";
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     title: "Send us your details",
-    body: `Email ${SUPPORT_EMAIL} (or DM Nasser privately — not in the public Telegram group) with your city, your vehicle (year, make, model), the email you want your Stripe setup link sent to, and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}%) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`,
+    body: `Email ${SUPPORT_EMAIL} (or DM Nasser privately on Telegram — not in the group chat) with your city, your vehicle (year, make, model), the email you want your Stripe setup link sent to, and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}%) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`,
   },
   {
     title: "We add you on our carrier account",
@@ -58,6 +59,8 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
   if (!profile) redirect("/account/setup");
 
   const joined = !!user?.fleetJoinedAt;
+  // Fleet members only — the one place drivers are pointed to Telegram.
+  const telegram = joined ? fleetTelegramInviteUrl() : null;
   // Just paid from this page: fire the browser Purchase pixel with the Stripe
   // session id so Meta dedupes it against the webhook's CAPI event.
   const justJoined = joined && sp.joined === "1";
@@ -108,6 +111,23 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
             >
               Email {SUPPORT_EMAIL}
             </a>
+            {telegram && (
+              <div className="mt-5 border-t border-accent/20 pt-5">
+                <p className="text-sm font-semibold text-accent">Fleet Telegram group</p>
+                <p className="mt-1 text-sm text-foreground/90">
+                  Where dispatch updates and questions from other fleet drivers live. Join it once you&apos;re
+                  activated — Nasser will recognize you there.
+                </p>
+                <a
+                  href={telegram}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-ghost mt-3 inline-flex rounded-full px-6 py-2.5 text-sm"
+                >
+                  Open the fleet Telegram group →
+                </a>
+              </div>
+            )}
           </section>
         ) : (
           <>
