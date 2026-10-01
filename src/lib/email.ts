@@ -149,22 +149,25 @@ export async function sendDriverWelcomeEmail(opts: {
   upgradeUrl?: string;
   /** Offer page B for a Verified buyer (fleet for $200 more, 24h). */
   fleetOfferUrl?: string;
-  /** The service chosen at checkout, e.g. "courier" → "Your FlowSync courier listing is active". */
+  /** The service chosen at checkout, e.g. "courier" → "Your FlowSync courier listing is paid for". */
   serviceId?: string | null;
 }) {
   const base = new URL(opts.signInUrl).origin;
   const upgradeUrl = opts.upgradeUrl || `${base}/account/edit`;
   const welcomeService = serviceLabel(opts.serviceId);
+  // Accurate, not aspirational: the listing is paid for, but the driver isn't in
+  // the directory until they finish their profile, upload their license and
+  // insurance, and an admin approves them.
   const listingPhrase = welcomeService
-    ? `Your FlowSync ${welcomeService.toLowerCase()} listing is active`
-    : "Your FlowSync driver listing is active";
+    ? `Your FlowSync ${welcomeService.toLowerCase()} listing is paid for`
+    : "Your FlowSync driver listing is paid for";
   const fleetOffer = opts.fleetOfferUrl
     ? `<p ${P}>Same window for the fleet: for ${OFFER_WINDOW_HOURS} hours it's <strong style="color:#e7ecef">$${FLEET.addOnPriceWithoutPremium} more</strong> to get activated on our Curri carrier account (that includes everything in Premium). After that it's $${FLEET.price} from your account. <a href="${opts.fleetOfferUrl}" style="color:#25e07a">See the fleet offer →</a></p>`
     : "";
   const premium = premiumOfferPrice();
 
   const body = `
-    <p ${P}>Hi ${opts.firstName} — you're in. ${listingPhrase}, and you set your own rates on every job.</p>
+    <p ${P}>Hi ${opts.firstName} — you're in. ${listingPhrase}. Finish your profile and upload your license and insurance, and once we've approved you you're live in the directory, setting your own rates on every job.</p>
     <p ${P}>Sign in with this temporary password, and you'll be asked to set a permanent one:</p>
     <div style="background:#11181c;border:1px solid #1d262b;border-radius:12px;padding:14px;margin:14px 0;text-align:center;font-size:18px;font-weight:700;letter-spacing:1px;color:#25e07a">${opts.tempPassword}</div>
     <p style="margin:0 0 6px">${button(opts.signInUrl, "Sign in to FlowSync")}</p>
@@ -172,7 +175,7 @@ export async function sendDriverWelcomeEmail(opts: {
     <h2 ${H2}>Your first 10 minutes inside</h2>
     <ol style="padding-left:20px;margin:0">
       <li ${LI}><strong style="color:#e7ecef">Set your password</strong> and land on your dashboard.</li>
-      <li ${LI}><strong style="color:#e7ecef">Finish your profile</strong> — photo, vehicle, city, and the services you offer. That's what customers see in the directory.</li>
+      <li ${LI}><strong style="color:#e7ecef">Finish your profile</strong> — photo, vehicle, city, and the services you offer, plus your driver's license and insurance so we can verify you. Once you're approved, that's what customers see in the directory.</li>
       <li ${LI}><strong style="color:#e7ecef">Open your Driver Roadmap.</strong> It's the 30-day action plan, one box at a time. Do a box a day and you'll be set up properly, with a real shot at your first direct customer.</li>
       <li ${LI}><strong style="color:#e7ecef">Follow the setup guides.</strong> USDOT and EIN for free (no filing service), LLC filing, medical courier requirements, and how to sign up with Curri and Dispatch as a carrier instead of a gig driver. Plus your own service menu with your prices.</li>
     </ol>
@@ -201,7 +204,7 @@ export async function sendDriverWelcomeEmail(opts: {
   return send(
     opts.to,
     `You're in, ${opts.firstName} — your FlowSync login + the story behind the vans`,
-    shell("You're listed", body),
+    shell("You're in", body),
   );
 }
 
