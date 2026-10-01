@@ -10,6 +10,7 @@ import { getService } from "@/lib/services";
 import type { ServiceId } from "@/lib/services";
 import { SITE_URL } from "@/lib/site";
 import { createReviewInviteToken, REVIEW_INVITE_DAYS } from "@/lib/review-invite";
+import { alertIfEmailFailed } from "@/lib/alerts";
 
 /**
  * Invite a driver who is actively running loads with us to leave a review.
@@ -58,12 +59,12 @@ export async function adminResetDriverPassword(driverProfileId: string): Promise
   });
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-  await sendTempPasswordEmail({
+  await alertIfEmailFailed(await sendTempPasswordEmail({
     to: driver.user.email,
     firstName: driver.firstName,
     tempPassword,
     signInUrl: `${base}/signin`,
-  });
+  }));
 
   return { ok: true, tempPassword };
 }
@@ -96,11 +97,11 @@ export async function setDriverTier(driverProfileId: string, tier: "STANDARD" | 
 
   if (tier === "PREMIUM") {
     const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-    await sendPremiumUpgradeEmail({
+    await alertIfEmailFailed(await sendPremiumUpgradeEmail({
       to: driver.user.email,
       firstName: driver.firstName,
       accountUrl: `${base}/account`,
-    });
+    }));
   }
 
   revalidatePath("/admin");
@@ -120,11 +121,11 @@ export async function approveDriver(driverProfileId: string): Promise<{ ok: bool
   });
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-  await sendDriverApprovedEmail({
+  await alertIfEmailFailed(await sendDriverApprovedEmail({
     to: driver.user.email,
     firstName: driver.firstName,
     profileUrl: `${base}/profile`,
-  });
+  }));
 
   revalidatePath("/admin");
   revalidatePath("/find-a-driver");
@@ -228,7 +229,7 @@ export async function adminCreateDriver(_prev: CreateDriverState, formData: Form
   });
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-  await sendDriverWelcomeEmail({ to: email, firstName, tempPassword, signInUrl: `${base}/signin` });
+  await alertIfEmailFailed(await sendDriverWelcomeEmail({ to: email, firstName, tempPassword, signInUrl: `${base}/signin` }));
 
   revalidatePath("/admin");
   revalidatePath("/find-a-driver");

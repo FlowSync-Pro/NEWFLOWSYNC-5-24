@@ -22,20 +22,34 @@ function from(): string {
   return process.env.RESEND_FROM_EMAIL || "FlowSync <hello@flowsyncdriver.com>";
 }
 
-async function send(to: string, subject: string, html: string): Promise<{ sent: boolean }> {
+/** What every send returns. `reason` says why it didn't go, for owner alerts. */
+export interface EmailResult {
+  sent: boolean;
+  reason?: "not-configured" | "failed";
+  to: string;
+  subject: string;
+}
+
+async function send(to: string, subject: string, html: string): Promise<EmailResult> {
   const resend = getResend();
   if (!resend || !process.env.RESEND_FROM_EMAIL) {
-    console.log(`[email:skipped] "${subject}" -> ${to}`);
-    return { sent: false };
+    // A warning, not a quiet log: in production this means no customer email
+    // is going out at all (RESEND_API_KEY / RESEND_FROM_EMAIL missing).
+    console.warn(`[email:skipped] "${subject}" -> ${to} (RESEND_API_KEY or RESEND_FROM_EMAIL not set)`);
+    return { sent: false, reason: "not-configured", to, subject };
   }
   try {
     // Several emails say "just reply" — replies must land in the inbox a
     // human actually reads, not whatever RESEND_FROM_EMAIL happens to be.
-    await resend.emails.send({ from: from(), to, subject, html, replyTo: SUPPORT_EMAIL });
-    return { sent: true };
+    const { error } = await resend.emails.send({ from: from(), to, subject, html, replyTo: SUPPORT_EMAIL });
+    if (error) {
+      console.error(`[email] Resend refused "${subject}" -> ${to}:`, error.message ?? error);
+      return { sent: false, reason: "failed", to, subject };
+    }
+    return { sent: true, to, subject };
   } catch (e) {
-    console.error("[email] send failed:", e);
-    return { sent: false };
+    console.error(`[email] send failed "${subject}" -> ${to}:`, e);
+    return { sent: false, reason: "failed", to, subject };
   }
 }
 

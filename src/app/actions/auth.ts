@@ -10,6 +10,7 @@ import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
 import { getStripe } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
 import type { ServiceId } from "@/lib/services";
+import { alertIfEmailFailed } from "@/lib/alerts";
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
@@ -82,7 +83,7 @@ export async function register(_prev: AuthState, formData: FormData): Promise<Au
   }
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-  await sendWelcomeEmail({ to: email, firstName, profileUrl: `${base}/account` });
+  await alertIfEmailFailed(await sendWelcomeEmail({ to: email, firstName, profileUrl: `${base}/account` }));
 
   await createSession({ userId, role: "DRIVER", mustResetPassword: false });
   redirect("/account?registered=1");
@@ -210,7 +211,7 @@ export async function requestPasswordReset(_prev: ForgotState, formData: FormDat
     });
     const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
     const resetUrl = `${base}/reset-password?token=${raw}&email=${encodeURIComponent(email)}`;
-    await sendPasswordResetEmail({ to: email, firstName: user.name?.split(" ")[0] || "there", resetUrl });
+    await alertIfEmailFailed(await sendPasswordResetEmail({ to: email, firstName: user.name?.split(" ")[0] || "there", resetUrl }));
   }
   return { sent: true };
 }
