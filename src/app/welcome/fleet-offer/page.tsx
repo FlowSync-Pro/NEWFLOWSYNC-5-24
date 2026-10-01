@@ -41,26 +41,36 @@ function Check() {
 export default async function FleetOfferPage({ searchParams }: PageProps<"/welcome/fleet-offer">) {
   const sp = await searchParams;
   const sessionId = typeof sp.session_id === "string" ? sp.session_id : Array.isArray(sp.session_id) ? sp.session_id[0] : "";
-  if (!sessionId) redirect("/signin?checkout=success");
+  // No purchase to show an offer for. Plain sign-in: "checkout=success" there
+  // fires a Purchase pixel, which must only happen for a real payment.
+  if (!sessionId) redirect("/signin");
 
   // Without Stripe (local/preview without keys) assume the Premium path so the page renders.
   let hasPremium = true;
   let premiumPurchaseValue: number | null = null;
+  // redirect() works by throwing, so a try/catch would swallow it: decide the
+  // destination inside the try, redirect after it.
+  let dest: string | null = null;
   const stripe = getStripe();
   if (stripe) {
     try {
       const cs = await stripe.checkout.sessions.retrieve(sessionId);
       const md = cs.metadata ?? {};
-      if (cs.payment_status !== "paid" || (md.type !== "upgrade" && md.type !== "listing")) redirect("/signin?checkout=success");
-      if (offerExpired(cs.created)) redirect("/signin?checkout=success");
-      hasPremium = md.type === "upgrade" || md.tier === "premium";
-      // Only a Premium purchase fires its Purchase pixel here; a Verified
-      // buyer's listing Purchase already fired on offer page A.
-      if (hasPremium) premiumPurchaseValue = typeof cs.amount_total === "number" ? cs.amount_total / 100 : premiumOfferPrice();
+      if (cs.payment_status !== "paid" || (md.type !== "upgrade" && md.type !== "listing")) dest = "/signin";
+      else if (offerExpired(cs.created)) dest = "/signin?offer=ended";
+      else {
+        hasPremium = md.type === "upgrade" || md.tier === "premium";
+        // Only a Premium purchase fires its Purchase pixel here; a Verified
+        // buyer's listing Purchase already fired on offer page A.
+        if (hasPremium) premiumPurchaseValue = typeof cs.amount_total === "number" ? cs.amount_total / 100 : premiumOfferPrice();
+      }
     } catch {
-      redirect("/signin?checkout=success");
+      // Stripe didn't answer. Sign-in retries with the session id, so a real
+      // buyer's Purchase still fires once and Meta can de-duplicate it.
+      dest = `/signin?checkout=success&session_id=${encodeURIComponent(sessionId)}`;
     }
   }
+  if (dest) redirect(dest);
 
   const price = fleetOfferPrice(hasPremium);
   const total = fleetOfferTotal();
