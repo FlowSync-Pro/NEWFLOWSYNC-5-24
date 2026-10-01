@@ -109,9 +109,10 @@ writing the code against env placeholders + setup docs; provisioning + secrets h
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
 ## 📍 Checkpoint — 2026-10-01
-Restore point: git tag `checkpoint-2026-10-01` (default branch after PR #14, live on
-flowsyncdriver.com). Today's changes added no migrations, schema changes or new env var
-names, so redeploying this tag later is a code-only rollback for them.
+Restore point: commit `1484112` (the merge of PR #14 into the default branch), live on
+flowsyncdriver.com. To roll back, promote that deployment in Vercel → Deployments, or
+redeploy that commit. Today's changes added no migrations, schema changes or new env var
+names, so rolling back to it is code-only for them.
 
 Shipped today (all copy or admin-only; pixel, Stripe, auth and data untouched):
 - **Admin "Newest signups"** on `/admin` — reads the User table, so a buyer shows up the
