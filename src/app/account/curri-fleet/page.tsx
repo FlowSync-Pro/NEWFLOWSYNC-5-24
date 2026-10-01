@@ -84,7 +84,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Curri fleet guide</h1>
           <p className="mt-3 text-muted">
             Hi {profile.firstName}{" "}
-            — the Curri fleet is a separate opportunity from your FlowSync listing. You get on our carrier account, we bid the loads, you run the ones you want, and
+            — the Curri fleet is a separate opportunity from your FlowSync driver account. You get on our carrier account, we bid the loads, you run the ones you want, and
             you&apos;re paid every Friday. Nothing here is required.
           </p>
         </header>
