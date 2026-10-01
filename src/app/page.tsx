@@ -300,7 +300,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-5 py-20">
           <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-start">
             <Reveal>
-              <p className="text-sm font-semibold uppercase tracking-widest text-accent">Curri fleet · separate from your listing</p>
+              <p className="text-sm font-semibold uppercase tracking-widest text-accent">Curri fleet · a separate opportunity</p>
               <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
                 Want loads dispatched to you? Join our carrier fleet.
               </h2>
