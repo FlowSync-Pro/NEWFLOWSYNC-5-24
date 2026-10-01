@@ -57,7 +57,7 @@ const escapeHtml = (t: string) =>
 /**
  * Owner alert (lib/alerts.ts). Plain and internal: the first line of the
  * message becomes the subject, the whole message the body, line breaks kept.
- * Goes to each ADMIN_EMAILS address separately so one bad address can't block
+ * Goes to each recipient (SUPPORT_EMAIL + ADMIN_EMAILS) separately so one bad address can't block
  * the others. Returns true if at least one send succeeded.
  */
 export async function sendOwnerAlertEmail(to: string[], message: string): Promise<boolean> {
@@ -67,7 +67,7 @@ export async function sendOwnerAlertEmail(to: string[], message: string): Promis
   <div style="max-width:560px;margin:0 auto;padding:28px 20px">
     <div style="font-size:13px;font-weight:700;letter-spacing:1px;color:#25e07a;margin-bottom:14px">FLOWSYNC OWNER ALERT</div>
     <div style="background:#0e1316;border:1px solid #1d262b;border-radius:14px;padding:22px;white-space:pre-wrap;line-height:1.6;font-size:15px">${escapeHtml(message)}</div>
-    <p style="color:#7c8a92;font-size:12px;margin-top:16px">Sent to the ADMIN_EMAILS addresses. Every alert is also in Vercel → Logs (search "[alert]").</p>
+    <p style="color:#7c8a92;font-size:12px;margin-top:16px">Sent to the support inbox and the ADMIN_EMAILS addresses. Every alert is also in Vercel → Logs (search "[alert]").</p>
   </div></body></html>`;
   let any = false;
   for (const addr of to) {
