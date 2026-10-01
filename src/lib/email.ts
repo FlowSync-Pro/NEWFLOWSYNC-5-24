@@ -177,9 +177,10 @@ function knownDetailsPhrase(d: DriverDetails): string | null {
  *   2. show them what to do first — the Roadmap is the 30-day plan
  *   3. earn the Premium upgrade with the real story, not a hard sell
  *
- * `upgradeUrl` is the post-checkout one-time-offer page (no sign-in needed) when
- * the caller has the Stripe session id, otherwise it falls back to the account
- * editor where a signed-in driver can upgrade.
+ * `upgradeUrl` is the post-checkout one-time-offer page (no sign-in needed).
+ * The "Add Premium — $50 more" section appears ONLY when it's passed, i.e. for a
+ * listing buyer whose 24h offer is real. Fleet buyers (Premium is already
+ * included) and admin-added drivers (no offer exists) get the email without it.
  */
 export async function sendDriverWelcomeEmail(opts: {
   to: string;
@@ -192,8 +193,6 @@ export async function sendDriverWelcomeEmail(opts: {
   /** The service chosen at checkout, e.g. "courier" → "Your FlowSync courier listing is paid for". */
   serviceId?: string | null;
 }) {
-  const base = new URL(opts.signInUrl).origin;
-  const upgradeUrl = opts.upgradeUrl || `${base}/account/edit`;
   const welcomeService = serviceLabel(opts.serviceId);
   // Accurate, not aspirational: the listing is paid for, but the driver isn't in
   // the directory until they finish their profile, upload their license and
@@ -205,6 +204,14 @@ export async function sendDriverWelcomeEmail(opts: {
     ? `<p ${P}>Same window for the fleet: for ${OFFER_WINDOW_HOURS} hours it's <strong style="color:#e7ecef">$${FLEET.addOnPriceWithoutPremium} more</strong> to get activated on our Curri carrier account (that includes everything in Premium). After that it's $${FLEET.price} from your account. <a href="${opts.fleetOfferUrl}" style="color:#25e07a">See the fleet offer →</a></p>`
     : "";
   const premium = premiumOfferPrice();
+  const premiumSection = opts.upgradeUrl
+    ? `
+    <h2 ${H2}>Want to run it like a business? Add Premium.</h2>
+    <p ${P}>The listing gets you found. Premium is the business behind it: <strong style="color:#e7ecef">the bidding calculator</strong> (your floor and your bid on every load), <strong style="color:#e7ecef">the business P&amp;L tracker</strong> (cost per mile, rate per mile, net income by week, month, quarter), the guide on running an ad for your delivery business, and <strong style="color:#e7ecef">the Curri mastermind course</strong> — the exact playbook below, lesson by lesson. Plus the Premium badge, priority placement above other drivers, and your own website link.</p>
+    <p ${P}>For <strong style="color:#e7ecef">${OFFER_WINDOW_HOURS} hours after your purchase</strong> it's <strong style="color:#e7ecef">$${premium} more, one-time</strong> (Premium's price includes the listing you already bought). After that it's $${premiumUpgradePrice()} from your account. No subscription, same 30-day money-back guarantee.</p>
+    <p style="margin:0 0 6px">${button(opts.upgradeUrl, `Add Premium — $${premium} more`)}</p>
+    ${fleetOffer}`
+    : "";
 
   const body = `
     <p ${P}>Hi ${opts.firstName} — you're in. ${listingPhrase}. Finish your profile and upload your license and insurance, and once we've approved you you're live in the directory, setting your own rates on every job.</p>
@@ -220,11 +227,7 @@ export async function sendDriverWelcomeEmail(opts: {
       <li ${LI}><strong style="color:#e7ecef">Follow the setup guides.</strong> USDOT and EIN for free (no filing service), LLC filing, medical courier requirements, and how to sign up with Curri and Dispatch as a carrier instead of a gig driver. Plus your own service menu with your prices.</li>
     </ol>
 
-    <h2 ${H2}>Want to run it like a business? Add Premium.</h2>
-    <p ${P}>The listing gets you found. Premium is the business behind it: <strong style="color:#e7ecef">the bidding calculator</strong> (your floor and your bid on every load), <strong style="color:#e7ecef">the business P&amp;L tracker</strong> (cost per mile, rate per mile, net income by week, month, quarter), the guide on running an ad for your delivery business, and <strong style="color:#e7ecef">the Curri mastermind course</strong> — the exact playbook below, lesson by lesson. Plus the Premium badge, priority placement above other drivers, and your own website link.</p>
-    <p ${P}>For <strong style="color:#e7ecef">${OFFER_WINDOW_HOURS} hours after your purchase</strong> it's <strong style="color:#e7ecef">$${premium} more, one-time</strong> (Premium's price includes the listing you already bought). After that it's $${premiumUpgradePrice()} from your account. No subscription, same 30-day money-back guarantee.</p>
-    <p style="margin:0 0 6px">${button(upgradeUrl, `Add Premium — $${premium} more`)}</p>
-    ${fleetOffer}
+    ${premiumSection}
 
     <h2 ${H2}>One rental van → four brand-new Sprinters</h2>
     <p ${P}>Quick story, because it's the whole reason FlowSync exists.</p>
