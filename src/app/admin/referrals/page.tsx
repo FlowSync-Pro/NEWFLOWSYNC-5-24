@@ -27,7 +27,7 @@ export default async function AdminReferralsPage() {
         <Link href="/admin" className="text-sm text-muted hover:text-foreground">← Admin dashboard</Link>
         <h1 className="mt-3 text-3xl font-bold tracking-tight">Fleet referrals</h1>
         <p className="mt-1 text-muted">
-          Drivers who signed up through someone&apos;s referral link on or after {fmt(FLEET.referralBonusStartsAt)} and
+          Drivers who signed up through someone&apos;s referral link after the bonus launched ({fmt(FLEET.referralBonusStartsAt)}, {FLEET.referralBonusStartsAt.toISOString().slice(11, 16)} UTC) and
           joined the Curri fleet. Each one earns their referrer ${FLEET.referralBonus} <strong className="text-foreground">once
           you&apos;ve activated them</strong> on the carrier account.
         </p>
