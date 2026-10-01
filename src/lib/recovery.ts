@@ -2,7 +2,7 @@ import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreas
 import { SITE_URL } from "./site";
 
 // Ready-to-send follow-up messages. One source so the admin recovery page, the
-// abandoned-checkout Telegram ping, and the recovery email all say the same
+// abandoned-checkout owner alert, and the recovery email all say the same
 // true things: the current price, the REAL increase date while it's pending,
 // and the 30-day guarantee. Short, personal, one link, no fake urgency.
 

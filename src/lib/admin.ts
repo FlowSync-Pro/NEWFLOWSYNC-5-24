@@ -2,7 +2,7 @@ import { prisma } from "./db";
 import { getSession } from "./session";
 
 /** Comma-separated allowlist of admin emails, e.g. ADMIN_EMAILS="me@x.com,you@y.com". */
-function adminEmails(): string[] {
+export function adminEmails(): string[] {
   return (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())

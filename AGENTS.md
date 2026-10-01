@@ -224,7 +224,7 @@ lead magnets; the gated ones are the account versions.
 
 **Abandoned-checkout recovery (live):** new-buyer Checkouts (listing, homepage fleet)
 expire after 60 minutes with Stripe recovery on and a phone field (owner-approved
-personal-data field). `checkout.session.expired` → recovery email + Telegram ping with a
+personal-data field). `checkout.session.expired` → recovery email + owner alert email (to `ADMIN_EMAILS`) with a
 ready-to-send text. `/admin/recovery` lists abandoned checkouts, unpaid signups, paid
 non-fleet drivers, and Verified-not-Premium drivers with copy/SMS/mailto buttons. All
 message copy lives in `src/lib/recovery.ts`: current price, the real increase date while

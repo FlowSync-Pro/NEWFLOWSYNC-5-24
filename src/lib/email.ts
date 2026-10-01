@@ -51,6 +51,32 @@ function shell(heading: string, body: string): string {
   </div></body></html>`;
 }
 
+const escapeHtml = (t: string) =>
+  t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/**
+ * Owner alert (lib/alerts.ts). Plain and internal: the first line of the
+ * message becomes the subject, the whole message the body, line breaks kept.
+ * Goes to each ADMIN_EMAILS address separately so one bad address can't block
+ * the others. Returns true if at least one send succeeded.
+ */
+export async function sendOwnerAlertEmail(to: string[], message: string): Promise<boolean> {
+  const firstLine = message.split("\n").find((l) => l.trim())?.trim() ?? "Alert";
+  const subject = `[FlowSync alert] ${firstLine}`.slice(0, 150);
+  const html = `<!doctype html><html><body style="margin:0;background:#07090b;font-family:Arial,Helvetica,sans-serif;color:#e7ecef">
+  <div style="max-width:560px;margin:0 auto;padding:28px 20px">
+    <div style="font-size:13px;font-weight:700;letter-spacing:1px;color:#25e07a;margin-bottom:14px">FLOWSYNC OWNER ALERT</div>
+    <div style="background:#0e1316;border:1px solid #1d262b;border-radius:14px;padding:22px;white-space:pre-wrap;line-height:1.6;font-size:15px">${escapeHtml(message)}</div>
+    <p style="color:#7c8a92;font-size:12px;margin-top:16px">Sent to the ADMIN_EMAILS addresses. Every alert is also in Vercel → Logs (search "[alert]").</p>
+  </div></body></html>`;
+  let any = false;
+  for (const addr of to) {
+    const r = await send(addr, subject, html);
+    any = any || r.sent;
+  }
+  return any;
+}
+
 function button(href: string, label: string): string {
   return `<a href="${href}" style="display:inline-block;background:#25e07a;color:#04130a;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:999px;margin-top:8px">${label}</a>`;
 }
