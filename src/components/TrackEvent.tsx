@@ -3,8 +3,10 @@
 import { useEffect } from "react";
 
 // Fires a single Meta Pixel conversion event on mount (no-op without the pixel).
-// `eventId` enables Meta's deduplication so a page refresh (or a future
-// server-side Conversions API event) doesn't double-count the same purchase.
+// `eventId` enables Meta's deduplication so a page refresh, or the server-side
+// Conversions API event with the same id (lib/meta-capi.ts), doesn't
+// double-count the same purchase. Meta only reads the id from the 4th
+// argument — fbq('track', name, data, { eventID }) — not from inside `data`.
 export default function TrackEvent({
   event,
   value,
@@ -24,10 +26,8 @@ export default function TrackEvent({
       data.value = value;
       data.currency = currency;
     }
-    if (eventId) {
-      data.eventID = eventId;
-    }
-    w.fbq("track", event, data);
+    if (eventId) w.fbq("track", event, data, { eventID: eventId });
+    else w.fbq("track", event, data);
   }, [event, value, currency, eventId]);
 
   return null;
