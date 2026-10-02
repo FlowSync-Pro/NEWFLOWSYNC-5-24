@@ -304,6 +304,61 @@ export function earningsBreakdownEmail(v: Vehicle): { subject: string; heading: 
   return { subject: `Your ${v.label.toLowerCase()} load breakdown`, heading: "What loads are going for", body };
 }
 
+/**
+ * Lead follow-ups L1–L3 for earnings-quiz signups (owner-approved copy,
+ * 2026-10-02): day 2, 5 and 10 after signup. lib/leads.ts decides who gets
+ * them; prices come from lib/pricing.ts. L1 has a fleet version (vans and
+ * trucks) and a listing version (cars).
+ */
+export function leadFollowupEmail(step: 1 | 2 | 3, v: Vehicle | undefined): { subject: string; heading: string; body: string } {
+  const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+  const notCurri = `<p style="color:#7c8a92;font-size:12px;font-style:italic;line-height:1.5;margin:0 0 14px">FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.</p>`;
+  const refund = `fully refundable until you're activated`;
+  if (step === 1 && v && v.track === "fleet") {
+    const name = escapeHtml(v.label.toLowerCase());
+    const body = `
+    <p ${P}>Hi — two days ago you looked up what loads go for with a ${name}. Quick context on those numbers, because it's the part most drivers miss.</p>
+    <p ${P}>They were bids we placed, not app prices. On a gig account you take the price the app lists. On our carrier account we bid, and when a load justifies it we aim well above the listed price. One example: a load listed at $100.45 that we won with a $300 bid. That's one load, not a promise — bids don't always win, and every market is different.</p>
+    <p ${P}>That's the Curri fleet: you run loads on our carrier account, we bid them, and you're paid every Friday minus a ${FLEET.dispatchFeePercent}% dispatching fee. $${FLEET.price} one-time, ${refund}.</p>
+    <p style="margin:0 0 6px">${button(`${base}/#curri-fleet`, "See how the fleet works")}</p>
+    ${notCurri}
+    ${signoff()}`;
+    return { subject: `What those ${v.label.toLowerCase()} bids mean for you`, heading: "What those bids mean", body };
+  }
+  if (step === 1) {
+    const body = `
+    <p ${P}>Hi — Curri loads aren't built for cars, but your own customers are. A Verified listing puts you in our directory, where local customers book you directly at the prices you set.</p>
+    <p ${P}>The drivers who land a first job fastest do two things: send their profile link to people they know, and post in local groups like Nextdoor. Your dashboard walks you through it step by step.</p>
+    <p ${P}>$${listingPrice()} one-time, with a ${GUARANTEE_DAYS}-day money-back guarantee — no questions asked.</p>
+    <p style="margin:0 0 6px">${button(`${base}/pricing`, "Get listed")}</p>
+    ${signoff()}`;
+    return { subject: "How car drivers find their own customers", heading: "Your own customers", body };
+  }
+  if (step === 2) {
+    const body = `
+    <p ${P}>Hi — whatever you drive, two free tools help you avoid unprofitable jobs. No account needed:</p>
+    <ul style="padding-left:20px;margin:0 0 14px">
+      <li ${LI}><strong style="color:#e7ecef">Quote calculator</strong> — prices a job so it covers your time, miles and costs.</li>
+      <li ${LI}><strong style="color:#e7ecef">Profit &amp; loss tracker</strong> — shows what you actually take home after fuel and expenses (<a href="${base}/tools/profit-loss" style="color:#25e07a">open it here</a>).</li>
+    </ul>
+    <p ${P}>Use them on your next few jobs and you'll know your real numbers.</p>
+    <p style="margin:0 0 6px">${button(`${base}/calculator`, "Open the quote calculator")}</p>
+    ${signoff()}`;
+    return { subject: "Two free tools before your next job", heading: "Know your real numbers", body };
+  }
+  const body = `
+    <p ${P}>Hi — this is the last email in this series. If you're still deciding, here are your two options:</p>
+    <ul style="padding-left:20px;margin:0 0 14px">
+      <li ${LI}><strong style="color:#e7ecef">Verified listing — $${listingPrice()} one-time.</strong> Customers book you directly. ${GUARANTEE_DAYS}-day money-back guarantee.</li>
+      <li ${LI}><strong style="color:#e7ecef">Curri fleet — $${FLEET.price} one-time.</strong> Run loads on our carrier account; we bid them; paid weekly minus a ${FLEET.dispatchFeePercent}% dispatching fee. Fully refundable until you're activated.</li>
+    </ul>
+    <p ${P}>If now's not the time, no worries — the free tools stay free. Reply anytime with questions; a real person reads it.</p>
+    <p style="margin:0 0 6px">${button(`${base}/`, "Compare your options")}</p>
+    ${notCurri}
+    ${signoff()}`;
+  return { subject: "Last note from me", heading: "Your two options", body };
+}
+
 /** Cancel an email scheduled with Resend. True if Resend accepted the cancel. */
 export async function cancelScheduledEmail(id: string): Promise<boolean> {
   const resend = getResend();
