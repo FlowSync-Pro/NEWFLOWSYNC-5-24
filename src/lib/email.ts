@@ -150,6 +150,32 @@ export function offerClosingEmail(opts: {
   };
 }
 
+/**
+ * M1b — "fleet offer closing soon" (owner-approved copy, 2026-10-02). For a
+ * driver who bought Premium and hasn't joined the fleet, scheduled for 20h
+ * after the Premium purchase. Content only, like offerClosingEmail above.
+ */
+export function fleetOfferClosingEmail(opts: {
+  firstName: string;
+  hoursLeft: number;
+  fleetUrl: string;
+}): { subject: string; heading: string; body: string } {
+  const body = `
+    <p ${P}>Hi ${escapeHtml(opts.firstName)} — since you're on Premium, joining the Curri fleet is <strong style="color:#e7ecef">$${FLEET.addOnPrice} more</strong> for about ${opts.hoursLeft} more hours, instead of $${FLEET.price} from your account later. No pressure; Premium is yours either way.</p>
+    <p ${P}>What you'd get: activated on our carrier account (usually the same day we have your details, while this month's spots are open), loads dispatched to you, we bid them, you run the ones you want, paid every Friday with a ${FLEET.dispatchFeePercent}% dispatching fee. How many loads you see depends on where you are.</p>
+    <p style="margin:0 0 6px">${button(opts.fleetUrl, "See the fleet offer")}</p>
+    <p style="color:#7c8a92;font-size:13px;font-style:italic;line-height:1.5;margin:0 0 14px">${FLEET.refundShort}</p>
+
+    <p ${P}>Questions? Just reply.</p>
+    <p style="color:#7c8a92;font-size:12px;font-style:italic;line-height:1.5;margin:0 0 14px">FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.</p>
+    <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
+  return {
+    subject: `Your fleet offer closes in about ${opts.hoursLeft} hours`,
+    heading: `About ${opts.hoursLeft} hours left`,
+    body,
+  };
+}
+
 /** Cancel an email scheduled with Resend. True if Resend accepted the cancel. */
 export async function cancelScheduledEmail(id: string): Promise<boolean> {
   const resend = getResend();
