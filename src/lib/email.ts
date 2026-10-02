@@ -680,7 +680,9 @@ export async function sendCheckoutRecoveryEmail(opts: {
     ${
       pending
         ? `<p ${P}>One heads-up so you're not surprised later: the listing is <strong style="color:#e7ecef">$${price} until ${LISTING_INCREASE_DATE_LABEL}</strong>, then it goes to $${LISTING_PRICE_AFTER}. Same ${GUARANTEE_DAYS}-day money-back guarantee either way.</p>`
-        : `<p ${P}>It's <strong style="color:#e7ecef">$${price} one-time</strong>, with a ${GUARANTEE_DAYS}-day money-back guarantee.</p>`
+        : isFleet
+          ? `<p ${P}>It's <strong style="color:#e7ecef">$${price} one-time</strong>. ${FLEET.refundShort}</p>`
+          : `<p ${P}>It's <strong style="color:#e7ecef">$${price} one-time</strong>, with a ${GUARANTEE_DAYS}-day money-back guarantee.</p>`
     }
     <p style="margin:0 0 18px">${button(opts.resumeUrl, isFleet ? `Finish joining — $${price}` : `Finish my listing — $${price}`)}</p>
     <p ${P}>Stuck on something, or just have a question? Reply to this email — a real person reads it.</p>
