@@ -1,6 +1,7 @@
 import { Resend } from "resend";
-import { SUPPORT_EMAIL } from "./site";
+import { SITE_URL, SUPPORT_EMAIL } from "./site";
 import { fleetTelegramInviteUrl } from "./telegram-invite";
+import { EARNINGS_SOURCE, type Vehicle } from "./earnings";
 import { FLEET, GUARANTEE_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, OFFER_WINDOW_HOURS, premiumOfferPrice, premiumUpgradePrice } from "./pricing";
 
 // Lazy + graceful: when RESEND_API_KEY isn't set, email sends are skipped (logged)
@@ -98,12 +99,16 @@ export async function sendMarketingEmail(opts: {
   unsubscribeUrl: string;
   postalAddress: string;
   scheduledAt?: string;
+  /** Why they're getting it, for people without an account (e.g. quiz leads). Default: the account wording. */
+  reason?: string;
 }): Promise<EmailResult> {
+  const link = `<a href="${opts.unsubscribeUrl}" style="color:#7c8a92;text-decoration:underline">Unsubscribe</a>`;
   const footer =
     `Barham Transport LLC · ${escapeHtml(opts.postalAddress)}<br>` +
-    `You're getting this because you have a FlowSync driver account. ` +
-    `<a href="${opts.unsubscribeUrl}" style="color:#7c8a92;text-decoration:underline">Unsubscribe</a> from tips and offers — ` +
-    `you'll still get emails about your account and payments.`;
+    (opts.reason
+      ? `${escapeHtml(opts.reason)} ${link} anytime.`
+      : `You're getting this because you have a FlowSync driver account. ` +
+        `${link} from tips and offers — you'll still get emails about your account and payments.`);
   return send(opts.to, opts.subject, shell(opts.heading, opts.body, footer), {
     headers: {
       "List-Unsubscribe": `<${opts.unsubscribeUrl}>, <mailto:${SUPPORT_EMAIL}?subject=unsubscribe>`,
@@ -257,6 +262,45 @@ export function winbackEmail(opts: {
     <p style="margin:0 0 6px">${button(opts.url, "Pick up where I left off")}</p>
     ${signoff()}`;
   return { subject: `Still building your delivery business, ${opts.firstName}?`, heading: "Checking in", body };
+}
+
+/**
+ * The earnings-quiz breakdown a visitor asked to have emailed (owner-approved
+ * copy, 2026-10-02). Same wording as the result on /tools/earnings: these are
+ * BIDS we placed, never earnings. Prices and fees come from lib/pricing.ts.
+ */
+export function earningsBreakdownEmail(v: Vehicle): { subject: string; heading: string; body: string } {
+  const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+  const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
+  const r = v.range;
+  let result: string;
+  let cta: string;
+  if (v.track === "listing") {
+    result =
+      `<p ${P}>Curri loads are for pickups, vans and trucks, so we don't have car numbers to show. With a car, your strongest path is your own direct customers. ` +
+      `A Verified listing puts you in our directory, where customers book you directly: ${usd(listingPrice())} one-time, with a ${GUARANTEE_DAYS}-day money-back guarantee.</p>`;
+    cta = button(`${base}/pricing`, "Get listed");
+  } else if (r) {
+    result =
+      `<p ${P}><strong style="color:#e7ecef">${escapeHtml(v.label)}:</strong> most of our recent bids were <strong style="color:#25e07a">${usd(r.typicalLow)}–${usd(r.typicalHigh)} per load</strong> (median ${usd(r.median)}). ` +
+      `The full range ran from ${usd(r.min)}${r.minNote ? ` for ${escapeHtml(r.minNote)}` : ""} to ${usd(r.max)}${r.maxNote ? ` for ${escapeHtml(r.maxNote)}` : ""}.</p>` +
+      `<p ${P}>These are bids we placed from the ${EARNINGS_SOURCE.account} on ${EARNINGS_SOURCE.dates} (${r.bids} ${escapeHtml(v.label)} bids). Not every bid wins, and a bid isn't a payout. ` +
+      `Fleet drivers are paid the load rate minus the ${FLEET.dispatchFeePercent}% dispatching fee, and cover their own fuel, insurance and wear.</p>`;
+    cta = button(`${base}/#curri-fleet`, "See how the Curri fleet works");
+  } else {
+    result =
+      `<p ${P}>We haven't bid enough ${escapeHtml(v.label.toLowerCase())} loads recently to show a fair range, so we're not going to guess. ` +
+      `${escapeHtml(v.label)}s can run Curri loads through our fleet.</p>`;
+    cta = button(`${base}/#curri-fleet`, "See how the Curri fleet works");
+  }
+  const body = `
+    <p ${P}>Here's the breakdown you asked for on our load-rate tool.</p>
+    ${result}
+    <p style="margin:0 0 6px">${cta}</p>
+    <p style="color:#7c8a92;font-size:12px;font-style:italic;line-height:1.5;margin:0 0 14px">These numbers are bids we placed on real loads over two days. They are not typical or guaranteed earnings, and not what any driver was paid. What you make depends on your market, the hours you drive, the loads you accept and win, and your costs. FlowSync does not promise any income. FlowSync and Barham Transport LLC are independent and not affiliated with Curri.</p>
+    <p ${P}>Questions? Just reply.</p>
+    ${signoff()}`;
+  return { subject: `Your ${v.label.toLowerCase()} load breakdown`, heading: "What loads are going for", body };
 }
 
 /** Cancel an email scheduled with Resend. True if Resend accepted the cancel. */

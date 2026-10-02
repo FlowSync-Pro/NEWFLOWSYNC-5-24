@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { EARNINGS_SOURCE, VEHICLES, type Vehicle, type VehicleId } from "@/lib/earnings";
+import { useState, type FormEvent } from "react";
+import { EARNINGS_CONSENT_TEXT, EARNINGS_SOURCE, VEHICLES, type Vehicle, type VehicleId } from "@/lib/earnings";
+import { emailEarningsBreakdown } from "@/app/actions/leads";
 import { FLEET, GUARANTEE_DAYS, listingPrice } from "@/lib/pricing";
 
 // Owner-approved copy (2026-10-02). Numbers are BIDS we placed, never earnings —
@@ -57,6 +58,72 @@ function ListingResult() {
   );
 }
 
+/**
+ * Optional "email me this" box under a result. The result never depends on it.
+ * On a brand-new signup the server returns an id and we fire Meta's Lead event
+ * once (owner-approved 2026-10-02). No email or other personal data goes to Meta.
+ */
+function EmailBreakdown({ vehicle }: { vehicle: VehicleId }) {
+  const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot — hidden from people
+  const [state, setState] = useState<{ status: "idle" | "sending" | "done" | "error"; message?: string }>({ status: "idle" });
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setState({ status: "sending" });
+    const r = await emailEarningsBreakdown({ email, vehicle, website });
+    if (!r.ok) return setState({ status: "error", message: r.error });
+    if (r.leadEventId) {
+      const w = window as unknown as { fbq?: (...a: unknown[]) => void };
+      w.fbq?.("track", "Lead", { content_name: "earnings-quiz" }, { eventID: r.leadEventId });
+    }
+    setState({ status: "done", message: r.message });
+  }
+
+  if (state.status === "done") {
+    return <p className="mt-6 border-t border-border pt-5 text-sm text-accent">{state.message}</p>;
+  }
+  return (
+    <form onSubmit={submit} className="mt-6 border-t border-border pt-5">
+      <label htmlFor="breakdown-email" className="text-sm font-medium">Want this in your inbox?</label>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+        <input
+          id="breakdown-email"
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition-colors focus:border-accent"
+        />
+        <button
+          type="submit"
+          disabled={state.status === "sending"}
+          className="btn-ghost shrink-0 rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60"
+        >
+          {state.status === "sending" ? "Sending…" : "Email me this breakdown"}
+        </button>
+      </div>
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        value={website}
+        onChange={(e) => setWebsite(e.target.value)}
+        className="absolute -left-[9999px] h-px w-px opacity-0"
+      />
+      <p className="mt-2 text-xs text-muted">
+        {`${EARNINGS_CONSENT_TEXT} `}
+        <Link href="/privacy" className="underline hover:text-foreground">Privacy policy</Link>
+      </p>
+      {state.status === "error" && <p className="mt-2 text-sm text-red-300">{state.message}</p>}
+    </form>
+  );
+}
+
 export default function EarningsQuiz() {
   const [picked, setPicked] = useState<VehicleId | null>(null);
   const vehicle = VEHICLES.find((v) => v.id === picked) ?? null;
@@ -96,6 +163,7 @@ export default function EarningsQuiz() {
       {vehicle && (
         <div className="card mt-8 p-6" aria-live="polite">
           {vehicle.track === "fleet" ? <FleetResult v={vehicle} /> : <ListingResult />}
+          <EmailBreakdown key={vehicle.id} vehicle={vehicle.id} />
         </div>
       )}
 

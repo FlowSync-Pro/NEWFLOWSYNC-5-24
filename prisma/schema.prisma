@@ -146,6 +146,28 @@ model EmailLog {
   @@index([sentAt])
 }
 
+/// Email signups from free public tools (the /tools/earnings quiz), from people
+/// who may not have an account. Additive (owner-approved 2026-10-02): a new
+/// standalone table — nothing else references it and it touches no driver data.
+/// Stores only what the form needs; no name, phone or tracking.
+model Lead {
+  id             String    @id @default(cuid())
+  /// Lowercased.
+  email          String    @unique
+  /// What they picked in the tool, e.g. "sprinter".
+  vehicle        String?
+  /// Which tool they signed up from, e.g. "earnings-quiz".
+  source         String
+  /// The exact consent wording they agreed to, and when.
+  consentText    String
+  consentAt      DateTime  @default(now())
+  /// Last email we sent them (limits the form to one email per address per day).
+  lastEmailedAt  DateTime?
+  unsubscribedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
 model DriverProfile {
   id     String @id @default(cuid())
   userId String @unique

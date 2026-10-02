@@ -14,6 +14,9 @@ export const EARNINGS_SOURCE = {
   totalBids: 119,
 };
 
+/** The exact consent wording shown under the email box — also stored with each signup (Lead.consentText). */
+export const EARNINGS_CONSENT_TEXT = "Email me this breakdown and tips for drivers. Unsubscribe anytime.";
+
 export type VehicleId = "car" | "pickup" | "cargo-van" | "sprinter" | "box-truck";
 
 export interface BidRange {
