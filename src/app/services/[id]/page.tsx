@@ -66,7 +66,7 @@ export default async function ServiceDetailPage({ params }: PageProps<"/services
     description: s.description,
     areaServed: "US",
     provider: { "@type": "Organization", name: "FlowSync", url: SITE_URL },
-    offers: { "@type": "Offer", priceCurrency: "USD", price: "17", description: "One-time driver listing" },
+    offers: { "@type": "Offer", priceCurrency: "USD", price: String(listingPrice()), description: "One-time driver listing" },
   };
 
   return (
