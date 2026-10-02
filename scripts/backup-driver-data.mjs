@@ -51,6 +51,9 @@ const MODELS = [
   "telegramProcessedUpdate",
   "telegramBotSetting",
   "emailLog",
+  // Email signups from the free load-rate tool (/tools/earnings). Not driver
+  // data, but a backup should be total. No foreign keys, so order doesn't matter.
+  "lead",
 ];
 
 async function main() {
