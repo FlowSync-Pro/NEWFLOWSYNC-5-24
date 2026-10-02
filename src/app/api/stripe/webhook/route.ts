@@ -11,7 +11,7 @@ import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, 
 import { SITE_URL } from "@/lib/site";
 import { FLEET, isPremiumTier } from "@/lib/pricing";
 import { recoveryText } from "@/lib/recovery";
-import { cancelOfferClosingReminder, scheduleOfferClosingReminder } from "@/lib/offer-reminders";
+import { cancelFleetOfferReminder, cancelOfferClosingReminder, scheduleFleetOfferReminder, scheduleOfferClosingReminder } from "@/lib/offer-reminders";
 import { cancelScheduledMarketing } from "@/lib/marketing";
 import type { ServiceId } from "@/lib/services";
 
@@ -294,6 +294,16 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     fleetOfferUrl: `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(session.id)}`,
   }));
 
+  // M1b: remind them before this purchase's fleet offer closes. M1 was
+  // cancelled above, first, so it doesn't count toward the 48h gap. Skipped
+  // for fleet members by lib/marketing.ts. Never throws.
+  await scheduleFleetOfferReminder({
+    userId,
+    firstName: profile.firstName || "there",
+    upgradeSessionId: session.id,
+    purchasedAt: new Date(session.created * 1000),
+  });
+
   // Server-side Purchase event to Meta (CAPI). Same event_id as the browser
   // pixel that fires on /signin?checkout=success&upgraded=1 -> Meta dedupes
   // into one Purchase per upgrade.
@@ -366,8 +376,9 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     },
   });
 
-  // They joined the fleet, so the "offer closing" reminder (M1) no longer applies.
+  // They joined the fleet, so neither offer reminder (M1, M1b) applies any more.
   await cancelOfferClosingReminder(user.id);
+  await cancelFleetOfferReminder(user.id);
 
   if (!user.fleetJoinedAt) {
     await prisma.user.update({ where: { id: user.id }, data: { fleetJoinedAt: new Date() } });
