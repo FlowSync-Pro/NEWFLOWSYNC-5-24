@@ -176,6 +176,89 @@ export function fleetOfferClosingEmail(opts: {
   };
 }
 
+const signoff = () => `<p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
+
+/**
+ * M2 — day 3 "finish setup" (owner-approved copy, 2026-10-02). For a new buyer
+ * still missing their profile, main service, license or insurance. Content
+ * only: lib/followups.ts picks who gets it and lib/marketing.ts adds the footer.
+ */
+export function finishSetupEmail(opts: {
+  firstName: string;
+  /** No profile yet, or no main service picked. */
+  profileUnfinished: boolean;
+  missingLicense: boolean;
+  missingInsurance: boolean;
+  url: string;
+}): { subject: string; heading: string; body: string } {
+  const steps: string[] = [];
+  if (opts.profileUnfinished) steps.push("finish setting up your profile (name and main service)");
+  if (opts.missingLicense) steps.push("upload your driver's license");
+  if (opts.missingInsurance) steps.push("upload proof of insurance");
+  const uploads = Number(opts.missingLicense) + Number(opts.missingInsurance);
+  const name = escapeHtml(opts.firstName);
+  const subject = opts.profileUnfinished
+    ? `${opts.firstName}, your FlowSync profile isn't set up yet`
+    : `${opts.firstName}, ${uploads === 1 ? "one upload" : "two uploads"} left`;
+  const body = `
+    <p ${P}>Hi ${name} — you paid for your listing a few days ago, but you're not in the review queue yet. Here's what's left:</p>
+    <ul style="padding-left:20px;margin:0 0 14px">${steps.map((s) => `<li ${LI}>${s}</li>`).join("")}</ul>
+    <p ${P}>A photo from your phone works. PDFs won't upload yet. Once both documents are in, we review you, and you'll get an email when you're live in the directory.</p>
+    <p style="margin:0 0 6px">${button(opts.url, "Finish my profile")}</p>
+    <p ${P}>Stuck on anything? Reply and tell me what — I read these.</p>
+    ${signoff()}`;
+  return { subject, heading: "Almost in the review queue", body };
+}
+
+/**
+ * M3 — day 7 "first week" (owner-approved copy, 2026-10-02). The Premium line
+ * only shows for drivers without Premium tools (not Premium, fleet or legacy).
+ */
+export function firstWeekEmail(opts: {
+  firstName: string;
+  launchPct: number;
+  showPremium: boolean;
+  url: string;
+}): { subject: string; heading: string; body: string } {
+  const premium = opts.showPremium
+    ? `<p ${P}>When you're ready to run it like a business, Premium adds the bidding calculator, the P&amp;L tracker and the Curri mastermind course — $${premiumUpgradePrice()} one-time from your account, with the same ${GUARANTEE_DAYS}-day guarantee.</p>`
+    : "";
+  const body = `
+    <p ${P}>Hi ${escapeHtml(opts.firstName)} — one week in. Wherever you are, these three moves matter most this week:</p>
+    <ol style="padding-left:20px;margin:0 0 14px">
+      <li ${LI}><strong style="color:#e7ecef">Open your Driver Roadmap and tick one box today.</strong> It's built to be done a box a day. (${opts.launchPct}% done so far.)</li>
+      <li ${LI}><strong style="color:#e7ecef">Set your service menu and prices</strong> in My Services, so customers know what you do and what it costs.</li>
+      <li ${LI}><strong style="color:#e7ecef">Read one setup guide:</strong> USDOT and EIN (both free to apply for), LLC filing (there's a small state filing fee), or signing up with Curri and Dispatch as a carrier.</li>
+    </ol>
+    <p style="margin:0 0 6px">${button(opts.url, "Open my Roadmap")}</p>
+    ${premium}
+    ${signoff()}`;
+  return { subject: "Your first week on FlowSync — the next three things to do", heading: "One week in", body };
+}
+
+/**
+ * M4 — win-back for a quiet driver (owner-approved copy, 2026-10-02). "Quiet"
+ * means no Roadmap check-in for 14+ days (or never) — the only activity the
+ * site records — so the copy talks about the Roadmap, not logins.
+ */
+export function winbackEmail(opts: {
+  firstName: string;
+  neverCheckedIn: boolean;
+  nextStep: string;
+  url: string;
+}): { subject: string; heading: string; body: string } {
+  const quiet = opts.neverCheckedIn
+    ? "you haven't checked in on your Driver Roadmap yet"
+    : "you haven't checked in on your Driver Roadmap in a couple of weeks";
+  const body = `
+    <p ${P}>Hi ${escapeHtml(opts.firstName)} — ${quiet}, so I wanted to check in, not sell you anything.</p>
+    <p ${P}>If life got busy: pick up where you left off with one small step — <strong style="color:#e7ecef">${escapeHtml(opts.nextStep)}</strong>.</p>
+    <p ${P}>If something got in the way — the setup, the documents, or you're not sure what to do next — reply and tell me. A real person reads it, and I'll point you to the right next step.</p>
+    <p style="margin:0 0 6px">${button(opts.url, "Pick up where I left off")}</p>
+    ${signoff()}`;
+  return { subject: `Still building your delivery business, ${opts.firstName}?`, heading: "Checking in", body };
+}
+
 /** Cancel an email scheduled with Resend. True if Resend accepted the cancel. */
 export async function cancelScheduledEmail(id: string): Promise<boolean> {
   const resend = getResend();
