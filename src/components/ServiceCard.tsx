@@ -30,7 +30,7 @@ export default function ServiceCard({ service }: { service: Service }) {
       </span>
       <p className="mt-3 flex-1 text-sm text-muted">{service.description}</p>
       <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-        <span className="text-xs text-muted">Earnings</span>
+        <span className="text-xs text-muted">Suggested rate</span>
         <span className="text-sm font-semibold text-accent">{service.earnings}</span>
       </div>
     </Link>

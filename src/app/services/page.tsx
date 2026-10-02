@@ -10,7 +10,7 @@ import JsonLd from "@/components/JsonLd";
 export const metadata: Metadata = {
   title: "Services — eight ways to earn",
   description:
-    "Explore the eight delivery and errand services you can offer on FlowSync — grocery, food, furniture, courier, pharmacy, senior errands, moving, and auto parts — with typical vehicles and earnings.",
+    "Explore the eight delivery and errand services you can offer on FlowSync — grocery, food, furniture, courier, pharmacy, senior errands, moving, and auto parts — with typical vehicles and suggested rates to quote.",
   alternates: { canonical: `${SITE_URL}/services` },
 };
 
@@ -57,7 +57,7 @@ export default function ServicesPage() {
         <Reveal className="mt-14">
           <div className="card overflow-hidden">
             <div className="border-b border-border bg-surface-2 px-6 py-4">
-              <h2 className="font-semibold">Service & typical vehicle</h2>
+              <h2 className="font-semibold">Service, typical vehicle & suggested rate</h2>
             </div>
             <div className="divide-y divide-border">
               {SERVICES.map((s) => (

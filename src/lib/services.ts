@@ -31,6 +31,7 @@ export interface Service {
   description: string;
   /** the headline shown on the matched profile page */
   profileHeadline: string;
+  /** Suggested hourly rate to QUOTE (a pricing starting point), not an earnings claim. Shown as "Suggested rate". */
   earnings: string;
   demand: "High" | "Very high" | "Steady";
   tasks: string[];
