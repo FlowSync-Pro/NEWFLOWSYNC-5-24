@@ -229,7 +229,7 @@ export async function adminCreateDriver(_prev: CreateDriverState, formData: Form
   });
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-  await alertIfEmailFailed(await sendDriverWelcomeEmail({ to: email, firstName, tempPassword, signInUrl: `${base}/signin` }));
+  await alertIfEmailFailed(await sendDriverWelcomeEmail({ to: email, firstName, tempPassword, signInUrl: `${base}/signin`, challenge: false }));
 
   revalidatePath("/admin");
   revalidatePath("/find-a-driver");
