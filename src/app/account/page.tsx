@@ -8,6 +8,8 @@ import { currentStreak, parseProgress, todayKey } from "@/lib/roadmap";
 import { referralStats, REWARD_THRESHOLD } from "@/lib/referrals";
 import { SITE_URL } from "@/lib/site";
 import RoadmapTracker from "@/components/RoadmapTracker";
+import ChallengeCard from "@/components/ChallengeCard";
+import { CHALLENGE_STARTS_AT, challengeDay } from "@/lib/challenge";
 import ReferralCard from "@/components/ReferralCard";
 import FounderLoom from "@/components/FounderLoom";
 import TrackEvent from "@/components/TrackEvent";
@@ -26,7 +28,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   if (session.mustResetPassword) redirect("/reset-password");
 
   const [profile, user, review] = await Promise.all([
-    prisma.driverProfile.findUnique({ where: { userId: session.userId }, select: { firstName: true } }),
+    prisma.driverProfile.findUnique({ where: { userId: session.userId }, select: { id: true, firstName: true, verified: true, primaryService: true } }),
     prisma.user.findUnique({ where: { id: session.userId }, select: { roadmapData: true, email: true } }),
     // Reviews are invite-only; the chip only makes sense for a driver who
     // already has one to edit. Invitees arrive through their link instead.
@@ -39,6 +41,16 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const progress = parseProgress(user?.roadmapData);
   const ref = await referralStats(session.userId);
   const shareBase = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+
+  // First-$47 Challenge: new buyers only (first paid listing/fleet payment on or
+  // after CHALLENGE_STARTS_AT). The profile link only works once they're approved.
+  const firstPaid = await prisma.payment.findFirst({
+    where: { userId: session.userId, status: "PAID", type: { in: ["LISTING", "FLEET"] } },
+    orderBy: { createdAt: "asc" },
+    select: { createdAt: true },
+  });
+  const inChallenge = !!firstPaid && firstPaid.createdAt >= CHALLENGE_STARTS_AT;
+  const publicProfileUrl = profile.verified && profile.primaryService ? `${shareBase}/d/${profile.id}` : null;
 
   return (
     <div className="relative">
@@ -77,6 +89,10 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
             <span className="shrink-0 text-sm font-medium text-accent">Open guide →</span>
           </Link>
         </div>
+
+        {inChallenge && firstPaid && (
+          <ChallengeCard day={challengeDay(firstPaid.createdAt)} initialTasks={progress.tasks} profileUrl={publicProfileUrl} />
+        )}
 
         {/* The Roadmap is the dashboard. Everything else is a side trip. */}
         <RoadmapTracker

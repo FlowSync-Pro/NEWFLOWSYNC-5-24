@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { SITE_URL, SUPPORT_EMAIL } from "./site";
 import { fleetTelegramInviteUrl } from "./telegram-invite";
+import { CHALLENGE_DAYS, challengeName } from "./challenge";
 import { EARNINGS_SOURCE, type Vehicle } from "./earnings";
 import { FLEET, GUARANTEE_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, OFFER_WINDOW_HOURS, premiumOfferPrice, premiumUpgradePrice } from "./pricing";
 
@@ -444,6 +445,8 @@ export async function sendDriverWelcomeEmail(opts: {
   fleetOfferUrl?: string;
   /** The service chosen at checkout, e.g. "courier" → "Your FlowSync courier listing is paid for". */
   serviceId?: string | null;
+  /** Mention the First-$47 Challenge (paid buyers). Off for drivers an admin adds by hand. Default on. */
+  challenge?: boolean;
 }) {
   const welcomeService = serviceLabel(opts.serviceId);
   // Accurate, not aspirational: the listing is paid for, but the driver isn't in
@@ -478,6 +481,12 @@ export async function sendDriverWelcomeEmail(opts: {
       <li ${LI}><strong style="color:#e7ecef">Open your Driver Roadmap.</strong> It's the 30-day action plan, one box at a time. Do a box a day and you'll be set up properly, with a real shot at your first direct customer.</li>
       <li ${LI}><strong style="color:#e7ecef">Follow the setup guides.</strong> USDOT and EIN for free (no filing service), LLC filing, medical courier requirements, and how to sign up with Curri and Dispatch as a carrier instead of a gig driver. Plus your own service menu with your prices.</li>
     </ol>
+    ${
+      opts.challenge === false
+        ? ""
+        : `<h2 ${H2}>The ${challengeName()}</h2>
+    <p ${P}>Your dashboard has a ${CHALLENGE_DAYS}-day, step-by-step plan aimed at landing the job that pays your listing back — one small step a day. It's a goal, not a promise, and your ${GUARANTEE_DAYS}-day money-back guarantee applies either way.</p>`
+    }
 
     ${premiumSection}
 

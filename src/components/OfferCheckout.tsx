@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CHALLENGE_DAYS, challengeName } from "@/lib/challenge";
 import {
   BUMPS,
   GUARANTEE_DAYS,
@@ -264,6 +265,13 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
                 for a full refund — no questions, no hard feelings.
               </p>
             </div>
+
+            {/* First-$47 Challenge (owner-approved 2026-10-02). A goal, not a promise —
+                and it leaves the guarantee above exactly as it is. */}
+            <p className="mt-4 text-center text-xs text-muted">
+              <strong className="text-foreground">{`The ${challengeName()}:`}</strong>
+              {` a ${CHALLENGE_DAYS}-day, step-by-step plan aimed at landing the job that pays your listing back. Not for you? The ${GUARANTEE_DAYS}-day money-back guarantee still applies — no questions asked.`}
+            </p>
 
             <div className="mt-5 space-y-2 text-xs text-muted">
               <p className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> No monthly fees, ever — a {PLATFORM_FEE_PERCENT}% platform fee applies per booked job</p>
