@@ -48,6 +48,7 @@ export default function Footer() {
               <li><Link href="/pricing" className="hover:text-foreground">Pricing</Link></li>
               <li><Link href="/calculator" className="hover:text-foreground">Quote calculator</Link></li>
               <li><Link href="/tools/profit-loss" className="hover:text-foreground">P&amp;L tracker</Link></li>
+              <li><Link href="/tools/earnings" className="hover:text-foreground">What loads go for</Link></li>
             </ul>
           </div>
 
