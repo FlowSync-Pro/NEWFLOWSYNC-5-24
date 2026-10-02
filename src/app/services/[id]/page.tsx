@@ -36,8 +36,8 @@ function serviceFaqs(s: Service): { q: string; a: string }[] {
       a: `Typically a ${s.vehicle.toLowerCase()}. You can confirm your exact vehicle when you build your profile.`,
     },
     {
-      q: `How much can I earn doing ${s.short.toLowerCase()} on FlowSync?`,
-      a: `Drivers in this category typically earn ${s.earnings}. On FlowSync you set your own quote on every job — there are no monthly fees, just a platform fee on jobs you book.`,
+      q: `What should I charge for ${s.short.toLowerCase()} on FlowSync?`,
+      a: `A common starting point is ${s.earnings} for your time — check it against your mileage and costs with the quote calculator. You set your own quote on every job, and what you earn depends on your market, your hours and the jobs you book. There are no monthly fees, just a platform fee on jobs you book.`,
     },
     {
       q: `What does ${s.short.toLowerCase()} work involve?`,
@@ -104,10 +104,13 @@ export default async function ServiceDetailPage({ params }: PageProps<"/services
               <p className="text-sm font-semibold">{s.vehicle}</p>
             </div>
             <div className="rounded-xl border border-border bg-surface-2 px-4 py-3">
-              <p className="text-xs text-muted">Earnings</p>
+              <p className="text-xs text-muted">Suggested rate</p>
               <p className="text-sm font-semibold text-accent">{s.earnings}</p>
             </div>
           </div>
+          <p className="mt-3 text-xs text-muted">
+            {"Suggested rate is a starting point for quoting your time, not a promise of earnings. You set your own price on every job."}
+          </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link href={`/signup?service=${s.id}`} className="btn-primary rounded-full px-7 py-3 text-sm">
