@@ -121,6 +121,15 @@ so the tables are created/updated on deploy with no terminal step. (Locally, run
   models when we cut over.
 - `DocKind` enum values match the app's `DocKey`s; `ServiceType` matches the eight
   service ids in `src/lib/services.ts`.
+- **Prisma stays on 6.19.x (owner decision, 2026-10-02).** `npm audit` reports 3 high
+  findings, all one package (`deepmerge-ts` < 8, GHSA-ggr8-5vv4-36mx) pulled in by
+  `@prisma/config`. It only runs at build time on our own config files, so it is not
+  reachable from the live site. No stable Prisma fixes it: 6.19.3, 7.10.0 and the 8.0.0
+  RC all still ship `deepmerge-ts` 7.1.5; the fix exists only in 8.1.0-dev builds.
+  Prisma 7 is also a rewrite of the DB layer (driver adapter, `prisma.config.ts`,
+  new generated-client import path in 15 files + 7 scripts). Re-check when a stable
+  Prisma ≥ 8.1 ships; do the upgrade on a preview branch with a backup first. Do not
+  downgrade to 6.12 (audit's "fix") and do not force `deepmerge-ts` via `overrides`.
 
 ---
 
