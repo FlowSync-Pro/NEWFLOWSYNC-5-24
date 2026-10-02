@@ -41,6 +41,11 @@ export default function PrivacyPage() {
         it. Every one of those emails has an unsubscribe link, and unsubscribing never stops emails about
         your account, payments, or bookings.
       </p>
+      <p>
+        If you enter your email in one of our free tools, we save it with the choice you made so we can
+        send what you asked for and occasional tips for drivers. Every email has an unsubscribe link, and
+        we never sell your email.
+      </p>
 
       <h2>Sharing</h2>
       <p>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { optOutOfMarketing, verifyUnsubscribeToken } from "@/lib/marketing";
+import { unsubscribeLead, verifyLeadUnsubscribeToken } from "@/lib/leads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,8 +10,15 @@ export const dynamic = "force-dynamic";
 // the same URL from the List-Unsubscribe header. Both work without signing in.
 // Only marketing email stops — account and payment emails continue.
 
+// Quiz leads (no account) carry an `l` token instead of `t`.
 async function handle(req: Request): Promise<string | null> {
-  const userId = verifyUnsubscribeToken(new URL(req.url).searchParams.get("t"));
+  const params = new URL(req.url).searchParams;
+  const leadId = verifyLeadUnsubscribeToken(params.get("l"));
+  if (leadId) {
+    await unsubscribeLead(leadId);
+    return leadId;
+  }
+  const userId = verifyUnsubscribeToken(params.get("t"));
   if (!userId) return null;
   await optOutOfMarketing(userId);
   return userId;
@@ -18,7 +26,8 @@ async function handle(req: Request): Promise<string | null> {
 
 export async function GET(req: Request) {
   const ok = await handle(req);
-  return NextResponse.redirect(new URL(`/unsubscribed?status=${ok ? "ok" : "invalid"}`, req.url), 303);
+  const lead = new URL(req.url).searchParams.has("l");
+  return NextResponse.redirect(new URL(`/unsubscribed?status=${ok ? "ok" : "invalid"}${ok && lead ? "&who=lead" : ""}`, req.url), 303);
 }
 
 export async function POST(req: Request) {
