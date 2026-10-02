@@ -18,7 +18,7 @@
     "@vercel/blob": "^2.4.0",
     "@vercel/speed-insights": "^2.0.0",
     "ai": "^7.0.65",
-    "next": "16.2.6",
+    "next": "16.3.8",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "resend": "^6.12.3",
@@ -30,7 +30,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "16.3.8",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "typescript": "^5"
