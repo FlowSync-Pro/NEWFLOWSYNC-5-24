@@ -51,6 +51,16 @@ All of this is created once and lives under your Vercel account.
 1. **Postgres** — Vercel Dashboard → Storage → Create Database → Neon Postgres.
    Vercel adds `DATABASE_URL`. Set it to the **direct/non-pooled** string (the host
    WITHOUT `-pooler`) so migrations run cleanly.
+   **Preview branching is ON (2026-10-02):** Storage → neon-carmine-fence → Projects →
+   newflowsync-5-24 → Update Project Connection → "Create Database Branch For
+   Deployment" has Preview ticked (Production was already ticked; prefix left empty).
+   Each preview build gets its own Neon copy named `preview/<git-branch>`, and its
+   `prisma migrate deploy` runs on that copy. The real database is only migrated when
+   a preview is promoted to Production (promote rebuilds with production env), so the
+   backup-before-migration rule still applies before promoting. The copy holds real
+   customer data and preview can still send email: don't email drivers from a
+   preview, and never complete a payment there (the Stripe webhook only reaches
+   production, which won't find the buyer).
 2. **Blob** — Vercel Dashboard → Storage → Create → Blob. Adds `BLOB_READ_WRITE_TOKEN`.
 3. **Stripe** — from the Stripe dashboard copy the secret key and the publishable
    key. Create a webhook endpoint (after first deploy) pointed at
