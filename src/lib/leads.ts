@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { MARKETING_POSTAL_ADDRESS, SITE_URL } from "@/lib/site";
 import { marketingEnabled } from "@/lib/marketing";
-import { earningsBreakdownEmail, sendMarketingEmail } from "@/lib/email";
+import { earningsBreakdownEmail, leadFollowupEmail, sendMarketingEmail } from "@/lib/email";
 import { EARNINGS_CONSENT_TEXT, VEHICLES, type VehicleId } from "@/lib/earnings";
 
 // Email signups from free public tools (owner-approved 2026-10-02). Leads have
@@ -93,4 +93,78 @@ export async function requestBreakdown(rawEmail: string, vehicleId: string): Pro
 
   await prisma.lead.update({ where: { id: lead.id }, data: { lastEmailedAt: new Date() } });
   return { ok: true, status: "sent", newLead: !existing, leadId: lead.id };
+}
+
+// ---- Follow-ups L1–L3 (owner-approved 2026-10-02) ----------------------------
+// Day 2, 5 and 10 after signup (consentAt), run by the daily cron. No schema
+// change: a step counts as sent once lastEmailedAt is on/after its day. Each
+// step only goes out inside its own window (until the next step's day), so a
+// missed step is skipped, never sent late. Stops on unsubscribe, after L3, or
+// once the email belongs to a paying driver.
+
+export const LEAD_FOLLOWUPS = [
+  { step: 1 as const, day: 2, until: 5 },
+  { step: 2 as const, day: 5, until: 10 },
+  { step: 3 as const, day: 10, until: 14 },
+];
+const LEAD_GAP_HOURS = 48;
+
+/** Which follow-up (if any) is due for a lead right now. Pure — exported for tests. */
+export function dueLeadStep(lead: { consentAt: Date; lastEmailedAt: Date | null }, now = new Date()): 1 | 2 | 3 | null {
+  const DAY = 86_400_000;
+  const age = (now.getTime() - lead.consentAt.getTime()) / DAY;
+  const last = lead.lastEmailedAt?.getTime() ?? 0;
+  if (last && now.getTime() - last < LEAD_GAP_HOURS * 3_600_000) return null;
+  for (const f of LEAD_FOLLOWUPS) {
+    const sent = last >= lead.consentAt.getTime() + f.day * DAY;
+    if (age >= f.day && age < f.until && !sent) return f.step;
+  }
+  return null;
+}
+
+export async function runLeadFollowups(now = new Date()): Promise<{ kind: string; sent: number; skipped: number }> {
+  const report = { kind: "lead-followups", sent: 0, skipped: 0 };
+  if (!marketingEnabled()) return report;
+  const since = new Date(now.getTime() - 15 * 86_400_000);
+  const leads = await prisma.lead.findMany({ where: { unsubscribedAt: null, consentAt: { gte: since } } });
+  if (leads.length === 0) return report;
+
+  // Anyone who has since paid for a listing or the fleet is a customer now — stop.
+  const paid = await prisma.user.findMany({
+    where: {
+      OR: leads.map((l) => ({ email: { equals: l.email, mode: "insensitive" as const } })),
+      payments: { some: { status: "PAID", type: { in: ["LISTING", "FLEET"] } } },
+    },
+    select: { email: true },
+  });
+  const customers = new Set(paid.map((u) => u.email.toLowerCase()));
+
+  for (const lead of leads) {
+    try {
+      const step = dueLeadStep(lead, now);
+      if (!step) continue;
+      if (customers.has(lead.email)) {
+        report.skipped++;
+        continue;
+      }
+      const vehicle = VEHICLES.find((v) => v.id === lead.vehicle);
+      const res = await sendMarketingEmail({
+        to: lead.email,
+        ...leadFollowupEmail(step, vehicle),
+        unsubscribeUrl: leadUnsubscribeUrl(lead.id),
+        postalAddress: MARKETING_POSTAL_ADDRESS,
+        reason: "You're getting this because you signed up for driver tips on FlowSync's load-rate tool.",
+      });
+      if (!res.sent) {
+        report.skipped++;
+        continue;
+      }
+      await prisma.lead.update({ where: { id: lead.id }, data: { lastEmailedAt: now } });
+      report.sent++;
+    } catch (e) {
+      console.error(`[leads] follow-up failed for ${lead.id}:`, e);
+      report.skipped++;
+    }
+  }
+  return report;
 }
