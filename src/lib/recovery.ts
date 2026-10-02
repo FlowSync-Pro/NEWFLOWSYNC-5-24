@@ -52,7 +52,7 @@ export function fleetPitchText(firstName?: string | null): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
   return (
     `${hi}it's Nas. Quick one: I'm adding drivers to my Curri carrier account this week. ` +
-    `I bid the loads (we just took a $300 load that a gig driver ran for $145 — one load, not a promise), you run the ones you want, paid every Friday, ${FLEET.dispatchFeePercent}% dispatch fee, no monthly. ` +
+    `I bid the loads (we just won a $300 bid on a load a gig driver ran for $145 — one load, not a promise), you run the ones you want, paid every Friday, ${FLEET.dispatchFeePercent}% dispatch fee, no monthly. ` +
     `$${FLEET.price} one-time to join, ${FLEET_REFUND_TEXT}. Sign in and open "Curri fleet" in your account: ${base()}/account/curri-fleet — or reply and I'll walk you through it.`
   );
 }
