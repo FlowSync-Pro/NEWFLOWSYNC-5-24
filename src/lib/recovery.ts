@@ -17,13 +17,17 @@ export function listingPriceLine(): string {
     : `It's $${listingPrice()} one-time.`;
 }
 
+// The fleet is NOT covered by the 30-day guarantee (AGENTS.md §D): it's
+// refundable until activation, then earned. Same terms as FLEET.refundShort.
+const FLEET_REFUND_TEXT = "fully refundable until you're activated on our carrier account, then non-refundable";
+
 /** SMS-length text the owner sends from his own phone. */
 export function recoveryText(product: RecoveryProduct, firstName?: string | null): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
   if (product === "fleet") {
     return (
       `${hi}it's Nas from FlowSync. You started joining the fleet but didn't finish. ` +
-      `Here's the link to pick it back up: ${base()}/#curri-fleet — $${FLEET.price} one-time, ${GUARANTEE_DAYS}-day money-back. ` +
+      `Here's the link to pick it back up: ${base()}/#curri-fleet — $${FLEET.price} one-time, ${FLEET_REFUND_TEXT}. ` +
       `Reply here if you have questions.`
     );
   }
@@ -49,7 +53,7 @@ export function fleetPitchText(firstName?: string | null): string {
   return (
     `${hi}it's Nas. Quick one: I'm adding drivers to my Curri carrier account this week. ` +
     `I bid the loads (we just took a $300 load that a gig driver ran for $145), you run the ones you want, paid every Friday, ${FLEET.dispatchFeePercent}% dispatch fee, no monthly. ` +
-    `$${FLEET.price} one-time to join, ${GUARANTEE_DAYS}-day money-back. Sign in and open "Curri fleet" in your account: ${base()}/account/curri-fleet — or reply and I'll walk you through it.`
+    `$${FLEET.price} one-time to join, ${FLEET_REFUND_TEXT}. Sign in and open "Curri fleet" in your account: ${base()}/account/curri-fleet — or reply and I'll walk you through it.`
   );
 }
 
