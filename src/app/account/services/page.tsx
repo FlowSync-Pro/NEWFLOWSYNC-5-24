@@ -3,9 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { isPremiumTier, premiumUpgradePrice } from "@/lib/pricing";
 import MyServicesEditor, { type ServiceRow } from "@/components/MyServicesEditor";
-import TrackEvent from "@/components/TrackEvent";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +12,10 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default async function MyServicesPage({ searchParams }: PageProps<"/account/services">) {
+export default async function MyServicesPage() {
   const session = await getSession();
   if (!session) redirect("/signin");
   if (session.mustResetPassword) redirect("/reset-password");
-  const justUpgraded = (await searchParams).upgraded === "1";
 
   const profile = await prisma.driverProfile.findUnique({
     where: { userId: session.userId },
@@ -26,11 +23,8 @@ export default async function MyServicesPage({ searchParams }: PageProps<"/accou
   });
   if (!profile) redirect("/account/setup");
 
-  const premium = isPremiumTier(profile.tier);
-
   return (
     <div className="relative">
-      {justUpgraded && premium && <TrackEvent event="Purchase" value={premiumUpgradePrice()} />}
       <div className="glow-radial pointer-events-none absolute inset-0 h-48" />
       <div className="relative mx-auto max-w-4xl px-5 py-10">
         <div className="flex items-center justify-between">
