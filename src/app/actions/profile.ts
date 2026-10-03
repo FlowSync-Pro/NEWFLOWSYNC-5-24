@@ -34,6 +34,9 @@ export async function completeDriverProfile(_prev: SetupState, formData: FormDat
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const rawService = String(formData.get("primaryService") ?? "");
+  // Optional: puts the driver on their city's /delivery page. Blank leaves
+  // an existing value alone on a revisit.
+  const city = String(formData.get("city") ?? "").trim().replace(/\s+/g, " ").slice(0, 80) || undefined;
   if (!firstName || !lastName) return { error: "Enter your first and last name." };
 
   // "undecided" (or anything not in our list) means the driver wants to pick
@@ -43,7 +46,7 @@ export async function completeDriverProfile(_prev: SetupState, formData: FormDat
     : null;
 
   const existing = await prisma.driverProfile.findUnique({ where: { userId: session.userId } });
-  const data = { firstName, lastName, primaryService };
+  const data = { firstName, lastName, primaryService, city };
   if (existing) {
     // Profile already exists (e.g. revisiting setup) — apply the resubmitted
     // values instead of silently discarding them.
@@ -98,7 +101,7 @@ export async function saveDriverProfile(input: ProfileInput): Promise<{ ok: bool
     firstName: input.firstName,
     lastName: input.lastName,
     phone: input.phone,
-    city: input.city,
+    city: input.city?.trim().replace(/\s+/g, " ").slice(0, 80),
     headline: input.headline,
     bio: input.bio,
     hourlyRate: input.hourlyRate ?? undefined,

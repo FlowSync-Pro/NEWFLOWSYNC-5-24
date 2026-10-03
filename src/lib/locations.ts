@@ -53,6 +53,40 @@ export async function citiesForService(serviceEnum: string): Promise<CityService
     .sort((a, b) => b.count - a.count);
 }
 
+export interface CityIndexEntry {
+  city: string; // display string as the first driver typed it
+  slug: string;
+  services: { serviceEnum: string; count: number }[];
+}
+
+/**
+ * Every city with verified drivers, with the services available there — for
+ * the "Browse by city" links on /find-a-driver. Same rules as the pages
+ * themselves: a city/service only appears when a real verified driver has it.
+ */
+export async function cityIndex(): Promise<CityIndexEntry[]> {
+  const rows = await prisma.driverProfile.findMany({
+    where: { verified: true, city: { not: null }, primaryService: { not: null } },
+    select: { city: true, primaryService: true },
+  });
+  const cities = new Map<string, { city: string; services: Map<string, number> }>();
+  for (const r of rows) {
+    const city = (r.city ?? "").trim();
+    const slug = citySlug(city);
+    if (!slug || !r.primaryService) continue;
+    const entry = cities.get(slug) ?? { city: cityDisplay(city), services: new Map<string, number>() };
+    entry.services.set(r.primaryService, (entry.services.get(r.primaryService) ?? 0) + 1);
+    cities.set(slug, entry);
+  }
+  return [...cities.entries()]
+    .map(([slug, v]) => ({
+      slug,
+      city: v.city,
+      services: [...v.services.entries()].map(([serviceEnum, count]) => ({ serviceEnum, count })).sort((a, b) => b.count - a.count),
+    }))
+    .sort((a, b) => a.city.localeCompare(b.city));
+}
+
 /** All city/service combos with verified drivers (for the sitemap + index). */
 export async function allCityServiceRoutes(): Promise<{ serviceEnum: string; slug: string }[]> {
   const rows = await prisma.driverProfile.findMany({
