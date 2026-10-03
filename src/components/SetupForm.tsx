@@ -15,6 +15,7 @@ export default function SetupForm({ defaultFirst = "", defaultLast = "" }: { def
         <input name="firstName" defaultValue={defaultFirst} placeholder="First name" required className={inputCls} />
         <input name="lastName" defaultValue={defaultLast} placeholder="Last name" required className={inputCls} />
       </div>
+      <input name="city" placeholder="City, state — e.g. Bakersfield, CA" autoComplete="address-level2" className={inputCls} />
       <select name="primaryService" defaultValue="undecided" required className={inputCls}>
         <option value="undecided">I&apos;m not sure yet — I&apos;ll pick later</option>
         {SERVICES.map((s) => (

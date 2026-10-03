@@ -333,6 +333,15 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
       {/* Profile details */}
       <section className="card mt-6 space-y-5 p-7">
         <h2 className="text-lg font-semibold">Profile details</h2>
+        {/* City drives the /delivery/[service]/[city] pages customers search —
+            a driver without one is only findable in the main directory. */}
+        <TextField
+          label="City"
+          value={profile.city}
+          onChange={(v) => set("city", v)}
+          placeholder="Bakersfield, CA"
+          hint="City and state. Customers searching your city find you on its page."
+        />
         <TextField label="Headline" value={profile.headline} onChange={(v) => set("headline", v)} placeholder={primary?.profileHeadline} />
         <TextArea label="About you" value={profile.bio} onChange={(v) => set("bio", v)} placeholder="Tell customers why they should book you…" />
         <div className="grid gap-5 sm:grid-cols-3">

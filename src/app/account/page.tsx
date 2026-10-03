@@ -28,7 +28,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   if (session.mustResetPassword) redirect("/reset-password");
 
   const [profile, user, review] = await Promise.all([
-    prisma.driverProfile.findUnique({ where: { userId: session.userId }, select: { id: true, firstName: true, verified: true, primaryService: true } }),
+    prisma.driverProfile.findUnique({ where: { userId: session.userId }, select: { id: true, firstName: true, verified: true, primaryService: true, city: true } }),
     prisma.user.findUnique({ where: { id: session.userId }, select: { roadmapData: true, email: true } }),
     // Reviews are invite-only; the chip only makes sense for a driver who
     // already has one to edit. Invitees arrive through their link instead.
@@ -75,6 +75,19 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         {/* Start here — single focus block at the top */}
         <div className="mx-auto mt-6 max-w-3xl space-y-5 px-5">
           <FounderLoom firstName={profile.firstName} />
+          {/* No city = not on any /delivery/[service]/[city] page. One line, until it's filled in. */}
+          {!profile.city?.trim() && (
+            <Link
+              href="/account/edit"
+              className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface-2 p-4 text-sm transition-colors hover:border-accent/60"
+            >
+              <span>
+                <span className="font-semibold">Add your city</span>
+                <span className="text-muted"> — customers searching your city can&apos;t find you until you do.</span>
+              </span>
+              <span className="shrink-0 font-medium text-accent">Add it →</span>
+            </Link>
+          )}
           <Link
             href="/account/curri-fleet"
             className="flex items-center justify-between gap-4 rounded-2xl border border-accent/30 bg-accent-soft p-5 transition-colors hover:bg-accent-soft/80"
