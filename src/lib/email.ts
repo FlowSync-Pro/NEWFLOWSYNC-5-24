@@ -28,6 +28,8 @@ function from(): string {
 export interface EmailResult {
   sent: boolean;
   reason?: "not-configured" | "failed";
+  /** Resend's own error message when `reason` is "failed" (e.g. a rate limit or quota) — safe to show an admin. */
+  detail?: string;
   to: string;
   subject: string;
   /** Resend's id for the email — needed to cancel a scheduled one. */
@@ -62,12 +64,12 @@ async function send(to: string, subject: string, html: string, opts: SendOptions
     });
     if (error) {
       console.error(`[email] Resend refused "${subject}" -> ${to}:`, error.message ?? error);
-      return { sent: false, reason: "failed", to, subject };
+      return { sent: false, reason: "failed", detail: error.message ?? String(error), to, subject };
     }
     return { sent: true, to, subject, id: data?.id };
   } catch (e) {
     console.error(`[email] send failed "${subject}" -> ${to}:`, e);
-    return { sent: false, reason: "failed", to, subject };
+    return { sent: false, reason: "failed", detail: e instanceof Error ? e.message : String(e), to, subject };
   }
 }
 
