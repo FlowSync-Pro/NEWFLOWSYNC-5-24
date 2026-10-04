@@ -11,6 +11,20 @@ import type { ServiceId } from "@/lib/services";
 import { SITE_URL } from "@/lib/site";
 import { createReviewInviteToken, REVIEW_INVITE_DAYS } from "@/lib/review-invite";
 import { alertIfEmailFailed } from "@/lib/alerts";
+import { sendAddCityBatch, type AddCityBatchResult } from "@/lib/add-city-email";
+
+/** Owner-only: send the one-time "Add your city" email to the next batch (see /admin/add-city). */
+export async function sendAddCityEmails(): Promise<{ ok: true; result: AddCityBatchResult } | { ok: false; error: string }> {
+  await requireAdmin();
+  try {
+    const result = await sendAddCityBatch();
+    revalidatePath("/admin/add-city");
+    return { ok: true, result };
+  } catch (e) {
+    console.error("[add-city] batch failed:", e);
+    return { ok: false, error: "The batch stopped partway. Reload the page to see how many are still waiting, then try again." };
+  }
+}
 
 /**
  * Invite a driver who is actively running loads with us to leave a review.
