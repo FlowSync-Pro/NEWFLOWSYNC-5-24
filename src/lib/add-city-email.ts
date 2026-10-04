@@ -12,8 +12,11 @@ import { SITE_URL } from "@/lib/site";
 // AUTH_SECRET (which signs unsubscribe links) only lives on Vercel.
 
 export const ADD_CITY_KIND = "add-city-2026-10";
-/** Per click, so a batch finishes well inside the page's maxDuration. */
-export const ADD_CITY_BATCH = 50;
+/** Per click: 40 × (SEND_GAP_MS + a DB round trip) stays inside the page's 60s maxDuration. */
+export const ADD_CITY_BATCH = 40;
+/** Resend allows 2 requests/second; a burst of sends gets every one after the first refused. */
+const SEND_GAP_MS = 600;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const P = `style="color:#aebac1;line-height:1.65;margin:0 0 14px"`;
 const LI = `style="color:#aebac1;line-height:1.6;margin:0 0 8px"`;
@@ -75,7 +78,8 @@ export async function sendAddCityBatch(limit = ADD_CITY_BATCH): Promise<AddCityB
   const audience = await addCityAudience();
   const batch = audience.slice(0, limit);
   const result: AddCityBatchResult = { sent: 0, skipped: 0, reasons: {}, remaining: 0 };
-  for (const r of batch) {
+  for (const [i, r] of batch.entries()) {
+    if (i > 0) await sleep(SEND_GAP_MS);
     try {
       const res = await sendMarketing({ userId: r.userId, kind: ADD_CITY_KIND, ...addCityEmail(r.firstName) });
       if (res.sent) result.sent++;

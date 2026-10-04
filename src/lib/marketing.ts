@@ -150,7 +150,8 @@ export async function sendMarketing(m: MarketingEmail): Promise<{ sent: boolean;
     // Nothing went out, so release the slot (this row is our own bookkeeping,
     // not driver data) and let a later run try again.
     await prisma.emailLog.delete({ where: { id: logId } });
-    return { sent: false, reason: res.reason ?? "failed" };
+    // Pass Resend's message through (rate limit, quota…) so an admin can see why.
+    return { sent: false, reason: res.detail ?? res.reason ?? "failed" };
   }
   if (res.id) await prisma.emailLog.update({ where: { id: logId }, data: { resendId: res.id } });
   return { sent: true };
