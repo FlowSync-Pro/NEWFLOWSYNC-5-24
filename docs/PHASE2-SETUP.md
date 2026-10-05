@@ -67,6 +67,19 @@ All of this is created once and lives under your Vercel account.
    `/api/stripe/webhook` and copy its signing secret.
 4. **Resend** — create an API key and verify a sending domain (e.g.
    `mail.flowsyncdriver.com`). Set `RESEND_FROM_EMAIL` to an address on it.
+   **Live setup (2026-10-04): email is sent from `flowsyncdrivers.com` (plural),
+   while the website stays on `flowsyncdriver.com` (singular). This is on purpose —
+   don't "fix" it back.** The singular domain's DNS (Google nameservers, registered
+   at Squarespace) became unreachable when the owner lost the Gmail tied to that
+   Squarespace account, and Resend reported it unverified for the current API key.
+   The plural domain's DNS is on Vercel (Vercel → Domains → flowsyncdrivers.com),
+   where the Resend records live: an apex `resend-domain-verification` TXT (domain
+   claim — keep it), `resend._domainkey` TXT (DKIM), and `send` MX + TXT (bounces /
+   SPF). Verified in Resend team "flowsyncdriver", region us-east-1.
+   `RESEND_FROM_EMAIL` = `Nasser <hello@flowsyncdrivers.com>`. Replies still go to
+   `SUPPORT_EMAIL` (`support@flowsyncdriver.com`, Google Workspace on the singular
+   domain) — if that domain's DNS is ever lost, replies stop arriving. When the
+   singular domain is recovered, sending can move back, but nothing requires it.
 5. **Auth secret** — run `npx auth secret` (or `openssl rand -base64 32`) and set
    `AUTH_SECRET`.
 
