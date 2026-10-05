@@ -7,9 +7,9 @@ import { SITE_URL } from "@/lib/site";
 // /admin/add-city in batches. Goes through sendMarketing(), so the usual rules
 // apply: skips unsubscribed, refunded and admin accounts, once per driver
 // (EmailLog kind below), 48h gap from other marketing email, unsubscribe link
-// and postal footer added for you. scripts/send-add-city.mjs is the same email
-// for the command line; the admin page exists because the production
-// AUTH_SECRET (which signs unsubscribe links) only lives on Vercel.
+// and postal footer added for you. Sent from the site (not a local script)
+// because the production AUTH_SECRET, which signs unsubscribe links, only lives
+// on Vercel. Sent to all 231 waiting drivers on 2026-10-04.
 
 export const ADD_CITY_KIND = "add-city-2026-10";
 /** Per click: 40 × (SEND_GAP_MS + a DB round trip) stays inside the page's 60s maxDuration. */
