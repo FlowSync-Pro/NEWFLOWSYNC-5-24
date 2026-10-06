@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import { AuthPanel, ActivateAccountForm } from "@/components/AuthForm";
 import TrackEvent from "@/components/TrackEvent";
+import { redirect } from "next/navigation";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/session";
 import { FLEET, listingPrice, OFFER_WINDOW_HOURS, premiumUpgradePrice } from "@/lib/pricing";
+
+/** Where a fleet buyer lands once signed in: the fleet page with their next steps. */
+const FLEET_LANDING = "/account/curri-fleet?welcome=1";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -17,6 +22,18 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
   const sessionId = typeof sp.session_id === "string" ? sp.session_id : undefined;
   // An offer page link opened after its window closed (e.g. from the welcome email).
   const offerEnded = sp.offer === "ended";
+  // A fleet purchase (homepage / pricing form, or offer page B) comes back here
+  // with fleet=1. Those buyers should end up on the fleet page, where the
+  // "send Nasser your details" steps are, not on the generic dashboard.
+  const fleet = paid && sp.fleet === "1";
+  const next = fleet ? FLEET_LANDING : undefined;
+
+  // Already signed in with a password set (e.g. bought Premium from the account,
+  // then took the fleet on offer page B): nothing to activate, go straight there.
+  if (fleet) {
+    const session = await getSession();
+    if (session && !session.mustResetPassword) redirect(FLEET_LANDING);
+  }
 
   // Report the real amount paid to the Meta Pixel so Meta can optimize for
   // value (a $97 Premium reports 97, a $17+bumps reports its true total) and
@@ -72,7 +89,11 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
           </p>
         ) : canActivate ? (
           <p className="mt-2 text-center text-accent">
-            Payment received! Choose a password below and you&apos;ll go straight to your dashboard.
+            Payment received! Choose a password below and you&apos;ll go straight to {fleet ? "your fleet next steps" : "your dashboard"}.
+          </p>
+        ) : fleet ? (
+          <p className="mt-2 text-center text-accent">
+            Payment received! Sign in below to see your fleet next steps. New here? Your temporary password is in your welcome email.
           </p>
         ) : paid && hasPassword ? (
           <p className="mt-2 text-center text-accent">Payment received! It&apos;s on your existing account — sign in below with your password.</p>
@@ -85,20 +106,20 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
         {canActivate && sessionId ? (
           <>
             <div className="card mt-8 p-7">
-              <ActivateAccountForm sessionId={sessionId} />
+              <ActivateAccountForm sessionId={sessionId} next={next} destination={fleet ? "your fleet next steps" : undefined} />
             </div>
             <details className="mt-5 text-center">
               <summary className="cursor-pointer text-sm text-muted hover:text-foreground">
                 Already have a password? Sign in instead
               </summary>
               <div className="card mt-4 p-7 text-left">
-                <AuthPanel />
+                <AuthPanel next={next} />
               </div>
             </details>
           </>
         ) : (
           <div className="card mt-8 p-7">
-            <AuthPanel />
+            <AuthPanel next={next} />
           </div>
         )}
       </div>

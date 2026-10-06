@@ -89,6 +89,16 @@ export async function register(_prev: AuthState, formData: FormData): Promise<Au
   redirect("/account?registered=1");
 }
 
+/**
+ * Where to send the driver after signing in / activating. Only an in-app path
+ * under /account is honored (never an external URL), so a tampered `next`
+ * can't bounce someone off the site. Falls back to the dashboard.
+ */
+function safeNext(formData: FormData): string {
+  const next = String(formData.get("next") ?? "");
+  return next.startsWith("/account") && !next.startsWith("//") ? next : "/account";
+}
+
 export async function login(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
@@ -100,7 +110,10 @@ export async function login(_prev: AuthState, formData: FormData): Promise<AuthS
   }
 
   await createSession({ userId: user.id, role: user.role, mustResetPassword: user.mustResetPassword });
-  redirect(user.mustResetPassword ? "/reset-password" : "/account");
+  const next = safeNext(formData);
+  // A temporary-password sign-in goes through /reset-password first; carry the
+  // destination along so the driver still ends up where they were headed.
+  redirect(user.mustResetPassword ? `/reset-password${next === "/account" ? "" : `?next=${encodeURIComponent(next)}`}` : next);
 }
 
 export async function logout(): Promise<void> {
@@ -122,7 +135,7 @@ export async function setPassword(_prev: AuthState, formData: FormData): Promise
     data: { hashedPassword: hashPassword(password), mustResetPassword: false },
   });
   await createSession({ ...session, mustResetPassword: false });
-  redirect("/account");
+  redirect(safeNext(formData));
 }
 
 export interface ActivateState {
@@ -189,7 +202,7 @@ export async function activateAfterCheckout(_prev: ActivateState, formData: Form
     data: { hashedPassword: hashPassword(password), mustResetPassword: false },
   });
   await createSession({ userId: user.id, role: user.role, mustResetPassword: false });
-  redirect("/account");
+  redirect(safeNext(formData));
 }
 
 export interface ForgotState {

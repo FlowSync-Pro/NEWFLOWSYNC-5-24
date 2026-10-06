@@ -63,12 +63,17 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
   const telegram = joined ? fleetTelegramInviteUrl() : null;
   // Just paid from this page: fire the browser Purchase pixel with the Stripe
   // session id so Meta dedupes it against the webhook's CAPI event.
-  const justJoined = joined && sp.joined === "1";
+  const paidHere = sp.joined === "1";
+  // welcome=1: sent here from the sign-in page after a homepage / offer-page
+  // fleet purchase. That purchase already fired its pixel on the sign-in page,
+  // so only the welcome copy applies — no second Purchase event.
+  const welcome = sp.welcome === "1";
+  const justJoined = joined && (paidHere || welcome);
   const purchaseSessionId = typeof sp.session_id === "string" ? sp.session_id : undefined;
 
   return (
     <div className="relative">
-      {justJoined && <TrackEvent event="Purchase" value={FLEET.price} eventId={purchaseSessionId} />}
+      {joined && paidHere && <TrackEvent event="Purchase" value={FLEET.price} eventId={purchaseSessionId} />}
       <div className="glow-radial pointer-events-none absolute inset-0 h-72" />
       <div className="relative mx-auto max-w-3xl px-5 py-10">
         <div className="flex items-center justify-between">
@@ -128,6 +133,20 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
                 </a>
               </div>
             )}
+          </section>
+        ) : welcome ? (
+          // Paid, but the Stripe webhook that records membership hasn't landed
+          // yet (it usually does within seconds). Don't show a "Join" button to
+          // someone who just paid.
+          <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
+            <h2 className="text-lg font-bold tracking-tight text-accent">Payment received — finishing your fleet setup</h2>
+            <p className="mt-2 text-sm leading-relaxed text-foreground/90">
+              This usually takes a few seconds. Refresh this page in a moment to see your next steps. If it still
+              isn&apos;t showing after a few minutes, email {SUPPORT_EMAIL} and we&apos;ll sort it out.
+            </p>
+            <Link href="/account/curri-fleet?welcome=1" className="btn-primary mt-5 inline-flex rounded-full px-6 py-2.5 text-sm">
+              Refresh
+            </Link>
           </section>
         ) : (
           <>

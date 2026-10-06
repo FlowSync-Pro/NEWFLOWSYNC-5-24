@@ -12,6 +12,9 @@ export default async function ResetPasswordPage({ searchParams }: PageProps<"/re
   const token = typeof sp.token === "string" ? sp.token : "";
   const email = typeof sp.email === "string" ? sp.email : "";
   const tokenFlow = !!(token && email);
+  // Where to go after the password is set (the server action only honors in-app
+  // /account paths, so a bad value just falls back to the dashboard).
+  const next = typeof sp.next === "string" ? sp.next : undefined;
 
   return (
     <div className="relative min-h-[70vh]">
@@ -24,7 +27,7 @@ export default async function ResetPasswordPage({ searchParams }: PageProps<"/re
             : "You signed in with a temporary password. Choose a permanent one to continue."}
         </p>
         <div className="card mt-8 p-7">
-          {tokenFlow ? <TokenResetForm token={token} email={email} /> : <ResetPasswordForm />}
+          {tokenFlow ? <TokenResetForm token={token} email={email} /> : <ResetPasswordForm next={next} />}
         </div>
       </div>
     </div>

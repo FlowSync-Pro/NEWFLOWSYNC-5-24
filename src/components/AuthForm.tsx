@@ -8,10 +8,11 @@ import { listingPrice } from "@/lib/pricing";
 const inputCls =
   "w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition-colors focus:border-accent";
 
-function SignIn() {
+function SignIn({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(login, {});
   return (
     <form action={action} className="space-y-3">
+      {next && <input type="hidden" name="next" value={next} />}
       <input name="email" type="email" placeholder="Email" autoComplete="email" required className={inputCls} />
       <input name="password" type="password" placeholder="Password" autoComplete="current-password" required className={inputCls} />
       {state.error && <p className="text-sm text-red-400">{state.error}</p>}
@@ -71,26 +72,27 @@ export function TokenResetForm({ token, email }: { token: string; email: string 
  * their password immediately, instead of being stuck waiting on the welcome
  * email. The ordinary sign-in form stays available underneath as a fallback.
  */
-export function ActivateAccountForm({ sessionId }: { sessionId: string }) {
+export function ActivateAccountForm({ sessionId, next, destination = "your dashboard" }: { sessionId: string; next?: string; destination?: string }) {
   const [state, action, pending] = useActionState<ActivateState, FormData>(activateAfterCheckout, {});
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="session_id" value={sessionId} />
+      {next && <input type="hidden" name="next" value={next} />}
       <input name="password" type="password" placeholder="Choose a password" autoComplete="new-password" required minLength={8} className={inputCls} />
       <input name="confirm" type="password" placeholder="Confirm password" autoComplete="new-password" required minLength={8} className={inputCls} />
       {state.error && <p className="text-sm text-red-400">{state.error}</p>}
       <button type="submit" disabled={pending} className="btn-primary w-full rounded-full px-6 py-3 text-sm disabled:opacity-60">
         {pending ? "Setting up…" : "Set password & continue"}
       </button>
-      <p className="text-center text-xs text-muted">At least 8 characters. You&apos;ll go straight to your dashboard.</p>
+      <p className="text-center text-xs text-muted">At least 8 characters. You&apos;ll go straight to {destination}.</p>
     </form>
   );
 }
 
-export function AuthPanel() {
+export function AuthPanel({ next }: { next?: string }) {
   return (
     <div>
-      <SignIn />
+      <SignIn next={next} />
       <p className="mt-5 border-t border-border pt-5 text-center text-sm text-muted">
         New driver?{" "}
         <Link href="/pricing" className="font-medium text-accent hover:underline">
@@ -101,10 +103,11 @@ export function AuthPanel() {
   );
 }
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(setPassword, {});
   return (
     <form action={action} className="space-y-3">
+      {next && <input type="hidden" name="next" value={next} />}
       <input name="password" type="password" placeholder="New password" autoComplete="new-password" required className={inputCls} />
       <input name="confirm" type="password" placeholder="Confirm new password" autoComplete="new-password" required className={inputCls} />
       {state.error && <p className="text-sm text-red-400">{state.error}</p>}
