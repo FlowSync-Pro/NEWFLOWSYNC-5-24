@@ -156,6 +156,7 @@ export default async function AdminPage() {
             </Link>
             <Link href="/admin/recovery" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Recovery</Link>
             <Link href="/admin/referrals" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Fleet referrals</Link>
+            <Link href="/admin/payouts" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Fleet payouts</Link>
             <Link href="/admin/leads" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Leads</Link>
             <Link href="/admin/challenge" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Challenge</Link>
             <Link href="/admin/add-city" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Add-city email</Link>

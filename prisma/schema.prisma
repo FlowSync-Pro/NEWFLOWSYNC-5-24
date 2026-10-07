@@ -68,6 +68,23 @@ enum PaymentStatus {
   FAILED
 }
 
+/// Fleet pay plan: STANDARD = paid every Friday (15% fee), FASTER = paid when
+/// the delivery is logged (20% fee). Percentages live in src/lib/pricing.ts.
+enum PayPlan {
+  STANDARD
+  FASTER
+}
+
+/// One fleet payout (one completed delivery). PENDING until the owner pays it;
+/// PAID once Stripe confirms the transfer; FAILED keeps Stripe's reason and can
+/// be retried; CANCELLED for a mis-logged delivery (never deleted).
+enum PayoutStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
 enum Tier {
   STANDARD
   PREMIUM
@@ -112,6 +129,9 @@ model User {
   stripeConnectAccountId      String?   @unique
   stripeConnectOnboardedAt    DateTime?
   stripeConnectPayoutsEnabled Boolean   @default(false)
+  // Fleet pay plan (ADDITIVE, default STANDARD) and the payouts themselves.
+  payPlan PayPlan        @default(STANDARD)
+  payouts DriverPayout[]
 
   // Referral program: each user's own shareable code, and the code they signed
   // up under (only set once they've paid, so it counts real referrals).
@@ -325,6 +345,38 @@ model Booking {
   payment Payment?
 
   @@index([driverProfileId, status])
+}
+
+/// A fleet payout for one completed delivery (src/lib/payouts.ts). Amounts in
+/// cents: loadCents is what Curri paid for the load, feeCents the dispatching
+/// fee at feePercent, netCents what is transferred to the driver's Stripe
+/// account. Rows are never edited after logging (cancel + re-log instead), so
+/// a retry can reuse the same Stripe idempotency key safely.
+model DriverPayout {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  status      PayoutStatus @default(PENDING)
+  loadCents   Int
+  feePercent  Int
+  feeCents    Int
+  netCents    Int
+  /// Load reference / route, shown to the driver on the receipt.
+  note        String?
+  deliveredOn DateTime
+
+  stripeTransferId String?   @unique
+  paidAt           DateTime?
+  failureReason    String?
+  /// Admin user id who logged it.
+  createdById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([status, createdAt])
 }
 
 model Payment {

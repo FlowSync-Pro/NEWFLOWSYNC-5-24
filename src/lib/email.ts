@@ -810,6 +810,34 @@ export async function sendStripeSetupEmail(opts: { to: string; firstName: string
   return send(opts.to, "Set up your fleet payouts (about 5 minutes)", shell("Set up your payouts", body), { campaign: "stripe-setup" });
 }
 
+/** Fleet payout receipt: one per paid delivery (lib/payouts.ts). */
+export async function sendPayoutReceiptEmail(opts: {
+  to: string;
+  firstName: string;
+  netCents: number;
+  loadCents: number;
+  feePercent: number;
+  feeCents: number;
+  deliveredOn: Date;
+  note?: string | null;
+  payoutsUrl: string;
+}) {
+  const $ = (c: number) => `$${(c / 100).toFixed(2)}`;
+  const when = opts.deliveredOn.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const body = `
+    <p ${P}>Hey ${opts.firstName} — we just sent <strong style="color:#25e07a">${$(opts.netCents)}</strong> to your Stripe account for your delivery on ${when}${opts.note ? ` (${escapeHtml(opts.note)})` : ""}.</p>
+    <table style="border-collapse:collapse;margin:0 0 14px">
+      <tr><td style="color:#aebac1;padding:2px 16px 2px 0">Load</td><td style="color:#e7ecef">${$(opts.loadCents)}</td></tr>
+      <tr><td style="color:#aebac1;padding:2px 16px 2px 0">Dispatching fee (${opts.feePercent}%)</td><td style="color:#e7ecef">−${$(opts.feeCents)}</td></tr>
+      <tr><td style="color:#aebac1;padding:2px 16px 2px 0"><strong>Paid to you</strong></td><td style="color:#25e07a"><strong>${$(opts.netCents)}</strong></td></tr>
+    </table>
+    <p ${P}>Stripe deposits it in your bank on its usual schedule, normally within two business days. Your full payout history and tax forms are in your Stripe dashboard — open it from the Payouts page in your account.</p>
+    <p style="margin:0 0 18px">${button(opts.payoutsUrl, "See my payouts")}</p>
+    <p ${P}>Something off? Just reply — a real person reads it.</p>
+    <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
+  return send(opts.to, `You've been paid ${$(opts.netCents)} — delivery on ${when}`, shell("Payout sent", body), { campaign: "payout-receipt" });
+}
+
 export async function sendCheckoutRecoveryEmail(opts: {
   to: string;
   firstName?: string;

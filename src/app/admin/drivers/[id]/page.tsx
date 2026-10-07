@@ -12,6 +12,7 @@ import AdminDriverExperience from "@/components/AdminDriverExperience";
 import AdminReviewInvite from "@/components/AdminReviewInvite";
 import AdminFleetToggle from "@/components/AdminFleetToggle";
 import AdminStripeConnect from "@/components/AdminStripeConnect";
+import AdminPayouts from "@/components/AdminPayouts";
 import { connectStatus, syncConnectStatus } from "@/lib/stripe-connect";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
   const driver = await prisma.driverProfile.findUnique({
     where: { id },
     include: {
-      user: true,
+      user: { include: { payouts: { orderBy: { createdAt: "desc" }, take: 60 } } },
       trips: { orderBy: { date: "desc" }, take: 200 },
       inspections: { orderBy: { date: "desc" }, take: 30 },
       verifiedLoads: { orderBy: { date: "desc" } },
@@ -92,6 +93,26 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
               accountId={driver.user.stripeConnectAccountId}
               onboardedAt={driver.user.stripeConnectOnboardedAt?.toISOString() ?? null}
               requirementsDue={connect?.requirementsDue ?? []}
+            />
+          </div>
+        )}
+        {driver.user.fleetJoinedAt && (
+          <div className="mt-3">
+            <AdminPayouts
+              driverProfileId={driver.id}
+              payPlan={driver.user.payPlan}
+              connectReady={connect?.payoutsEnabled ?? driver.user.stripeConnectPayoutsEnabled}
+              payouts={driver.user.payouts.map((p) => ({
+                id: p.id,
+                status: p.status,
+                loadCents: p.loadCents,
+                feePercent: p.feePercent,
+                netCents: p.netCents,
+                note: p.note,
+                deliveredOn: p.deliveredOn.toISOString(),
+                paidAt: p.paidAt?.toISOString() ?? null,
+                failureReason: p.failureReason,
+              }))}
             />
           </div>
         )}

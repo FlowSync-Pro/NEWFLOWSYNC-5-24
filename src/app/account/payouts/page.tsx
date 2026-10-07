@@ -29,9 +29,19 @@ export default async function PayoutsPage({ searchParams }: PageProps<"/account/
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { fleetJoinedAt: true, stripeConnectAccountId: true, stripeConnectPayoutsEnabled: true, driverProfile: { select: { firstName: true } } },
+    select: {
+      fleetJoinedAt: true,
+      stripeConnectAccountId: true,
+      stripeConnectPayoutsEnabled: true,
+      payPlan: true,
+      driverProfile: { select: { firstName: true } },
+      payouts: { where: { status: { in: ["PENDING", "PAID"] } }, orderBy: { deliveredOn: "desc" }, take: 100 },
+    },
   });
   if (!user?.fleetJoinedAt) redirect("/account/curri-fleet");
+  const $ = (c: number) => `$${(c / 100).toFixed(2)}`;
+  const day = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const paidTotal = user.payouts.filter((p) => p.status === "PAID").reduce((s, p) => s + p.netCents, 0);
 
   // Mirror Stripe's view on every visit (one API call), so coming back from
   // Stripe's form shows the real state without a webhook.
@@ -101,6 +111,35 @@ export default async function PayoutsPage({ searchParams }: PageProps<"/account/
             </>
           )}
         </section>
+
+        {user.payouts.length > 0 && (
+          <section className="card mt-6 p-6">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-lg font-bold tracking-tight">Your payouts</h2>
+              <p className="text-sm text-muted">Paid so far: <strong className="text-accent">{$(paidTotal)}</strong></p>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              Your plan: {user.payPlan === "FASTER" ? `faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%)` : `standard pay (every Friday, ${FLEET.dispatchFeePercent}%)`}.
+            </p>
+            <ul className="mt-3 divide-y divide-border text-sm">
+              {user.payouts.map((p) => (
+                <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <div>
+                    <span className={`mr-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${p.status === "PAID" ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted"}`}>
+                      {p.status === "PAID" ? "Paid" : "Pending"}
+                    </span>
+                    <span className="text-muted">Delivery {day(p.deliveredOn)}{p.note ? ` · ${p.note}` : ""}</span>
+                    {p.paidAt && <span className="ml-2 text-xs text-muted">sent {day(p.paidAt)}</span>}
+                  </div>
+                  <div className="text-right">
+                    <span className="font-semibold">{$(p.netCents)}</span>
+                    <span className="ml-2 text-xs text-muted">load {$(p.loadCents)} − {p.feePercent}%</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="card mt-6 p-6">
           <h2 className="text-lg font-bold tracking-tight">How you get paid</h2>

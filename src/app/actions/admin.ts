@@ -13,6 +13,69 @@ import { createReviewInviteToken, REVIEW_INVITE_DAYS } from "@/lib/review-invite
 import { alertIfEmailFailed } from "@/lib/alerts";
 import { sendAddCityBatch, type AddCityBatchResult } from "@/lib/add-city-email";
 import { ensureConnectAccount, syncConnectStatus, type ConnectSync } from "@/lib/stripe-connect";
+import { cancelPayout as cancelPayoutRow, logDelivery, parseDollars, payAllPending as payAllPendingRows, payPayout, type PayAllSummary, type PayResult } from "@/lib/payouts";
+import type { PayPlan } from "@prisma/client";
+
+// ---- Fleet payouts (Stripe Connect phase 2) ------------------------------
+
+/** Standard (Friday, 15%) or faster (on logging, 20%). Only affects deliveries logged from now on. */
+export async function setPayPlan(driverProfileId: string, plan: PayPlan): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  if (plan !== "STANDARD" && plan !== "FASTER") return { ok: false, error: "Unknown plan." };
+  const driver = await prisma.driverProfile.findUnique({ where: { id: driverProfileId }, select: { userId: true } });
+  if (!driver) return { ok: false, error: "Driver not found." };
+  await prisma.user.update({ where: { id: driver.userId }, data: { payPlan: plan } });
+  revalidatePath(`/admin/drivers/${driverProfileId}`);
+  return { ok: true };
+}
+
+/**
+ * Log one completed delivery. `payNow` transfers immediately (the FASTER
+ * plan's normal path; also allowed for a STANDARD driver when the owner wants).
+ */
+export async function logDeliveryForDriver(
+  driverProfileId: string,
+  input: { amount: string; deliveredOn: string; note: string; payNow: boolean },
+): Promise<{ ok: true; payoutId: string; netCents: number; pay?: PayResult } | { ok: false; error: string }> {
+  const adminId = await requireAdmin();
+  const driver = await prisma.driverProfile.findUnique({ where: { id: driverProfileId }, select: { userId: true } });
+  if (!driver) return { ok: false, error: "Driver not found." };
+  const loadCents = parseDollars(input.amount);
+  if (loadCents === null) return { ok: false, error: "Enter the load amount in dollars, e.g. 145.00." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.deliveredOn)) return { ok: false, error: "Pick the delivery date." };
+  const deliveredOn = new Date(`${input.deliveredOn}T12:00:00Z`);
+  if (Number.isNaN(deliveredOn.getTime())) return { ok: false, error: "Pick the delivery date." };
+
+  const logged = await logDelivery({ userId: driver.userId, loadCents, deliveredOn, note: input.note, createdById: adminId });
+  if (!logged.ok) return logged;
+  const pay = input.payNow ? await payPayout(logged.payoutId) : undefined;
+  revalidatePath(`/admin/drivers/${driverProfileId}`);
+  revalidatePath("/admin/payouts");
+  return { ok: true, payoutId: logged.payoutId, netCents: logged.netCents, pay };
+}
+
+/** Pay (or retry) one payout now. */
+export async function payPayoutNow(payoutId: string): Promise<PayResult> {
+  await requireAdmin();
+  const r = await payPayout(payoutId);
+  revalidatePath("/admin/payouts");
+  return r;
+}
+
+/** Friday: every pending payout, one transfer each. */
+export async function payAllPending(): Promise<{ ok: true; summary: PayAllSummary }> {
+  await requireAdmin();
+  const summary = await payAllPendingRows();
+  revalidatePath("/admin/payouts");
+  return { ok: true, summary };
+}
+
+export async function cancelPayout(payoutId: string): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  const r = await cancelPayoutRow(payoutId);
+  revalidatePath("/admin/payouts");
+  return r;
+}
 
 /**
  * Fleet payouts: create the driver's Stripe Express account if they don't

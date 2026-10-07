@@ -212,8 +212,12 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   admin toggle); the carrier-account add remains a MANUAL owner step. Stripe Connect
   (Express) onboarding is self-serve at `/account/payouts` (fleet members only; the admin
   driver page has "Send Stripe setup link" + status; `src/lib/stripe-connect.ts`). Paying
-  drivers per delivery (transfers) is Phase 2 — not built yet; transfers come from the
-  FlowSync Stripe balance, which the owner tops up.
+  per delivery: `src/lib/payouts.ts` — the owner logs each delivery (load amount Curri paid)
+  on the driver's admin page; fee = `User.payPlan` STANDARD 15% (paid every Friday from
+  `/admin/payouts` "Pay all pending") or FASTER 20% (paid when logged); net moves by Stripe
+  transfer (idempotency key = payout id; cap `PAYOUT_CAP_CENTS` $1,500; only when the
+  driver's Connect status is Ready). Rows (`DriverPayout`) are never edited — cancel and
+  re-log. Transfers come from the FlowSync Stripe balance, which the owner tops up.
   The "$100.45 listed / $145 gig driver / $300 our bid" example is real — keep "one
   load, not a promise" next to it.
 
