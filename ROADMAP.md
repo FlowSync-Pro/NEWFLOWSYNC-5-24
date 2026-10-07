@@ -108,6 +108,53 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-07
+Restore point: commit `d4cd287` on the default branch, verified live on flowsyncdriver.com
+by the owner. To roll back, promote that deployment in Vercel → Deployments, or redeploy
+that commit. None of the changes below added migrations, schema changes or env var names.
+
+Shipped since the 2026-10-01 checkpoint (this session; the other session's PRs #17–#55
+are recorded in their own commits):
+- **Document upload no longer deletes silently** (`3f67c6f`, 2026-09-30/10-01): a PDF or an
+  undecodable file (HEIC on most browsers) now shows "Please upload a photo — JPG or PNG."
+  inside the card and leaves the existing document alone. Before, it deleted the Document
+  row with no message. Roadmap step "Upload your license & documents" now opens
+  `/account/edit`. `scripts/find-missing-documents.mjs` (read-only) lists drivers whose
+  files exist in Blob with no Document row; it was run 2026-10-01 (8 drivers / 12 docs) —
+  outreach is the owner's.
+- **Fleet buyers land on the fleet page** (`595fbc3`): after a homepage/pricing or offer-page-B
+  fleet purchase, activation / sign-in / temp-password reset all end on
+  `/account/curri-fleet?welcome=1` (next-steps copy, no second Purchase pixel). Someone already
+  signed in is sent straight there. `next` is honored only for in-app `/account…` paths.
+- **First-touch attribution** (`1f05529`): `AttributionCapture` (root layout) stores one
+  30-day first-party cookie (`fs_attr`: referrer host, UTM tags, fbclid, landing path, time).
+  The checkout route copies it plus the pixel's `_fbp`/`_fbc` into every Checkout Session's
+  metadata (`attr_source`, `attr_medium`, `attr_campaign`, `attr_content`, `attr_referrer`,
+  `attr_landing`, `attr_fbclid`, `attr_first_seen`, `fbp`, `fbc`); the webhook forwards
+  `fbp`/`fbc` to the Conversions API. Privacy policy has a paragraph on the cookie. Read it
+  per sale in Stripe → payment → Metadata.
+- **Tagged links** (`501eb45`, `d4cd287`): `docs/ads/tagged-links.md` has the ad / bio / reel /
+  text / Telegram links (same campaign names as `meta-ad-copy.md`). Every automatic email
+  tags its own site links (`utm_source=email&utm_campaign=<email name>`) via `send()` in
+  `lib/email.ts`; Telegram, Stripe, `/api/` and password-reset links are never tagged.
+
+Open, owner-side:
+- Neon password reset (the role password was exposed in chat/screenshots): Neon → production
+  branch → Roles → `neondb_owner` → Reset password; confirm Vercel's `DATABASE_URL` /
+  `DATABASE_URL_UNPOOLED` updated (Vercel-managed store), redeploy, check `/api/health`.
+  Owner declined to rotate the Blob token (2026-10-06).
+- Remove `DATABASE_URL` and `BLOB_READ_WRITE_TOKEN` from the LOCAL cloud environment's
+  variables if still there (they were added only to run the missing-documents script).
+- Reach out to the 8 drivers from the missing-documents CSV (owner's local `backups/`).
+- One tagged test purchase (`/pricing?utm_source=test&utm_campaign=attribution`, then refund)
+  to confirm the `attr_*` fields in Stripe and the match keys in Meta Events Manager.
+- Still from 10-01: run `scripts/send-test-email.mjs`; check the support email in Stripe's
+  public details; confirm an abandoned-checkout alert reaches the inbox.
+
+Next candidates: Phase 2 of attribution (nullable `Payment` columns + source on `/admin`
+signups — a migration, backup-first); PDF support for insurance cards (needs the
+server-action body limit raised or direct-to-Blob upload).
+
 ## 📍 Checkpoint — 2026-10-01
 Restore point: commit `62bd1c3` (the merge of PR #16 into the default branch), live on
 flowsyncdriver.com. Earlier same-day point, before the alert change: `1484112` (PR #14). To roll back, promote that deployment in Vercel → Deployments, or
