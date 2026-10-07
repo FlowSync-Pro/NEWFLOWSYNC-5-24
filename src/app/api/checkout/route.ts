@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { attributionMetadata } from "@/lib/attribution";
 import { FLEET, fleetOfferPrice, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, TIERS, type TierId } from "@/lib/pricing";
 
 /** Post-checkout offers are open for OFFER_WINDOW_HOURS after the purchase they follow. */
@@ -119,6 +121,13 @@ async function handleCheckout(req: Request) {
   const body = await req.json().catch(() => ({}));
   const base = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
 
+  // Where this buyer first came from (lib/attribution.ts) — attached to every
+  // checkout's metadata so the payment in Stripe says its source. Empty when
+  // the cookie is absent; the checkout's own keys always win on a clash.
+  const attribution = attributionMetadata(await cookies());
+  const meta = (m: Record<string, string | undefined>): Record<string, string> =>
+    Object.fromEntries(Object.entries({ ...attribution, ...m }).filter((e): e is [string, string] => typeof e[1] === "string"));
+
   // Curri fleet invite, full price, for a signed-in driver (one who passed on
   // the $97 post-checkout offer, or an existing driver joining later).
   if (body.intent === "fleet") {
@@ -132,7 +141,7 @@ async function handleCheckout(req: Request) {
       mode: "payment",
       line_items: [fleetLineItem(FLEET.price * 100)],
       customer_email: user.email,
-      metadata: { type: "fleet", userId: user.id, source: "account" },
+      metadata: meta({ type: "fleet", userId: user.id, source: "account" }),
       // Session id in the URL so the fleet page fires the browser Purchase pixel
       // with the same eventID the webhook sends to CAPI (one event, not two).
       success_url: `${base}/account/curri-fleet?joined=1&session_id={CHECKOUT_SESSION_ID}`,
@@ -164,7 +173,7 @@ async function handleCheckout(req: Request) {
       mode: "payment",
       line_items: [fleetLineItem(FLEET.price * 100)],
       customer_email: email,
-      metadata: { type: "fleet", standalone: "1", firstName, lastName, email, phone, ref },
+      metadata: meta({ type: "fleet", standalone: "1", firstName, lastName, email, phone, ref }),
       // Same post-payment landing as the listing: on-screen activation if the
       // account is brand new, plus the Purchase pixel with this session's id.
       success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
@@ -214,7 +223,7 @@ async function handleCheckout(req: Request) {
       line_items: [fleetLineItem(amount * 100)],
       customer_email: user.email,
       expires_at: offerCheckoutExpiry(original),
-      metadata: { type: "fleet", userId: user.id, source: hasPremium ? "oto-premium" : "oto-verified" },
+      metadata: meta({ type: "fleet", userId: user.id, source: hasPremium ? "oto-premium" : "oto-verified" }),
       success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
       cancel_url: `${base}/welcome/fleet-offer?session_id=${encodeURIComponent(original.id)}`,
     });
@@ -242,7 +251,7 @@ async function handleCheckout(req: Request) {
         },
       ],
       customer_email: profile.user.email,
-      metadata: { type: "upgrade", userId: session.userId, source: "account" },
+      metadata: meta({ type: "upgrade", userId: session.userId, source: "account" }),
       // A Premium purchase is followed by the fleet offer (page B).
       success_url: `${base}/welcome/fleet-offer?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/account/services`,
@@ -291,7 +300,7 @@ async function handleCheckout(req: Request) {
       customer_email: email,
       expires_at: offerCheckoutExpiry(original),
       // Reuses the existing fulfillUpgrade webhook handler.
-      metadata: { type: "upgrade", userId: user.id, source: "oto" },
+      metadata: meta({ type: "upgrade", userId: user.id, source: "oto" }),
       // The NEW upgrade session id (Stripe substitutes it) lands on offer page
       // B, which fires Purchase($50) with its own Meta eventID. The listing
       // Purchase fired on offer page A with the listing session's id.
@@ -361,7 +370,7 @@ async function handleCheckout(req: Request) {
       quantity: 1,
     })),
     customer_email: email || undefined,
-    metadata: { type: "listing", tier: tierId, bumps: bumps.join(","), firstName, lastName, primaryService, ref },
+    metadata: meta({ type: "listing", tier: tierId, bumps: bumps.join(","), firstName, lastName, primaryService, ref }),
     // Verified buyers get offer page A (Premium for $50); Premium buyers skip
     // straight to offer page B (the fleet for $149).
     success_url: `${base}/welcome/${tierId === "premium" ? "fleet-offer" : "premium-offer"}?session_id={CHECKOUT_SESSION_ID}`,

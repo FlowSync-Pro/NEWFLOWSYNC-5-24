@@ -315,6 +315,8 @@ async function fulfillUpgrade(session: Stripe.Checkout.Session) {
     firstName: profile.firstName,
     lastName: profile.lastName,
     sourceUrl: `${base}/welcome/premium-offer`,
+    fbp: session.metadata?.fbp,
+    fbc: session.metadata?.fbc,
   });
 }
 
@@ -446,6 +448,8 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     firstName,
     lastName: user.driverProfile?.lastName || md.lastName || undefined,
     sourceUrl: `${base}/account/curri-fleet`,
+    fbp: md.fbp,
+    fbc: md.fbc,
   });
 }
 
@@ -633,5 +637,7 @@ async function fulfillCheckout(session: Stripe.Checkout.Session) {
     firstName: md.firstName || undefined,
     lastName: md.lastName || undefined,
     sourceUrl: `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/welcome/premium-offer`,
+    fbp: md.fbp,
+    fbc: md.fbc,
   });
 }

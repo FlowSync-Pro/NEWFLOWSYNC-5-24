@@ -7,6 +7,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import MetaPixel from "@/components/MetaPixel";
 import GoogleTagManager from "@/components/GoogleTagManager";
+import AttributionCapture from "@/components/AttributionCapture";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -104,6 +105,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <GoogleTagManager />
         <MetaPixel pixelIds={metaPixelIds} />
+        <AttributionCapture />
         {fbAppId && <meta property="fb:app_id" content={fbAppId} />}
         <script
           type="application/ld+json"

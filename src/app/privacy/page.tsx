@@ -29,6 +29,12 @@ export default function PrivacyPage() {
       <p>
         <strong>Usage:</strong> basic analytics about how the site is used, to improve the product.
       </p>
+      <p>
+        <strong>Where you came from:</strong> on your first visit we store a small cookie for 30 days noting the
+        site or ad that sent you here (for example the referring website and any campaign tags on the link) and the
+        page you landed on. It contains no personal details. If you make a purchase, that information is kept with
+        your payment record so we know which of our ads and emails work.
+      </p>
 
       <h2>How we use it</h2>
       <p>

@@ -36,6 +36,10 @@ export interface CapiPurchaseEvent {
   lastName?: string;
   /** Optional — the page where conversion happened. */
   sourceUrl?: string;
+  /** Optional — the pixel's browser id cookie (_fbp), captured at checkout. Not hashed. */
+  fbp?: string;
+  /** Optional — the pixel's click id cookie (_fbc), captured at checkout. Not hashed. */
+  fbc?: string;
 }
 
 export async function sendCapiPurchase(event: CapiPurchaseEvent): Promise<void> {
@@ -50,11 +54,15 @@ export async function sendCapiPurchase(event: CapiPurchaseEvent): Promise<void> 
     "https://flowsyncdriver.com";
 
   // Meta requires PII to be SHA-256-hashed and lowercased before transmission.
-  const userData: Record<string, string[]> = {
+  const userData: Record<string, string[] | string> = {
     em: [sha256Lower(event.email)],
   };
   if (event.firstName) userData.fn = [sha256Lower(event.firstName)];
   if (event.lastName) userData.ln = [sha256Lower(event.lastName)];
+  // Browser match keys: these are what let Meta tie a server event to the ad
+  // click. Meta specifies them as plain strings, not hashed.
+  if (event.fbp) userData.fbp = event.fbp;
+  if (event.fbc) userData.fbc = event.fbc;
 
   const body = {
     data: [
