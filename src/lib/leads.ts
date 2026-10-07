@@ -88,6 +88,7 @@ export async function requestBreakdown(rawEmail: string, vehicleId: string): Pro
     unsubscribeUrl: leadUnsubscribeUrl(lead.id),
     postalAddress: MARKETING_POSTAL_ADDRESS,
     reason: "You're getting this because you asked for it on FlowSync's load-rate tool.",
+    campaign: "quiz-breakdown",
   });
   if (!res.sent) return { ok: false, error: "We couldn't send the email just now. Please try again in a few minutes." };
 
@@ -154,6 +155,7 @@ export async function runLeadFollowups(now = new Date()): Promise<{ kind: string
         unsubscribeUrl: leadUnsubscribeUrl(lead.id),
         postalAddress: MARKETING_POSTAL_ADDRESS,
         reason: "You're getting this because you signed up for driver tips on FlowSync's load-rate tool.",
+        campaign: `quiz-l${step}`,
       });
       if (!res.sent) {
         report.skipped++;

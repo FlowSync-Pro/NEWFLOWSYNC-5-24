@@ -98,11 +98,15 @@ https://flowsyncdriver.com/?utm_source=telegram&utm_medium=group&utm_campaign=fl
 
 ## Emails
 
-Emails the site sends automatically (welcome, Premium, fleet, recovery, the
-M1–M4 and L1–L3 follow-ups, "Add your city") build their links in code and are
-NOT tagged yet. Tagging them is a small code change in the email templates
-(`utm_source=email&utm_medium=email&utm_campaign=<email name>`); ask for it
-as its own task. For an email you write by hand:
+Every email the site sends tags its own links automatically (`lib/email.ts`
+→ `tagEmailLinks` in `lib/attribution.ts`): `utm_source=email`,
+`utm_medium=email`, and `utm_campaign` set to the email's name — `welcome`,
+`purchase-confirmation`, `premium-welcome`, `fleet-welcome`, `approved`,
+`review-invite`, `booking`, the follow-up kinds (`m1-offer-closing`,
+`m1b-fleet-offer-closing`, `m2-finish-setup`, `m3-first-week`, the win-back,
+`add-city-2026-10`), and the quiz emails (`quiz-breakdown`, `quiz-l1`…`quiz-l3`). Only links into our own site are tagged; Telegram,
+Stripe, unsubscribe and password-reset links are left alone. Nothing to do
+by hand. For an email you write yourself:
 
 ```
 https://flowsyncdriver.com/pricing?utm_source=email&utm_medium=email&utm_campaign=manual

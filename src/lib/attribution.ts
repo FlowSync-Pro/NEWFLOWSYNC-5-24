@@ -89,6 +89,43 @@ export function serializeAttribution(a: Attribution): string {
 }
 
 /**
+ * Tag one link in an email we send: adds utm_source=email, utm_medium=email and
+ * utm_campaign=<campaign> so a visit (and a later purchase) is traced back to
+ * that email. Only links into our own site are touched — never Telegram,
+ * Stripe, mailto, or our /api/ links (unsubscribe, sign-in tokens). Tags
+ * already on the link are kept. Anything unparseable is returned unchanged.
+ */
+export function tagEmailLink(href: string, campaign: string, siteUrl: string): string {
+  try {
+    const url = new URL(href);
+    const site = new URL(siteUrl);
+    const host = (h: string) => h.replace(/^www\./, "");
+    if (!/^https?:$/.test(url.protocol) || host(url.hostname) !== host(site.hostname)) return href;
+    if (url.pathname.startsWith("/api/")) return href;
+    const set = (k: string, v: string) => { if (!url.searchParams.has(k)) url.searchParams.set(k, v); };
+    set("utm_source", "email");
+    set("utm_medium", "email");
+    set("utm_campaign", clip(campaign.toLowerCase().replace(/[^a-z0-9-]+/g, "-"), 60));
+    return url.toString();
+  } catch {
+    return href;
+  }
+}
+
+/** Tag every href="…" in an email's HTML (see tagEmailLink). Never throws. */
+export function tagEmailLinks(html: string, campaign: string, siteUrl: string): string {
+  try {
+    return html.replace(/href="([^"]+)"/g, (_m, raw: string) => {
+      const escaped = raw.includes("&amp;");
+      const tagged = tagEmailLink(escaped ? raw.replace(/&amp;/g, "&") : raw, campaign, siteUrl);
+      return `href="${escaped ? tagged.replace(/&/g, "&amp;") : tagged}"`;
+    });
+  } catch {
+    return html;
+  }
+}
+
+/**
  * Stripe metadata for a checkout: readable keys for the Stripe dashboard, plus
  * Meta's browser match keys. Stripe allows 50 keys of 500 chars — well within.
  * `fbc` falls back to the documented fb.1.<ms>.<fbclid> form when the pixel

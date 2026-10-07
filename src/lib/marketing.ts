@@ -145,6 +145,7 @@ export async function sendMarketing(m: MarketingEmail): Promise<{ sent: boolean;
     unsubscribeUrl: unsubscribeUrl(m.userId),
     postalAddress: MARKETING_POSTAL_ADDRESS,
     scheduledAt: m.scheduledAt?.toISOString(),
+    campaign: m.kind,
   });
   if (!res.sent) {
     // Nothing went out, so release the slot (this row is our own bookkeeping,

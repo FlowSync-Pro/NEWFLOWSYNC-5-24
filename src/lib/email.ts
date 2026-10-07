@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { SITE_URL, SUPPORT_EMAIL } from "./site";
+import { tagEmailLinks } from "./attribution";
 import { fleetTelegramInviteUrl } from "./telegram-invite";
 import { CHALLENGE_DAYS, challengeName } from "./challenge";
 import { EARNINGS_SOURCE, type Vehicle } from "./earnings";
@@ -40,9 +41,18 @@ interface SendOptions {
   headers?: Record<string, string>;
   /** ISO time to deliver later (Resend scheduling); cancel with cancelScheduledEmail. */
   scheduledAt?: string;
+  /**
+   * Which email this is, e.g. "welcome", "recovery", "m2-finish-setup". Every
+   * link into the site gets utm_source=email&utm_medium=email&utm_campaign=<this>
+   * (lib/attribution.ts), so a purchase that started from this email says so
+   * in Stripe. Leave unset for emails whose links shouldn't be tagged
+   * (password resets, owner alerts).
+   */
+  campaign?: string;
 }
 
-async function send(to: string, subject: string, html: string, opts: SendOptions = {}): Promise<EmailResult> {
+async function send(to: string, subject: string, rawHtml: string, opts: SendOptions = {}): Promise<EmailResult> {
+  const html = opts.campaign ? tagEmailLinks(rawHtml, opts.campaign, process.env.NEXT_PUBLIC_SITE_URL || SITE_URL) : rawHtml;
   const resend = getResend();
   if (!resend || !process.env.RESEND_FROM_EMAIL) {
     // A warning, not a quiet log: in production this means no customer email
@@ -104,6 +114,8 @@ export async function sendMarketingEmail(opts: {
   scheduledAt?: string;
   /** Why they're getting it, for people without an account (e.g. quiz leads). Default: the account wording. */
   reason?: string;
+  /** Tag for the links (see SendOptions.campaign). Defaults to "marketing". */
+  campaign?: string;
 }): Promise<EmailResult> {
   const link = `<a href="${opts.unsubscribeUrl}" style="color:#7c8a92;text-decoration:underline">Unsubscribe</a>`;
   const footer =
@@ -118,6 +130,7 @@ export async function sendMarketingEmail(opts: {
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
     scheduledAt: opts.scheduledAt,
+    campaign: opts.campaign ?? "marketing",
   });
 }
 
@@ -566,6 +579,7 @@ export async function sendDriverWelcomeEmail(opts: {
     opts.to,
     `You're in, ${opts.firstName} — your FlowSync login + the story behind the vans`,
     shell("You're in", body),
+    { campaign: "welcome" },
   );
 }
 
@@ -624,7 +638,7 @@ export function purchaseConfirmationEmail(opts: PurchaseConfirmationOpts): { sub
 
 export async function sendPurchaseConfirmationEmail(opts: PurchaseConfirmationOpts) {
   const { subject, html } = purchaseConfirmationEmail(opts);
-  return send(opts.to, subject, html);
+  return send(opts.to, subject, html, { campaign: "purchase-confirmation" });
 }
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -641,7 +655,7 @@ export async function sendBookingRequestEmail(opts: {
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.driverFirstName}, you have a new ${opts.service.toLowerCase()} request from <strong style="color:#e7ecef">${opts.customerName}</strong>:</p>
     <div style="background:#11181c;border:1px solid #1d262b;border-radius:12px;padding:14px;margin:14px 0;color:#aebac1">${opts.details}</div>
     <p style="margin-top:8px">${button(opts.bookingsUrl, "Review & send a quote")}</p>`;
-  return send(opts.to, `New ${opts.service.toLowerCase()} request from ${opts.customerName}`, shell("New booking request", body));
+  return send(opts.to, `New ${opts.service.toLowerCase()} request from ${opts.customerName}`, shell("New booking request", body), { campaign: "booking" });
 }
 
 export async function sendQuoteEmail(opts: {
@@ -655,7 +669,7 @@ export async function sendQuoteEmail(opts: {
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.customerName}, ${opts.driverName} sent you a quote:</p>
     <div style="background:#11181c;border:1px solid #1d262b;border-radius:12px;padding:14px;margin:14px 0;text-align:center;font-size:24px;font-weight:800;color:#25e07a">${money(opts.amountCents)}</div>
     <p style="margin-top:8px">${button(opts.payUrl, "Review & pay")}</p>`;
-  return send(opts.to, `Your quote from ${opts.driverName} — ${money(opts.amountCents)}`, shell("You have a quote", body));
+  return send(opts.to, `Your quote from ${opts.driverName} — ${money(opts.amountCents)}`, shell("You have a quote", body), { campaign: "booking" });
 }
 
 export async function sendBookingPaidEmail(opts: {
@@ -666,7 +680,7 @@ export async function sendBookingPaidEmail(opts: {
 }) {
   const body = `
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.driverFirstName}, ${opts.customerName} just paid ${money(opts.amountCents)} — go make it happen!</p>`;
-  return send(opts.to, `You got booked — ${money(opts.amountCents)}`, shell("Payment received", body));
+  return send(opts.to, `You got booked — ${money(opts.amountCents)}`, shell("Payment received", body), { campaign: "booking" });
 }
 
 export async function sendBookingReceiptEmail(opts: {
@@ -684,7 +698,7 @@ export async function sendBookingReceiptEmail(opts: {
       </table>
     </div>
     <p style="color:#7c8a92;font-size:13px">${opts.driverName} has been notified and will be in touch to coordinate.</p>`;
-  return send(opts.to, `Receipt — ${money(opts.amountCents)} to ${opts.driverName}`, shell("Payment confirmed", body));
+  return send(opts.to, `Receipt — ${money(opts.amountCents)} to ${opts.driverName}`, shell("Payment confirmed", body), { campaign: "booking" });
 }
 
 export async function sendDriverApprovedEmail(opts: {
@@ -695,7 +709,7 @@ export async function sendDriverApprovedEmail(opts: {
   const body = `
     <p style="color:#aebac1;line-height:1.6">Great news, ${opts.firstName} — your documents have been reviewed and your FlowSync profile is now <strong style="color:#25e07a">verified</strong>. Customers will see your Verified badge and can book you directly.</p>
     <p style="margin-top:8px">${button(opts.profileUrl, "View your profile")}</p>`;
-  return send(opts.to, "You're verified on FlowSync", shell("You're verified", body));
+  return send(opts.to, "You're verified on FlowSync", shell("You're verified", body), { campaign: "approved" });
 }
 
 // Sent automatically the moment the $97 upgrade is paid (Stripe webhook) or
@@ -730,7 +744,7 @@ export async function sendPremiumUpgradeEmail(opts: {
     <p ${P}><strong style="color:#e7ecef">Reply to this email with those three</strong> and I'll come back with a plan built specifically around where you actually are.</p>
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>
     ${ps}`;
-  return send(opts.to, "You're in — FlowSync Premium (3 quick questions)", shell("Welcome to Premium", body));
+  return send(opts.to, "You're in — FlowSync Premium (3 quick questions)", shell("Welcome to Premium", body), { campaign: "premium-welcome" });
 }
 
 /**
@@ -766,7 +780,7 @@ export async function sendFleetWelcomeEmail(opts: {
     <p style="margin:0 0 18px">${button(opts.fleetUrl, "Open the fleet guide")}</p>
     <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.</p>
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
-  return send(opts.to, `You're in the fleet, ${opts.firstName} — next steps`, shell("Welcome to the fleet", body));
+  return send(opts.to, `You're in the fleet, ${opts.firstName} — next steps`, shell("Welcome to the fleet", body), { campaign: "fleet-welcome" });
 }
 
 /**
@@ -802,7 +816,7 @@ export async function sendCheckoutRecoveryEmail(opts: {
     : pending
       ? `Your FlowSync listing is still waiting (it's $${price} until ${LISTING_INCREASE_DATE_LABEL})`
       : "Your FlowSync listing is still waiting";
-  return send(opts.to, subject, shell(isFleet ? "Pick up where you left off" : "Your listing is one click away", body));
+  return send(opts.to, subject, shell(isFleet ? "Pick up where you left off" : "Your listing is one click away", body), { campaign: isFleet ? "recovery-fleet" : "recovery" });
 }
 
 /**
@@ -822,7 +836,7 @@ export async function sendReviewInviteEmail(opts: {
     <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">This link is just for you — sign in to your FlowSync account first if you aren't already. It stays good for 90 days.</p>
     <p ${P}>Thanks for riding with us.</p>
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
-  return send(opts.to, `${opts.firstName}, can I get your honest review of FlowSync?`, shell("Your review", body));
+  return send(opts.to, `${opts.firstName}, can I get your honest review of FlowSync?`, shell("Your review", body), { campaign: "review-invite" });
 }
 
 export async function sendPasswordResetEmail(opts: {
@@ -854,5 +868,5 @@ export async function sendWelcomeEmail(opts: { to: string; firstName: string; pr
   const body = `
     <p style="color:#aebac1;line-height:1.6">Hi ${opts.firstName}, welcome to FlowSync. Your account is ready — finish your profile and upload your documents to get verified.</p>
     <p style="margin-top:8px">${button(opts.profileUrl, "Complete your profile")}</p>`;
-  return send(opts.to, "Welcome to FlowSync", shell("Welcome aboard", body));
+  return send(opts.to, "Welcome to FlowSync", shell("Welcome aboard", body), { campaign: "welcome" });
 }
