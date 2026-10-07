@@ -119,11 +119,10 @@ the receipt email, and the row PAID.** Database restore point taken BEFORE this 
 Neon snapshot `before-payouts-2026-10-07` on main (never expires), on top of the phase-1
 branch + snapshot below.
 
-Known loose end (2026-10-07): the owner also created a connected account for Judith
-Nalubowa by hand in the Stripe dashboard, so she has two — the site stores only the one it
-created (shown on her admin card). If she completes onboarding on the hand-made one, the
-site will still see "not ready"; either close the hand-made one (Connect → the account →
-close) or add an admin "link existing account id" field (small, not built).
+Resolved 2026-10-07: a hand-made duplicate connected account for one driver was closed in
+the Stripe dashboard; the site's account (the one on her admin card) is the only one left.
+Rule of thumb: never create connected accounts by hand — the admin button or the driver's
+Payouts page creates the one the site will pay.
 
 **Migration `20261007230000_fleet_payouts` (ADDITIVE, applied to production 2026-10-07):**
 enums `PayPlan`, `PayoutStatus`; `User.payPlan` (default STANDARD); new table
