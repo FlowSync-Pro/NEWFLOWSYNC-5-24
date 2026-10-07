@@ -108,6 +108,33 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-07 (night): Stripe Connect phase 2 live — drivers can be paid
+Restore point: commit `5c7f889` on the default branch, verified live by the owner: a $1.18
+test delivery logged on his own account, "Log and pay now" → $1.00 transfer confirmed in
+Stripe, receipt email received, row PAID in /admin/payouts. Database restore point taken
+BEFORE this migration: Neon snapshot `before-payouts-2026-10-07` on main (never expires),
+on top of the phase-1 branch + snapshot below.
+
+**Migration `20261007230000_fleet_payouts` (ADDITIVE, applied to production 2026-10-07):**
+enums `PayPlan`, `PayoutStatus`; `User.payPlan` (default STANDARD); new table
+`DriverPayout`. Rolling the code back to `2d151aa` is safe with these in place.
+
+Shipped: `src/lib/payouts.ts` (log a delivery → PENDING; pay = live Stripe-readiness check +
+`stripe.transfers.create` with the payout id as idempotency key, $1,500 cap, PAID / FAILED
+with reason + owner alert / retry; Pay all pending; cancel), the "Fleet payouts" card on the
+admin driver page (plan, Log delivery with net preview, Log for Friday / Log and pay now,
+per-row Pay now / Retry / Cancel), `/admin/payouts` (Friday run + history, linked from
+/admin), the driver's own history on `/account/payouts`, and the payout receipt email.
+
+**How the owner pays drivers now:** log each delivery on the driver's page as it happens.
+Standard drivers: Friday → /admin/payouts → Pay all pending. Faster drivers: Log and pay
+now. Keep the FlowSync Stripe balance topped up (Stripe → Balances → Add to balance);
+a short balance fails the transfer cleanly and the row stays pending for retry.
+
+Open, owner-side: in Stripe → Settings → Connect turn on tax-form (1099) generation;
+contractor terms are attorney territory. Phase 3 candidates: reversal handling
+(`transfer.reversed` → mark the row), a weekly payout summary email, CSV export of payouts.
+
 ## 📍 Checkpoint — 2026-10-07 (evening): Stripe Connect phase 1 live
 Restore point: commit `2d151aa` on the default branch, verified live by the owner (own
 account through Stripe's form; a real driver's account created from the admin button;
