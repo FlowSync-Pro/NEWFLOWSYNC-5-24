@@ -109,11 +109,21 @@ writing the code against env placeholders + setup docs; provisioning + secrets h
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
 ## 📍 Checkpoint — 2026-10-07 (night): Stripe Connect phase 2 live — drivers can be paid
-Restore point: commit `5c7f889` on the default branch, verified live by the owner: a $1.18
-test delivery logged on his own account, "Log and pay now" → $1.00 transfer confirmed in
-Stripe, receipt email received, row PAID in /admin/payouts. Database restore point taken
-BEFORE this migration: Neon snapshot `before-payouts-2026-10-07` on main (never expires),
-on top of the phase-1 branch + snapshot below.
+Restore point: commit `5c7f889` on the default branch, deployed and Ready. **The live
+transfer call has NOT been exercised yet** (corrected 2026-10-07 late: the owner reported
+the $1 test as done to move forward, then clarified it was not run). Verified live so far:
+the migration applied, the admin card and /admin/payouts render, and (phase 1) the site
+creates Express accounts and reads their status. **Before any driver is paid: one $1.18
+delivery → "Log and pay now" → confirm the $1.00 transfer in Stripe → Connect → Transfers,
+the receipt email, and the row PAID.** Database restore point taken BEFORE this migration:
+Neon snapshot `before-payouts-2026-10-07` on main (never expires), on top of the phase-1
+branch + snapshot below.
+
+Known loose end (2026-10-07): the owner also created a connected account for Judith
+Nalubowa by hand in the Stripe dashboard, so she has two — the site stores only the one it
+created (shown on her admin card). If she completes onboarding on the hand-made one, the
+site will still see "not ready"; either close the hand-made one (Connect → the account →
+close) or add an admin "link existing account id" field (small, not built).
 
 **Migration `20261007230000_fleet_payouts` (ADDITIVE, applied to production 2026-10-07):**
 enums `PayPlan`, `PayoutStatus`; `User.payPlan` (default STANDARD); new table
@@ -136,9 +146,12 @@ contractor terms are attorney territory. Phase 3 candidates: reversal handling
 (`transfer.reversed` → mark the row), a weekly payout summary email, CSV export of payouts.
 
 ## 📍 Checkpoint — 2026-10-07 (evening): Stripe Connect phase 1 live
-Restore point: commit `2d151aa` on the default branch, verified live by the owner (own
-account through Stripe's form; a real driver's account created from the admin button;
-existing drivers' trips and documents still render). Database restore points taken
+Restore point: commit `2d151aa` on the default branch, verified live by the owner as far
+as: a real driver's Express account created from the admin button with live status and
+requirements shown; existing drivers' trips and documents still render. (Corrected
+2026-10-07 late: Stripe's Connected accounts list shows no account for the owner, so the
+driver-side form was not walked through by him; four drivers' accounts exist, all
+"Restricted" until each finishes Stripe's form.) Database restore points taken
 BEFORE this migration: Neon branch `backup-before-stripe-connect` and snapshot
 `before-stripe-connect-2026-10-07` on main (never expires).
 
