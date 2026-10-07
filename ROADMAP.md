@@ -108,7 +108,37 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
-## 📍 Checkpoint — 2026-10-07
+## 📍 Checkpoint — 2026-10-07 (evening): Stripe Connect phase 1 live
+Restore point: commit `2d151aa` on the default branch, verified live by the owner (own
+account through Stripe's form; a real driver's account created from the admin button;
+existing drivers' trips and documents still render). Database restore points taken
+BEFORE this migration: Neon branch `backup-before-stripe-connect` and snapshot
+`before-stripe-connect-2026-10-07` on main (never expires).
+
+**Migration `20261007190000_stripe_connect_accounts` (ADDITIVE, applied to production
+2026-10-07):** `User.stripeConnectAccountId` (unique, nullable),
+`User.stripeConnectOnboardedAt` (nullable), `User.stripeConnectPayoutsEnabled`
+(default false). Rolling back the code to `d4cd287` is safe with these columns in place.
+
+Shipped: `src/lib/stripe-connect.ts` (Express account per fleet driver, onboarding links
+on click, Express dashboard login links, status sync + owner email when payouts become
+enabled), `/account/payouts` (fleet members; Set up / Continue / Manage in Stripe), the
+admin driver page's "Stripe payouts" card (status, requirements due, Send Stripe setup
+link, Refresh status), the "Set up your fleet payouts" email, and copy changes in the
+fleet welcome email + fleet guide (no more "email for your Stripe link"). No webhook:
+status is read from Stripe on page load. Transfers (paying per delivery) are NOT built.
+
+**Next: Stripe Connect phase 2 — pay per delivery.** Needs: a `DriverPayout` table
+(driver, load amount, fee %, net, note/load ref, Stripe transfer id, who/when) — a
+migration (backup first); an admin "Pay driver" form on the driver page (load amount,
+standard 15% / faster 20%, shows net, confirm → `stripe.transfers.create` to the
+driver's account) with a receipt email; a payouts history. Transfers draw on the
+FlowSync Stripe balance — the owner tops it up (Curri pays the bank, not Stripe). First
+real transfer must be $1 to the owner's own account. Open decisions: faster-pay
+mechanics (Stripe instant payout is the driver's choice/fee on Express; "faster pay" here
+means we transfer sooner), and whether a weekly Friday batch screen comes in phase 2 or 3.
+
+## 📍 Checkpoint — 2026-10-07 (morning)
 Restore point: commit `d4cd287` on the default branch, verified live on flowsyncdriver.com
 by the owner. To roll back, promote that deployment in Vercel → Deployments, or redeploy
 that commit. None of the changes below added migrations, schema changes or env var names.
