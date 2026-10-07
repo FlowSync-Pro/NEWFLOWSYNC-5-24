@@ -762,7 +762,7 @@ export async function sendFleetWelcomeEmail(opts: {
   // Fleet buyers are the only drivers who get the Telegram invite.
   const telegram = fleetTelegramInviteUrl();
   const fleetStep1 = known
-    ? `<strong style="color:#e7ecef">Reply to this email</strong> to confirm your details — I've got ${known} on file — plus the email for your Stripe payouts, and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}% dispatching fee) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`
+    ? `<strong style="color:#e7ecef">Reply to this email</strong> to confirm your details — I've got ${known} on file — and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}% dispatching fee) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`
     : `<strong style="color:#e7ecef">Reply to this email</strong> with your city, your vehicle (year, make, model), and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}% dispatching fee) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`;
   const body = `
     <p ${P}>Hey ${opts.firstName} — you're in. Welcome to the Barham Transport fleet.</p>
@@ -770,7 +770,7 @@ export async function sendFleetWelcomeEmail(opts: {
     <ol style="padding-left:20px;margin:0 0 14px">
       <li ${LI}>${fleetStep1}</li>
       <li ${LI}><strong style="color:#e7ecef">We add you to our carrier account.</strong> That's what gets you activated so loads can be dispatched to you. Usually same day once we have your details.</li>
-      <li ${LI}><strong style="color:#e7ecef">You get a Stripe setup link</strong> from us. That's where every payout lands, and it's what your 1099 comes from at year end. Don't have Stripe yet? We can send your first two or three payouts another way while you set it up.</li>
+      <li ${LI}><strong style="color:#e7ecef">Set up your payouts.</strong> In your account, open <strong style="color:#e7ecef">Payouts</strong> and finish Stripe's short form (bank account and tax details — about 5 minutes). That's where every payout lands, and it's what your 1099 comes from at year end. Not done yet when your first load pays? We can send the first two or three payouts another way while you set it up.</li>
       <li ${LI}><strong style="color:#e7ecef">Loads start showing up.</strong> Claim, bid, or pass — you're never required to take one.</li>
       <li ${LI}><strong style="color:#e7ecef">Everything in Premium is unlocked in your account.</strong> The bidding calculator, the P&amp;L tracker, every guide, and the Curri mastermind — use them from day one.</li>
       ${telegram ? `<li ${LI}><strong style="color:#e7ecef">Join the fleet Telegram group</strong> once you're activated — dispatch updates and the other fleet drivers are there. <a href="${telegram}" style="color:#25e07a">Open the group →</a></li>` : ""}
@@ -788,6 +788,28 @@ export async function sendFleetWelcomeEmail(opts: {
  * Checkout expires unpaid. Personal, one link, the real price (and the real
  * increase date while it's pending), the guarantee. No discount, no fake timer.
  */
+/**
+ * Fleet payouts: asks the driver to finish Stripe's onboarding form from the
+ * Payouts page in their account (the Stripe link itself expires in minutes,
+ * so the email never carries it). Sent by the admin button; the same page is
+ * reachable from the fleet guide without any email.
+ */
+export async function sendStripeSetupEmail(opts: { to: string; firstName: string; payoutsUrl: string }) {
+  const body = `
+    <p ${P}>Hey ${opts.firstName} — one more step so we can pay you for the loads you run.</p>
+    <p ${P}>Payouts go through <strong style="color:#e7ecef">Stripe</strong>, the same company that handles card payments for most of the internet. You fill in Stripe's short form once — bank account for deposits, your name and address, and a tax ID so Stripe can send your 1099 at year end — and from then on every completed delivery is paid straight to your bank.</p>
+    <ol style="padding-left:20px;margin:0 0 14px">
+      <li ${LI}>Sign in to your FlowSync account and open <strong style="color:#e7ecef">Payouts</strong> (button below).</li>
+      <li ${LI}>Click <strong style="color:#e7ecef">Set up payouts with Stripe</strong> and finish the form. About 5 minutes; have your bank details handy.</li>
+      <li ${LI}>That's it. The page shows "Ready" when Stripe has everything.</li>
+    </ol>
+    <p style="margin:0 0 18px">${button(opts.payoutsUrl, "Set up payouts")}</p>
+    <p ${P}>Your bank details go to Stripe, not to us — we never see them. Standard pay is every Friday (${FLEET.dispatchFeePercent}% dispatching fee); faster pay in 1–2 business days is ${FLEET.fastPayoutFeePercent}%.</p>
+    <p ${P}>Stuck on anything? Just reply — a real person reads it.</p>
+    <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
+  return send(opts.to, "Set up your fleet payouts (about 5 minutes)", shell("Set up your payouts", body), { campaign: "stripe-setup" });
+}
+
 export async function sendCheckoutRecoveryEmail(opts: {
   to: string;
   firstName?: string;

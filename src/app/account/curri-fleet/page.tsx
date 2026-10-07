@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     title: "Send us your details",
-    body: `Email ${SUPPORT_EMAIL} (or DM Nasser privately on Telegram — not in the group chat) with your city, your vehicle (year, make, model), the email you want your Stripe setup link sent to, and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}%) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%).`,
+    body: `Email ${SUPPORT_EMAIL} (or DM Nasser privately on Telegram — not in the group chat) with your city, your vehicle (year, make, model), and whether you want standard pay (every Friday, ${FLEET.dispatchFeePercent}%) or faster pay (1–2 business days, ${FLEET.fastPayoutFeePercent}%). Then set up payouts from the Payouts page in your account — about 5 minutes with Stripe.`,
   },
   {
     title: "We add you on our carrier account",
@@ -107,15 +107,20 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground/90">
               <li>Your city</li>
               <li>Your vehicle (year, make, model)</li>
-              <li>The email you want your Stripe setup link sent to</li>
+              <li>Then set up payouts below (bank details go straight to Stripe, about 5 minutes)</li>
               <li>Standard pay (every Friday, {FLEET.dispatchFeePercent}%) or faster pay (1–2 business days, {FLEET.fastPayoutFeePercent}%)</li>
             </ul>
-            <a
-              href={`mailto:${SUPPORT_EMAIL}?subject=Curri%20fleet%20activation`}
-              className="btn-primary mt-5 inline-flex rounded-full px-6 py-2.5 text-sm"
-            >
-              Email {SUPPORT_EMAIL}
-            </a>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <a
+                href={`mailto:${SUPPORT_EMAIL}?subject=Curri%20fleet%20activation`}
+                className="btn-primary inline-flex rounded-full px-6 py-2.5 text-sm"
+              >
+                Email {SUPPORT_EMAIL}
+              </a>
+              <Link href="/account/payouts" className="btn-ghost inline-flex rounded-full px-6 py-2.5 text-sm">
+                Set up payouts →
+              </Link>
+            </div>
             {telegram && (
               <div className="mt-5 border-t border-accent/20 pt-5">
                 <p className="text-sm font-semibold text-accent">Fleet Telegram group</p>

@@ -209,7 +209,11 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   checkbox at checkout (needs the Terms of Service URL set in Stripe → Settings → Public
   details; the code falls back to a plain checkout and logs if it isn't). Attorney
   review of this clause is still owed. Membership is `User.fleetJoinedAt` (webhook or
-  admin toggle); carrier-account add and Stripe Connect link remain MANUAL owner steps.
+  admin toggle); the carrier-account add remains a MANUAL owner step. Stripe Connect
+  (Express) onboarding is self-serve at `/account/payouts` (fleet members only; the admin
+  driver page has "Send Stripe setup link" + status; `src/lib/stripe-connect.ts`). Paying
+  drivers per delivery (transfers) is Phase 2 — not built yet; transfers come from the
+  FlowSync Stripe balance, which the owner tops up.
   The "$100.45 listed / $145 gig driver / $300 our bid" example is real — keep "one
   load, not a promise" next to it.
 

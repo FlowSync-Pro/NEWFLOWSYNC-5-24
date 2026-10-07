@@ -11,6 +11,8 @@ import TripMap from "@/components/TripMap";
 import AdminDriverExperience from "@/components/AdminDriverExperience";
 import AdminReviewInvite from "@/components/AdminReviewInvite";
 import AdminFleetToggle from "@/components/AdminFleetToggle";
+import AdminStripeConnect from "@/components/AdminStripeConnect";
+import { connectStatus, syncConnectStatus } from "@/lib/stripe-connect";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Driver operations", robots: { index: false } };
@@ -51,6 +53,10 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
   const totalMiles = totals.paidMiles + totals.deadheadMiles;
   const name = `${driver.firstName} ${driver.lastName}`.trim();
 
+  // Fleet payouts: mirror Stripe's status for members who have an account
+  // (one API call; null when Stripe is unreachable — the stored flags stand in).
+  const connect = driver.user.fleetJoinedAt && driver.user.stripeConnectAccountId ? await syncConnectStatus(driver.userId) : null;
+
   return (
     <div className="relative">
       <div className="glow-radial pointer-events-none absolute inset-0 h-40" />
@@ -78,6 +84,17 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
         <div className="mt-6">
           <AdminFleetToggle driverProfileId={driver.id} fleetJoinedAt={driver.user.fleetJoinedAt?.toISOString() ?? null} />
         </div>
+        {driver.user.fleetJoinedAt && (
+          <div className="mt-3">
+            <AdminStripeConnect
+              driverProfileId={driver.id}
+              status={connect?.status ?? connectStatus(driver.user)}
+              accountId={driver.user.stripeConnectAccountId}
+              onboardedAt={driver.user.stripeConnectOnboardedAt?.toISOString() ?? null}
+              requirementsDue={connect?.requirementsDue ?? []}
+            />
+          </div>
+        )}
 
         {/* Review invite — the only way a driver gets to leave a review */}
         <div className="mt-6">

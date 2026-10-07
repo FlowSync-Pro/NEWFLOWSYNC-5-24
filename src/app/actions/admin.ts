@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import { generateTempPassword, hashPassword } from "@/lib/password";
-import { sendDriverApprovedEmail, sendDriverWelcomeEmail, sendPremiumUpgradeEmail, sendReviewInviteEmail, sendTempPasswordEmail } from "@/lib/email";
+import { sendDriverApprovedEmail, sendDriverWelcomeEmail, sendPremiumUpgradeEmail, sendReviewInviteEmail, sendStripeSetupEmail, sendTempPasswordEmail } from "@/lib/email";
 import { serviceToEnum } from "@/lib/enums";
 import { getService } from "@/lib/services";
 import type { ServiceId } from "@/lib/services";
@@ -12,6 +12,43 @@ import { SITE_URL } from "@/lib/site";
 import { createReviewInviteToken, REVIEW_INVITE_DAYS } from "@/lib/review-invite";
 import { alertIfEmailFailed } from "@/lib/alerts";
 import { sendAddCityBatch, type AddCityBatchResult } from "@/lib/add-city-email";
+import { ensureConnectAccount, syncConnectStatus, type ConnectSync } from "@/lib/stripe-connect";
+
+/**
+ * Fleet payouts: create the driver's Stripe Express account if they don't
+ * have one, then email them the Payouts page where they finish Stripe's form.
+ * Safe to click again — it resends the email, never makes a second account.
+ */
+export async function sendStripeSetupLink(driverProfileId: string): Promise<{ ok: true; created: boolean; emailSent: boolean } | { ok: false; error: string }> {
+  await requireAdmin();
+  const driver = await prisma.driverProfile.findUnique({
+    where: { id: driverProfileId },
+    select: { userId: true, firstName: true, user: { select: { email: true } } },
+  });
+  if (!driver) return { ok: false, error: "Driver not found." };
+  try {
+    const acct = await ensureConnectAccount(driver.userId);
+    if (!acct.ok) return acct;
+    const res = await sendStripeSetupEmail({ to: driver.user.email, firstName: driver.firstName, payoutsUrl: `${SITE_URL}/account/payouts` });
+    await alertIfEmailFailed(res);
+    revalidatePath(`/admin/drivers/${driverProfileId}`);
+    return { ok: true, created: acct.created, emailSent: res.sent };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    console.error("[connect] setup link failed:", msg);
+    return { ok: false, error: `Stripe said: ${msg}` };
+  }
+}
+
+/** Fleet payouts: re-read the driver's Stripe account status (no email, no changes in Stripe). */
+export async function refreshStripeConnectStatus(driverProfileId: string): Promise<{ ok: true; sync: ConnectSync | null } | { ok: false; error: string }> {
+  await requireAdmin();
+  const driver = await prisma.driverProfile.findUnique({ where: { id: driverProfileId }, select: { userId: true } });
+  if (!driver) return { ok: false, error: "Driver not found." };
+  const sync = await syncConnectStatus(driver.userId);
+  revalidatePath(`/admin/drivers/${driverProfileId}`);
+  return { ok: true, sync };
+}
 
 /** Owner-only: send the one-time "Add your city" email to the next batch (see /admin/add-city). */
 export async function sendAddCityEmails(): Promise<{ ok: true; result: AddCityBatchResult } | { ok: false; error: string }> {

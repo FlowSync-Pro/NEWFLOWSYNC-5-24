@@ -105,6 +105,14 @@ model User {
   // DriverProfile, because a homepage buyer may pay before a profile exists.
   fleetJoinedAt DateTime?
 
+  // Stripe Connect (Express) for fleet payouts — ADDITIVE, all optional.
+  // accountId is set when the account is created (admin "Send Stripe setup
+  // link" or the driver's own Payouts page); the other two mirror what Stripe
+  // reports (synced on page load, never authoritative over Stripe).
+  stripeConnectAccountId      String?   @unique
+  stripeConnectOnboardedAt    DateTime?
+  stripeConnectPayoutsEnabled Boolean   @default(false)
+
   // Referral program: each user's own shareable code, and the code they signed
   // up under (only set once they've paid, so it counts real referrals).
   referralCode   String? @unique
