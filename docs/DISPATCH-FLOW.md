@@ -403,3 +403,5 @@ drivers' pocket, not mine." Consequences:
   "I'm ready to take loads now").
 - Any cost that does exist (e.g. Stripe Connect payout fees) is to be passed to drivers —
   a pricing change under AGENTS.md section D, so it needs the owner's explicit wording first.
+- **Decided 2026-10-08: Stripe Connect fees are covered by the dispatching fee** (15% /
+  20%). No separate payout fee; receipts and pricing stay as they are.
