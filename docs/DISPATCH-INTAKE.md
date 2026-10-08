@@ -155,6 +155,9 @@ only logged — the load also leaves the feed when *we* claim it.
 ### Turn off in that bot
 - Its own driver messages and commands (`/on`, `/end`, `/dispatch … @driver`, "Sent to N
   available drivers"). Drivers use the FlowSync bot: `/active`, `/inactive`.
+- **Kept (owner decision):** one "NEW LOAD DETECTED" info card per load to the owner's
+  private chat only (addresses, pay, rate per mile, vehicle, portal link), ending with
+  "FlowSync is offering it to Active drivers — claim only after ✅ ACCEPTED — CLAIM NOW".
 - "Claim on Curri portal, then dispatch" prompts. Claim only after this board's
   "✅ … ACCEPTED — CLAIM NOW".
 - The "$25 / removal" line — not in the fleet terms on the site. Any driver charge is a

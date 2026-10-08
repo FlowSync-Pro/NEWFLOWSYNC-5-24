@@ -21,6 +21,8 @@ Do-NOT
 - Do not claim, bid, assign, or click anything in the Curri portal. Read only.
 - Do not message drivers. Remove /on, /end, /dispatch … @driver, and the
   "Sent to N available drivers" output. Drivers use the FlowSync bot (/active, /inactive).
+  Exception (owner decision): keep ONE info card per new load in Nasser's private chat —
+  see docs/CURSOR-TASK-PORTAL-BOT-2.md.
 - Do not tell Nasser to "claim on portal, then dispatch". He claims only after FlowSync's
   "✅ … ACCEPTED — CLAIM NOW" message.
 - Do not show or enforce a "$25 / removal" fee — it is not in the fleet terms.
