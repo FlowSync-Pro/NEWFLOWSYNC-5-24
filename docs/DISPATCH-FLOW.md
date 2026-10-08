@@ -246,3 +246,65 @@ Every step visible in the load's event log.
   *Scheduled* — the pickup time Curri shows. A driver's **busy window** = pickup start →
   pickup + estimated trip time (trip miles at ~35 mph + 30 min handling); overlapping
   windows block a second assignment.
+
+## Stage 1b scope (2026-10-08) — Telegram + the intake door
+
+Stage 1a is live. 1b removes the two manual relays: texting drivers by hand, and typing
+loads in. The owner plans to have an agent (Cursor) watch Curri's emails/push and send
+loads in — allowed and welcome; an agent must NOT drive the Curri portal (terms, brittle,
+and a mis-click there is an unreleasable claim). Rule: agents feed the board; humans claim.
+
+**Data (one additive migration):** `User.telegramChatId` (unique, nullable) — the
+driver's private chat with the existing bot. New personal-data field (section E): needed
+for the function, stated on the fleet page.
+
+**Env (one new variable — RISKY deploy, owner sets it in Vercel):** `DISPATCH_INTAKE_KEY`,
+a long random secret for the intake endpoint. Telegram already has its token, webhook
+secret, owner user id and `TELEGRAM_BOT_USERNAME`.
+
+**1. Linking.** Fleet page → "Connect Telegram" opens
+`https://t.me/<bot>?start=<signed token>` (HMAC with AUTH_SECRET, 15-minute expiry,
+single use). The webhook sees `/start <token>` in a private chat, verifies it, stores
+`telegramChatId`, replies "Linked — you'll get loads here." Unlinking: `/unlink`.
+
+**2. Duty by command (private chat).** `/onduty` (defaults), `/onduty 10 40 200`
+(hours, radius mi, max trip mi), `/offduty`, `/status`. Same `setDuty` as the page.
+
+**3. Messages to drivers.**
+- Claim lane, on Assign: "ASSIGNED — pickup <address> (<zip>) at <time>, drop <address>,
+  <vehicle>, pay $<net after fee>, note. Reply here if anything's wrong." No buttons.
+- Bid lane, on Offer: the same details + inline buttons **Accept** / **Pass**
+  (`callback_data = offer:<id>:accept|pass`). The webhook handles `callback_query`
+  (today it only reads `message`), calls `respondOffer`, and answers the tap: "You've got
+  it", "Taken — someone was faster", "Expired", or "Passed". Expiry (OFFER_MINUTES) is
+  enforced at response time.
+- On Awarded / Lost / Cancelled: one line to the assigned driver.
+
+**4. Pings to the owner/dispatcher** (`TELEGRAM_OWNER_USER_ID`): a driver accepted or
+passed; a load arrived through intake, with the verdict and a link
+("New load 93711→93612 · cargo van · $145 · COVERED by Marcus (8 mi) → /admin/dispatch/…").
+No-answer alerts need a scheduler — not in 1b; the board shows pending offers.
+
+**5. Intake door.** `POST /api/dispatch/intake`, `Authorization: Bearer <DISPATCH_INTAKE_KEY>`,
+JSON with the same fields as the form (`curriRef`, `lane`, `rush`, `pickupAt`,
+`pickupAddress`, `pickupZip`, `dropoffAddress`, `dropoffZip`, `vehicleClass`, `listed`,
+`notes`). Validates exactly like the form, creates the load as NEW (never assigns, never
+claims), ranks it, pings the owner with the verdict. Duplicate `curriRef` within 24 h →
+200 with the existing load id (no second row). Rate-limited; wrong key → 401; logged.
+Any agent — Cursor, a Gmail script, a Zapier parser — uses this door.
+
+**Not in 1b:** no-answer timers, driving distance / live location (stage 3), SMS, the
+email parser itself (that is the agent's job, outside this repo).
+
+**Approval needed:** migration (backup first), the new env var, Telegram bot changes, the
+new personal-data field.
+
+**Done looks like:** a driver taps Connect Telegram once; goes on duty by `/onduty`; an
+agent posts a load → the owner's phone shows "COVERED by X" with a link → Assign → the
+driver's phone shows ASSIGNED → the owner claims in Curri. Bid lane: the driver taps
+Accept on their phone; the owner's phone says who accepted.
+
+**Open questions for the owner:** (1) what fields a Curri new-opportunity email actually
+contains (paste one, redacted) — decides what the agent can fill in; (2) the owner's
+pings to his private chat with the bot (default) or the relay group; (3) drivers may go
+on duty by Telegram command as well as the page (recommended yes).
