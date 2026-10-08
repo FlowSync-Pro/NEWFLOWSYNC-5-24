@@ -62,7 +62,7 @@ export default async function AdminDispatchLoadPage({ params }: PageProps<"/admi
             notes: load.notes, curriRef: load.curriRef, payoutId: load.payoutId,
             assigned: load.assignedProfile ? { profileId: load.assignedProfile.id, name: `${load.assignedProfile.firstName} ${load.assignedProfile.lastName}`.trim(), phone: load.assignedProfile.phone, email: load.assignedProfile.user.email } : null,
           }}
-          candidates={candidates.map((c) => ({ profileId: c.profileId, name: c.name, phone: c.phone, vehicleLabel: vehicleClassLabel(c.vehicleClass), baseZip: c.baseZip, milesToPickup: c.milesToPickup, minutesToPickup: c.minutesToPickup, onDuty: c.onDuty, covered: c.covered, reasons: c.reasons }))}
+          candidates={candidates.map((c) => ({ profileId: c.profileId, name: c.name, phone: c.phone, vehicleLabel: vehicleClassLabel(c.vehicleClass), baseZip: c.baseZip, milesToPickup: c.milesToPickup, minutesToPickup: c.minutesToPickup, onDuty: c.onDuty, onTelegram: c.onTelegram, covered: c.covered, assignable: c.activated && c.vehicleOk && !c.busy, reasons: c.reasons }))}
           offers={load.offers.map((o) => ({ id: o.id, profileId: o.driverProfileId, name: `${o.driverProfile.firstName} ${o.driverProfile.lastName}`.trim(), response: o.response, expiresAt: o.expiresAt.toISOString() }))}
           events={load.events.map((e) => ({ id: e.id, at: e.createdAt.toISOString(), actor: actorName(e.actorId), from: e.fromStatus, to: e.toStatus, note: e.note }))}
           bid={bid}

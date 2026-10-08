@@ -219,15 +219,19 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   driver's Connect status is Ready). Rows (`DriverPayout`) are never edited — cancel and
   re-log. Transfers come from the FlowSync Stripe balance, which the owner tops up.
   **Dispatch** (`/admin/dispatch`, `src/lib/dispatch.ts`, design in `docs/DISPATCH-FLOW.md`):
-  the owner enters a Curri load; the board ranks fleet drivers by ZIP distance and says
-  COVERED only when an on-duty, Curri-activated driver fits (vehicle, radius, max trip,
-  not busy). Claim-lane loads are assigned only when covered — never claim in Curri
-  without a committed driver (releasing a claim is a violation). Drivers go on duty from
-  the fleet page (`DutyToggle`) or by Telegram (`/onduty`, `/offduty` — `src/lib/telegram-dispatch.ts`,
-  linked via "Connect Telegram" on the fleet page, `User.telegramChatId`); admins mark
-  "Activated on Curri" on the driver page. Telegram carries ASSIGNED / offer (Accept, Pass)
-  / awarded / lost messages to drivers and verdict pings to the owner
-  (`src/lib/dispatch-notify.ts`). Loads arrive by hand or through the **intake door**
+  a Curri load arrives (intake agent or the form) and is **automatically offered on Telegram
+  to every matching Active driver** (Active, activated on Curri, vehicle, radius, max trip,
+  not busy, rush reach; nearest 10; 3 min open, 2 min for rush). First Accept wins; the
+  owner is pinged "CLAIM NOW" (claim lane) or "place bid $X" (bid lane) and only then
+  claims in Curri — never claim without a committed driver (releasing a claim is a
+  violation). Manual "Assign — confirmed by phone" exists for drivers the owner reached
+  by phone (still needs activated + right vehicle + not busy). Drivers see **Active /
+  Inactive** (stored as `onDutyUntil`; auto-expires after their hours) on the fleet page
+  (`DutyToggle`) or by Telegram `/active` `/inactive` (`/onduty` `/offduty` still work) —
+  `src/lib/telegram-dispatch.ts`, linked via "Connect Telegram", `User.telegramChatId`;
+  admins mark "Activated on Curri" on the driver page. Owner decisions 2026-10-08: no paid
+  services for dispatch (Google distance shelved; free ZIP/city estimates); Stripe Connect
+  fees are covered by the dispatching fee. Loads arrive by hand or through the **intake door**
   `POST /api/dispatch/intake` (bearer `DISPATCH_INTAKE_KEY`; spec `docs/DISPATCH-INTAKE.md`)
   which an email-reading agent uses — it only creates NEW loads or mirrors Curri's bid
   placed / won / lost / underbid emails; it never assigns or claims. Agents must not drive

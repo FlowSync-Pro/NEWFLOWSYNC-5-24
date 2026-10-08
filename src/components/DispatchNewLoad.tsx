@@ -19,7 +19,7 @@ const localNow = () => {
 export default function DispatchNewLoad() {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [f, setF] = useState({ curriRef: "", lane: "CLAIM" as "CLAIM" | "BID", rush: false, pickupAt: localNow(), pickupAddress: "", pickupZip: "", dropoffAddress: "", dropoffZip: "", vehicleClass: "CARGO_VAN" as (typeof VEHICLES)[number][0], listed: "", notes: "", miles: "" });
+  const [f, setF] = useState({ curriRef: "", lane: "CLAIM" as "CLAIM" | "BID", rush: false, pickupAt: localNow(), pickupAddress: "", pickupZip: "", dropoffAddress: "", dropoffZip: "", vehicleClass: "CARGO_VAN" as (typeof VEHICLES)[number][0], listed: "", notes: "", miles: "", sendNow: true });
   const [error, setError] = useState<string | null>(null);
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((s) => ({ ...s, [k]: v }));
   const input = "mt-1 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-foreground outline-none focus:border-accent";
@@ -60,15 +60,20 @@ export default function DispatchNewLoad() {
         <label className="text-xs text-muted">Curri reference<input value={f.curriRef} onChange={(e) => set("curriRef", e.target.value)} placeholder="#48213" className={input} /></label>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-[auto_1fr_2fr] sm:items-end">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={f.rush} onChange={(e) => set("rush", e.target.checked)} /> Rush (pickup within 30 min)
-        </label>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={f.rush} onChange={(e) => set("rush", e.target.checked)} /> Rush (pickup within 30 min)
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={f.sendNow} onChange={(e) => set("sendNow", e.target.checked)} /> Send to drivers now
+          </label>
+        </div>
         <label className="text-xs text-muted">Scheduled pickup<input type="datetime-local" value={f.pickupAt} disabled={f.rush} onChange={(e) => set("pickupAt", e.target.value)} className={`${input} disabled:opacity-50`} /></label>
         <label className="text-xs text-muted">Notes for the driver<input value={f.notes} onChange={(e) => set("notes", e.target.value)} placeholder="2 pallets, liftgate at dropoff" className={input} /></label>
       </div>
       {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
       <button type="button" onClick={submit} disabled={pending} className="btn-primary mt-4 rounded-full px-6 py-2.5 text-sm disabled:opacity-60">
-        {pending ? "Ranking drivers…" : "Add load and rank drivers"}
+        {pending ? "Working…" : f.sendNow ? "Add load and offer to Active drivers" : "Add load and rank drivers"}
       </button>
     </section>
   );

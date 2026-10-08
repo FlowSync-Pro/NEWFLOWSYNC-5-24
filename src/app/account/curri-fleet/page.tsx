@@ -33,8 +33,8 @@ const STEPS = [
     body: "Loads are dispatched through our carrier account. You do not need your own Curri carrier account to be approved before you can start. If you are already on Curri’s waitlist, you can run with our fleet while you wait.",
   },
   {
-    title: "Go on duty for nearby loads",
-    body: "After you're activated, connect Telegram on this page and turn on duty. On duty means nearby loads that fit your vehicle, radius, and trip length can be assigned to you. We claim or bid them in the Curri portal, then Telegram tells you the load is yours. On a bid-lane load, Telegram may ask you to Accept or Pass first. Turn duty off when you don't want loads.",
+    title: "Go Active for nearby loads",
+    body: "After you're activated, connect Telegram on this page and set yourself Active. While you're Active, loads that fit your vehicle, radius, and trip length are offered to you on Telegram with Accept and Pass. The first driver to accept gets the load; we claim or bid it in the Curri portal, then Telegram confirms it's yours. Go Inactive when you don't want offers — you also switch off automatically after the hours you set.",
   },
   {
     title: "Complete the delivery",

@@ -60,8 +60,10 @@ Body looks like one of:
   don't say which; the dispatcher can switch it on the board.
 - `listed` — dollars as text, if the email ever states a price. Usually empty.
 
-Response: `{ ok: true, loadId, status: "NEW", covered: ["Marcus Lee"] }` or
-`duplicate: true`. The owner's Telegram gets "COVERED by … / NOT COVERED" with a link.
+Response: `{ ok: true, loadId, status: "OFFERED", covered: ["Marcus Lee", …], offered: 2 }` or
+`duplicate: true`. The load is offered automatically on Telegram to every matching Active
+driver; the owner's Telegram gets "Offered to N Active drivers … / Not on Telegram — text
+them … / NOT COVERED" with a link, then "X ACCEPTED — CLAIM NOW" when someone taps Accept.
 
 ### 2. "Curri delivery opportunity: bid placed" → `kind: "event", type: "bid_placed"`
 

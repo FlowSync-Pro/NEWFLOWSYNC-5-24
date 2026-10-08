@@ -1,11 +1,25 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "./db";
 import { answerTelegramCallback, sendTelegramMessage, telegramBotUsername, telegramOwnerChatId } from "./telegram";
-import { DUTY_DEFAULTS, respondOffer, setDuty } from "./dispatch";
+import { DUTY_DEFAULTS, driverCostPerMile, rankCandidates, respondOffer, setDuty, suggestBid, type LoadForRanking } from "./dispatch";
+import { SITE_URL } from "./site";
+
+/** What the owner's phone says when a driver accepts: CLAIM NOW (claim lane) or the bid to place (bid lane). */
+async function ownerAcceptedLine(load: LoadForRanking & { lane: string; listedCents: number | null; pickupZip: string; dropoffZip: string }, profileId: string, name: string): Promise<string> {
+  const link = `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/admin/dispatch/${load.id}`;
+  const c = (await rankCandidates(load)).find((x) => x.profileId === profileId);
+  const miles = c?.milesToPickup ?? null;
+  const where = `${load.pickupZip} → ${load.dropoffZip}`;
+  if (load.lane !== "BID") return `✅ ${name} ACCEPTED ${where} (${miles ?? "?"} mi away) — CLAIM NOW in Curri, then tap "Claimed in Curri":\n${link}`;
+  if (miles === null || load.tripMiles === null) return `✅ ${name} ACCEPTED ${where} — place the bid in Curri:\n${link}`;
+  const cpm = await driverCostPerMile(profileId);
+  const s = suggestBid({ tripMiles: load.tripMiles, milesToPickup: miles, costPerMile: cpm.value, costPerMileSource: cpm.source, listedCents: load.listedCents });
+  return `✅ ${name} ACCEPTED ${where} (${miles} mi away) — place bid $${s.suggested} (floor $${s.floor}) in Curri:\n${link}`;
+}
 import { notifyOwner } from "./dispatch-notify";
 
 // The driver side of dispatch on Telegram (stage 1b): linking a driver's
-// private chat to their account, on/off duty by command, and the Accept /
+// private chat to their account, Active / Inactive by command, and the Accept /
 // Pass buttons on bid-lane offers. Runs before the community FAQ bot in the
 // webhook; returns true when it handled the update.
 
@@ -53,7 +67,7 @@ export type DispatchTelegramUpdate = {
   callback_query?: { id: string; from: { id: number }; data?: string; message?: { message_id: number; chat: { id: number } } };
 };
 
-const HELP = "This bot sends you fleet loads.\n/onduty — ready for loads (defaults: 8 h, 30 mi, 150 mi trips)\n/onduty 10 40 200 — hours, radius, max trip\n/offduty — stop\n/status — what you're set to\n/unlink — disconnect";
+const HELP = "This bot sends you fleet load offers.\n/active — send me offers (defaults: 8 h, 30 mi, 150 mi trips)\n/active 10 40 200 — hours, radius, max trip\n/inactive — stop offers\n/status — what you're set to\n/unlink — disconnect\n\nWhen an offer comes in, tap Accept or Pass. First to accept gets the load.";
 
 async function linkedProfile(chatId: string) {
   return prisma.user.findUnique({
@@ -74,7 +88,7 @@ export async function handleDispatchUpdate(update: DispatchTelegramUpdate): Prom
   const start = /^\/start(?:@\w+)?\s+(\S+)$/.exec(text);
   if (start) return handleStart(chatId, start[1]);
 
-  const cmd = /^\/(onduty|offduty|status|unlink|help)(?:@\w+)?(?:\s+(.*))?$/i.exec(text);
+  const cmd = /^\/(active|inactive|onduty|offduty|status|unlink|help)(?:@\w+)?(?:\s+(.*))?$/i.exec(text);
   if (!cmd) {
     // A linked driver chatting with the bot gets the help text; the owner's own commands pass through.
     if (chatId === telegramOwnerChatId()) return false;
@@ -95,7 +109,9 @@ export async function handleDispatchUpdate(update: DispatchTelegramUpdate): Prom
     return true;
   }
   const p = u.driverProfile;
-  switch (cmd[1].toLowerCase()) {
+  // /onduty and /offduty are the old names for /active and /inactive.
+  const command = ({ onduty: "active", offduty: "inactive" } as Record<string, string>)[cmd[1].toLowerCase()] ?? cmd[1].toLowerCase();
+  switch (command) {
     case "help":
       await sendTelegramMessage(chatId, HELP);
       return true;
@@ -106,15 +122,15 @@ export async function handleDispatchUpdate(update: DispatchTelegramUpdate): Prom
     case "status": {
       const on = !!p.onDutyUntil && p.onDutyUntil > new Date();
       await sendTelegramMessage(chatId, on
-        ? `On duty until ${p.onDutyUntil!.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" })} PT · ${p.dutyRadiusMiles ?? DUTY_DEFAULTS.radiusMiles} mi from ${p.baseZip ?? "(no ZIP)"} · trips up to ${p.dutyMaxTripMiles ?? DUTY_DEFAULTS.maxTripMiles} mi`
-        : `Off duty. Base ZIP ${p.baseZip ?? "(not set)"} · vehicle ${p.vehicleType || "(not set)"}${p.curriActivatedAt ? "" : " · not activated on Curri yet"}`);
+        ? `Active until ${p.onDutyUntil!.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" })} PT · ${p.dutyRadiusMiles ?? DUTY_DEFAULTS.radiusMiles} mi from ${p.baseZip ?? "(no ZIP)"} · trips up to ${p.dutyMaxTripMiles ?? DUTY_DEFAULTS.maxTripMiles} mi`
+        : `Inactive. Base ZIP ${p.baseZip ?? "(not set)"} · vehicle ${p.vehicleType || "(not set)"}${p.curriActivatedAt ? "" : " · not activated on Curri yet"}`);
       return true;
     }
-    case "offduty":
+    case "inactive":
       await setDuty(p.id, null);
-      await sendTelegramMessage(chatId, "Off duty. No loads will be assigned to you.");
+      await sendTelegramMessage(chatId, "Inactive. You won't get load offers until you send /active.");
       return true;
-    case "onduty": {
+    case "active": {
       if (!p.curriActivatedAt) { await sendTelegramMessage(chatId, "You're not activated on the Curri carrier account yet — Nas will let you know when you are."); return true; }
       if (!p.baseZip) { await sendTelegramMessage(chatId, "Add your home base ZIP first: account → Edit profile → Vehicle."); return true; }
       const nums = (cmd[2] ?? "").split(/\s+/).map(Number).filter((n) => Number.isFinite(n) && n > 0);
@@ -122,7 +138,7 @@ export async function handleDispatchUpdate(update: DispatchTelegramUpdate): Prom
       const radiusMiles = nums[1] ?? p.dutyRadiusMiles ?? DUTY_DEFAULTS.radiusMiles;
       const maxTripMiles = nums[2] ?? p.dutyMaxTripMiles ?? DUTY_DEFAULTS.maxTripMiles;
       await setDuty(p.id, { hours, radiusMiles, maxTripMiles });
-      await sendTelegramMessage(chatId, `On duty for ${Math.min(24, Math.max(1, Math.round(hours)))} h · within ${radiusMiles} mi of ${p.baseZip} · trips up to ${maxTripMiles} mi.\nIf a load fits, we may claim it for you and message you here — only stay on duty if you'll run it.`);
+      await sendTelegramMessage(chatId, `Active for ${Math.min(24, Math.max(1, Math.round(hours)))} h · offers within ${radiusMiles} mi of ${p.baseZip} · trips up to ${maxTripMiles} mi.\nOffers arrive here with Accept / Pass. First to accept gets the load. You switch off automatically after ${Math.min(24, Math.max(1, Math.round(hours)))} h, or send /inactive.`);
       return true;
     }
   }
@@ -165,9 +181,16 @@ async function handleCallback(q: NonNullable<DispatchTelegramUpdate["callback_qu
   const r = await respondOffer(offerId, action === "accept" ? "ACCEPTED" : "PASSED", u.id);
   const name = `${offer.driverProfile.firstName} ${offer.driverProfile.lastName}`.trim();
   if (r.ok) {
+    const load = await prisma.dispatchLoad.findUnique({ where: { id: offer.loadId } });
+    const claim = load?.lane !== "BID";
     await answerTelegramCallback(q.id, action === "accept" ? "You've got it ✅" : "Passed.");
-    await sendTelegramMessage(chatId, action === "accept" ? "✅ You've got it. We're placing the bid in Curri now — you'll hear back here when it's awarded." : "Passed. No problem.");
-    await notifyOwner(action === "accept" ? `✅ ${name} ACCEPTED the offer — place the bid: ${process.env.NEXT_PUBLIC_SITE_URL || ""}/admin/dispatch/${offer.loadId}` : `${name} passed on load ${offer.loadId}.`);
+    await sendTelegramMessage(chatId, action === "accept"
+      ? claim
+        ? "✅ You've got it. We're claiming it in Curri now — you'll get CONFIRMED here in a moment."
+        : "✅ You've got it. We're placing the bid in Curri now — you'll hear back here when it's awarded."
+      : "Passed. No problem.");
+    if (action === "accept" && load) await notifyOwner(await ownerAcceptedLine(load, offer.driverProfileId, name));
+    else if (action === "pass") await notifyOwner(`${name} passed on ${load ? `${load.pickupZip} → ${load.dropoffZip}` : offer.loadId}.`);
   } else {
     const why = /Taken|assigned/i.test(r.error) ? "Taken — someone was faster." : /expired/i.test(r.error) ? "This offer expired." : r.error;
     await answerTelegramCallback(q.id, why);

@@ -6,9 +6,9 @@ import Link from "next/link";
 import { goOffDuty, goOnDuty } from "@/app/actions/duty";
 
 /**
- * Fleet page: going on duty is the driver's commitment — within these
- * parameters the dispatcher may assign them a load and claim it in Curri on
- * their behalf (docs/DISPATCH-FLOW.md). Off duty = no loads, no questions.
+ * Fleet page: Active / Inactive. Active = send me load offers within my radius
+ * on Telegram; the driver accepts or passes each one, first accept wins
+ * (docs/DISPATCH-FLOW.md, stage 2). Inactive = no offers. Stored as onDutyUntil.
  */
 export default function DutyToggle({
   onDuty,
@@ -59,16 +59,16 @@ export default function DutyToggle({
     <section className={`mt-6 rounded-2xl border p-6 ${onDuty ? "border-accent/40 bg-accent-soft" : "border-border bg-surface-2/40"}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold tracking-tight">{onDuty ? "You're on duty" : "Go on duty"}</h2>
+          <h2 className="text-lg font-bold tracking-tight">{onDuty ? "You're Active" : "You're Inactive"}</h2>
           <p className="mt-1 text-sm text-muted">
             {onDuty
-              ? `Until ${new Date(onDutyUntil!).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · within ${radiusMiles ?? defaults.radiusMiles} mi of ${baseZip} · trips up to ${maxTripMiles ?? defaults.maxTripMiles} mi · ${vehicleLabel}`
-              : "On duty means: if a load fits what you set below, we may claim it for you and send you the details. Only go on duty when you'll actually run it — a claimed load can't be released."}
+              ? `Until ${new Date(onDutyUntil!).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · offers within ${radiusMiles ?? defaults.radiusMiles} mi of ${baseZip} · trips up to ${maxTripMiles ?? defaults.maxTripMiles} mi · ${vehicleLabel}. You'll switch to Inactive automatically after that.`
+              : "Active means we send you load offers within your radius on Telegram. You choose: tap Accept or Pass. The first driver to accept gets the load. You switch back to Inactive automatically after the hours you set."}
           </p>
         </div>
         {onDuty && (
           <button type="button" onClick={off} disabled={pending} className="rounded-full border border-border px-5 py-2.5 text-sm text-muted hover:text-foreground disabled:opacity-60">
-            {pending ? "Saving…" : "Go off duty"}
+            {pending ? "Saving…" : "Go Inactive"}
           </button>
         )}
       </div>
@@ -81,12 +81,12 @@ export default function DutyToggle({
             </p>
           )}
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <label className="text-xs text-muted">Hours on duty<input value={hours} onChange={(e) => setHours(e.target.value)} inputMode="numeric" className={input} /></label>
+            <label className="text-xs text-muted">Hours Active<input value={hours} onChange={(e) => setHours(e.target.value)} inputMode="numeric" className={input} /></label>
             <label className="text-xs text-muted">Radius from {baseZip || "your ZIP"} (miles)<input value={radius} onChange={(e) => setRadius(e.target.value)} inputMode="numeric" className={input} /></label>
             <label className="text-xs text-muted">Longest trip you&apos;ll take (miles)<input value={maxTrip} onChange={(e) => setMaxTrip(e.target.value)} inputMode="numeric" className={input} /></label>
           </div>
           <button type="button" onClick={on} disabled={pending || !ready} className="btn-primary mt-4 rounded-full px-6 py-2.5 text-sm disabled:opacity-60">
-            {pending ? "Saving…" : "Go on duty"}
+            {pending ? "Saving…" : "Go Active"}
           </button>
         </>
       )}

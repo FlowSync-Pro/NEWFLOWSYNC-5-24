@@ -69,7 +69,11 @@ export const ROAD_FACTOR = 1.25;
 export const AVG_MPH = 35;
 export const HANDLING_MINUTES = 30;
 export const RUSH_WINDOW_MINUTES = 30;
+/** How long an offer stays open (owner decision 2026-10-08): 3 min scheduled, 2 min rush. */
 export const OFFER_MINUTES = 3;
+export const OFFER_MINUTES_RUSH = 2;
+/** Automatic offers go to at most this many matching drivers, nearest first. */
+export const MAX_AUTO_OFFERS = 10;
 export const DEFAULT_COST_PER_MILE = 0.65;
 export const DEFAULT_HOURLY_TARGET = 35;
 
@@ -212,7 +216,9 @@ export interface Candidate {
   vehicleOk: boolean;
   busy: boolean;
   canMakeRush: boolean;
-  /** All hard filters pass — this driver can be assigned a claim-lane load. */
+  /** Linked on Telegram, so an automatic offer can reach them. */
+  onTelegram: boolean;
+  /** All hard filters pass — Active, activated, vehicle, radius, trip, not busy, rush reach. */
   covered: boolean;
   /** Why not covered, in plain words. Empty when covered. */
   reasons: string[];
@@ -235,7 +241,7 @@ export async function rankCandidates(load: LoadForRanking, now = new Date()): Pr
     select: {
       id: true, userId: true, firstName: true, lastName: true, phone: true, vehicleType: true, baseZip: true,
       curriActivatedAt: true, onDutyUntil: true, dutyRadiusMiles: true, dutyMaxTripMiles: true,
-      user: { select: { email: true } },
+      user: { select: { email: true, telegramChatId: true } },
     },
   });
   const ids = profiles.map((p) => p.id);
@@ -272,7 +278,7 @@ export async function rankCandidates(load: LoadForRanking, now = new Date()): Pr
     if (!p.baseZip || !base) reasons.push("no base ZIP");
     if (!vehicleClass) reasons.push("vehicle type not set");
     else if (!vehicleOk) reasons.push(`${vehicleClassLabel(vehicleClass)} can't cover ${vehicleClassLabel(load.vehicleClass)}`);
-    if (!onDuty) reasons.push("off duty");
+    if (!onDuty) reasons.push("inactive");
     if (miles !== null && !withinRadius) reasons.push(`${miles} mi > ${radiusMiles} mi radius`);
     if (!tripOk) reasons.push(`trip ${load.tripMiles} mi > ${maxTripMiles} mi max`);
     if (busy) reasons.push("busy on another load");
@@ -298,6 +304,7 @@ export async function rankCandidates(load: LoadForRanking, now = new Date()): Pr
       vehicleOk,
       busy,
       canMakeRush,
+      onTelegram: !!p.user.telegramChatId,
       covered: reasons.length === 0,
       reasons,
     };
@@ -355,7 +362,13 @@ export function suggestBid(opts: { tripMiles: number; milesToPickup: number; cos
 
 // ---- Assignment, offers, transitions ---------------------------------------
 
-/** Claim lane: only a covered driver. Bid lane: the driver who accepted (or a dispatcher's pick). */
+/**
+ * A driver is committed to this load: either they tapped Accept on an offer
+ * (viaOffer), or the dispatcher confirmed with them by phone (manual Assign).
+ * Either way the hard safety checks hold: activated on Curri, the right
+ * vehicle, not already busy. Active/radius aren't required for a phone-confirmed
+ * assign — the driver said yes to this specific load.
+ */
 export async function assignLoad(loadId: string, profileId: string, actorId: string, opts: { viaOffer?: boolean } = {}): Promise<Result> {
   const load = await prisma.dispatchLoad.findUnique({ where: { id: loadId } });
   if (!load) return { ok: false, error: "Load not found." };
@@ -363,33 +376,61 @@ export async function assignLoad(loadId: string, profileId: string, actorId: str
   const candidates = await rankCandidates(load);
   const c = candidates.find((x) => x.profileId === profileId);
   if (!c) return { ok: false, error: "That driver isn't a fleet member." };
-  if (load.lane === "CLAIM" && !c.covered) return { ok: false, error: `Not covered — ${c.name}: ${c.reasons.join(", ")}. A claim-lane load is only assigned to a driver who is on duty and in range.` };
-  if (load.lane === "BID" && !opts.viaOffer && (c.busy || !c.activated)) return { ok: false, error: `${c.name} is ${c.busy ? "busy on another load" : "not activated on Curri"}.` };
+  if (!c.activated) return { ok: false, error: `${c.name} isn't activated on Curri yet.` };
+  if (!c.vehicleOk) return { ok: false, error: `${c.name}: ${c.vehicleClass ? `${vehicleClassLabel(c.vehicleClass)} can't cover ${vehicleClassLabel(load.vehicleClass)}` : "vehicle type not set"}.` };
+  if (c.busy) return { ok: false, error: `${c.name} is busy on another load at that time.` };
   const r = await prisma.dispatchLoad.updateMany({
     where: { id: loadId, status: { in: ["NEW", "OFFERED"] } },
     data: { status: "ASSIGNED", assignedProfileId: profileId },
   });
   if (r.count === 0) return { ok: false, error: "Someone else just changed this load — reload." };
   await prisma.dispatchOffer.updateMany({ where: { loadId, response: "PENDING", driverProfileId: { not: profileId } }, data: { response: "EXPIRED", respondedAt: new Date() } });
-  await logEvent(loadId, actorId, load.status, "ASSIGNED", `${c.name} (${c.milesToPickup ?? "?"} mi to pickup)${opts.viaOffer ? " — accepted the offer" : ""}`);
+  await logEvent(loadId, actorId, load.status, "ASSIGNED", `${c.name} (${c.milesToPickup ?? "?"} mi to pickup)${opts.viaOffer ? " — accepted the offer" : " — confirmed by phone"}`);
   if (!opts.viaOffer) await notifyDriverAssigned(loadId); // offer accepts are confirmed on the tap itself
   return { ok: true };
 }
 
-/** Bid lane: offer to several drivers at once; first accept wins. In 1a the dispatcher relays the offer by text and records the answer. */
-export async function offerLoad(loadId: string, profileIds: string[], actorId: string): Promise<Result<{ offered: number }>> {
+/** Offer to several drivers at once (either lane); first accept wins. Drivers without Telegram are texted by the dispatcher. */
+export async function offerLoad(loadId: string, profileIds: string[], actorId: string): Promise<Result<{ offered: number; sent: number }>> {
   const load = await prisma.dispatchLoad.findUnique({ where: { id: loadId } });
   if (!load) return { ok: false, error: "Load not found." };
   if (!["NEW", "OFFERED"].includes(load.status)) return { ok: false, error: `Can't offer a load that is ${STATUS_LABEL[load.status].toLowerCase()}.` };
-  const ids = [...new Set(profileIds)].filter(Boolean);
-  if (ids.length === 0) return { ok: false, error: "Pick at least one driver." };
-  const expiresAt = new Date(Date.now() + OFFER_MINUTES * 60_000);
+  const already = new Set((await prisma.dispatchOffer.findMany({ where: { loadId, response: "PENDING", expiresAt: { gt: new Date() } }, select: { driverProfileId: true } })).map((o) => o.driverProfileId));
+  const ids = [...new Set(profileIds)].filter((x) => x && !already.has(x));
+  if (ids.length === 0) return { ok: false, error: already.size ? "Those drivers already have an open offer." : "Pick at least one driver." };
+  const expiresAt = new Date(Date.now() + (load.rush ? OFFER_MINUTES_RUSH : OFFER_MINUTES) * 60_000);
   await prisma.dispatchOffer.createMany({ data: ids.map((driverProfileId) => ({ loadId, driverProfileId, expiresAt })) });
   if (load.status === "NEW") await prisma.dispatchLoad.update({ where: { id: loadId }, data: { status: "OFFERED" } });
-  await logEvent(loadId, actorId, load.status, "OFFERED", `Offered to ${ids.length} driver${ids.length === 1 ? "" : "s"}`);
+  await logEvent(loadId, actorId, load.status === "NEW" ? "NEW" : null, load.status === "NEW" ? "OFFERED" : null, `Offered to ${ids.length} driver${ids.length === 1 ? "" : "s"}`);
   const sent = await notifyOffers(loadId, ids);
   if (sent < ids.length) await logEvent(loadId, actorId, null, null, `${ids.length - sent} driver${ids.length - sent === 1 ? "" : "s"} not on Telegram — text them`);
-  return { ok: true, offered: ids.length };
+  return { ok: true, offered: ids.length, sent };
+}
+
+export interface AutoOfferResult {
+  /** Drivers the offer reached on Telegram. */
+  offeredTo: { name: string; miles: number | null }[];
+  /** Matching drivers we couldn't reach (not linked on Telegram) — text them. */
+  notOnTelegram: { name: string; phone: string | null; miles: number | null }[];
+}
+
+/**
+ * A load just arrived: offer it to every matching Active driver on Telegram,
+ * nearest first, up to MAX_AUTO_OFFERS (owner decision 2026-10-08). The owner
+ * claims in Curri only after someone accepts. Never assigns on its own.
+ */
+export async function autoOffer(loadId: string, actorId: string): Promise<AutoOfferResult> {
+  const out: AutoOfferResult = { offeredTo: [], notOnTelegram: [] };
+  const load = await prisma.dispatchLoad.findUnique({ where: { id: loadId } });
+  if (!load || !["NEW", "OFFERED"].includes(load.status)) return out;
+  const covered = (await rankCandidates(load)).filter((c) => c.covered);
+  const reachable = covered.filter((c) => c.onTelegram).slice(0, MAX_AUTO_OFFERS);
+  out.notOnTelegram = covered.filter((c) => !c.onTelegram).map((c) => ({ name: c.name, phone: c.phone, miles: c.milesToPickup }));
+  if (reachable.length) {
+    const r = await offerLoad(loadId, reachable.map((c) => c.profileId), actorId);
+    if (r.ok) out.offeredTo = reachable.map((c) => ({ name: c.name, miles: c.milesToPickup }));
+  }
+  return out;
 }
 
 /** Record a driver's answer to an offer (by the dispatcher in 1a; by Telegram in 1b). First accept wins. */

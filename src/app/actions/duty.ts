@@ -16,8 +16,8 @@ export async function getTelegramLinkUrl(): Promise<{ ok: true; url: string } | 
   return url ? { ok: true, url } : { ok: false, error: "Telegram isn't set up on our side yet." };
 }
 
-// Driver-side: going on / off duty is the commitment that lets the dispatcher
-// claim a load for them (docs/DISPATCH-FLOW.md). Fleet members only.
+// Driver-side: Active / Inactive (stored as onDutyUntil). Active = send me load offers;
+// the driver accepts or passes each one (docs/DISPATCH-FLOW.md). Fleet members only.
 
 async function fleetProfileId(): Promise<string | null> {
   const session = await getSession();

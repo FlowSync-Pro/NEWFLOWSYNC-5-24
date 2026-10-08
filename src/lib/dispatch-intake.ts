@@ -1,6 +1,6 @@
 import type { DispatchLane } from "@prisma/client";
 import { prisma } from "./db";
-import { createLoad, rankCandidates, transitionLoad, vehicleClassFromCurriText, vehicleClassLabel } from "./dispatch";
+import { autoOffer, createLoad, OFFER_MINUTES, OFFER_MINUTES_RUSH, transitionLoad, vehicleClassFromCurriText, vehicleClassLabel } from "./dispatch";
 import { notifyOwner, verdictLine } from "./dispatch-notify";
 import { parseDollars } from "./payouts";
 
@@ -41,7 +41,7 @@ export type IntakePayload =
       rush?: boolean;
     };
 
-export type IntakeResult = { ok: true; loadId: string; status: string; duplicate?: boolean; covered?: string[] } | { ok: false; error: string };
+export type IntakeResult = { ok: true; loadId: string; status: string; duplicate?: boolean; covered?: string[]; offered?: number } | { ok: false; error: string };
 
 /** Curri refs come as ids or URLs; keep the stable part. */
 export function normalizeCurriRef(ref: string): string {
@@ -93,17 +93,18 @@ async function ingestOpportunity(p: Extract<IntakePayload, { kind: "opportunity"
   );
   if (!r.ok) return r;
 
+  // Offer it straight away to every matching Active driver on Telegram (owner decision 2026-10-08).
+  const offers = await autoOffer(r.id, INTAKE_ACTOR);
   const load = await prisma.dispatchLoad.findUnique({ where: { id: r.id } });
-  const candidates = load ? await rankCandidates(load) : [];
-  const covered = candidates.filter((c) => c.covered);
   if (load) {
     await notifyOwner(verdictLine({
       loadId: load.id, rush: load.rush, pickupLabel: load.pickupZip, dropoffLabel: load.dropoffZip,
       vehicle: vehicleClassLabel(load.vehicleClass), tripMiles: load.tripMiles, listedCents: load.listedCents,
-      covered: covered.map((c) => ({ name: c.name, miles: c.milesToPickup })),
+      offeredTo: offers.offeredTo, notOnTelegram: offers.notOnTelegram,
+      offerMinutes: load.rush ? OFFER_MINUTES_RUSH : OFFER_MINUTES,
     }));
   }
-  return { ok: true, loadId: r.id, status: "NEW", covered: covered.map((c) => c.name) };
+  return { ok: true, loadId: r.id, status: load?.status ?? "NEW", covered: [...offers.offeredTo, ...offers.notOnTelegram].map((c) => c.name), offered: offers.offeredTo.length };
 }
 
 async function ingestEvent(p: Extract<IntakePayload, { kind: "event" }>): Promise<IntakeResult> {

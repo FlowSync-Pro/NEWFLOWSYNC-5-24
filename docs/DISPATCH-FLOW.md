@@ -406,7 +406,7 @@ drivers' pocket, not mine." Consequences:
 - **Decided 2026-10-08: Stripe Connect fees are covered by the dispatching fee** (15% /
   20%). No separate payout fee; receipts and pricing stay as they are.
 
-## Stage 2 scope (2026-10-08) — automatic offers to Active drivers
+## Stage 2 (2026-10-08) — automatic offers to Active drivers — BUILT (owner said yes to all four recommendations: nearest 10, 3 min / 2 min rush, auto-off, accept the hot-load trade-off)
 
 Owner decision: when a load comes in, the board offers it automatically to every Active
 driver in range; first Accept wins; then the owner claims (or bids) in Curri. The owner no

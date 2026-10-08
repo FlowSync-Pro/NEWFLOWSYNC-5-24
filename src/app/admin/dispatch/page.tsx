@@ -48,7 +48,7 @@ export default async function AdminDispatchPage() {
         <Link href="/admin" className="text-sm text-muted hover:text-foreground">← Admin</Link>
         <h1 className="mt-3 text-3xl font-bold tracking-tight">Dispatch</h1>
         <p className="mt-2 text-sm text-muted">
-          {onDuty} driver{onDuty === 1 ? "" : "s"} on duty and activated right now. Claim-lane loads are assigned only when covered; never claim in Curri without a committed driver.
+          {onDuty} driver{onDuty === 1 ? "" : "s"} Active and activated right now. New loads are offered to every Active driver in range on Telegram; claim in Curri only after someone accepts.
         </p>
 
         <DispatchNewLoad />

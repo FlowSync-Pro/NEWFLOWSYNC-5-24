@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { assignDispatchLoad, offerDispatchLoad, respondDispatchOffer, setDispatchLane, transitionDispatchLoad } from "@/app/actions/dispatch";
+import { assignDispatchLoad, offerDispatchLoad, respondDispatchOffer, sendToActiveDrivers, setDispatchLane, transitionDispatchLoad } from "@/app/actions/dispatch";
 
 export interface PanelLoad {
   id: string;
@@ -33,7 +33,10 @@ export interface PanelCandidate {
   milesToPickup: number | null;
   minutesToPickup: number | null;
   onDuty: boolean;
+  onTelegram: boolean;
   covered: boolean;
+  /** Activated, right vehicle, not busy — can be assigned once they've said yes. */
+  assignable: boolean;
   reasons: string[];
 }
 export interface PanelOffer { id: string; profileId: string; name: string; response: "PENDING" | "ACCEPTED" | "PASSED" | "EXPIRED"; expiresAt: string }
@@ -60,6 +63,7 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
     });
   };
   const covered = candidates.filter((c) => c.covered);
+  const pendingOffers = offers.filter((o) => o.response === "PENDING");
   const open = !["LOST", "DELIVERED", "CANCELLED"].includes(load.status);
   const btn = "rounded-full px-4 py-2 text-sm disabled:opacity-60";
   const ghost = `${btn} border border-border text-muted hover:text-foreground`;
@@ -69,23 +73,21 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
   return (
     <>
       {/* Verdict */}
-      <section className={`mt-6 rounded-2xl border p-6 ${load.lane === "CLAIM" ? (covered.length ? "border-accent/40 bg-accent-soft" : "border-red-400/40 bg-red-400/10") : "card"}`}>
-        {load.lane === "CLAIM" ? (
-          covered.length ? (
-            <>
-              <h2 className="text-lg font-bold tracking-tight text-accent">Covered by {covered[0].name} — {covered[0].milesToPickup} mi to pickup{covered.length > 1 ? ` (+${covered.length - 1} more)` : ""}</h2>
-              <p className="mt-1 text-sm text-foreground/90">Assign, then claim it in the Curri portal. {covered[0].name} is on duty and pre-committed within their parameters.</p>
-            </>
-          ) : (
-            <>
-              <h2 className="text-lg font-bold tracking-tight text-red-300">Not covered — do not claim</h2>
-              <p className="mt-1 text-sm text-foreground/90">No on-duty driver fits this load. Releasing a claim is a violation on the carrier account, so the Assign button stays off.</p>
-            </>
-          )
+      <section className={`mt-6 rounded-2xl border p-6 ${load.assigned ? "border-accent/40 bg-accent-soft" : covered.length ? "card" : "border-red-400/40 bg-red-400/10"}`}>
+        {load.assigned ? (
+          <>
+            <h2 className="text-lg font-bold tracking-tight text-accent">{load.assigned.name} is on this load</h2>
+            <p className="mt-1 text-sm text-foreground/90">{load.status === "ASSIGNED" ? (load.lane === "CLAIM" ? "Claim it in the Curri portal now, then tap “Claimed in Curri”." : "Place the bid in the Curri portal, then record it below.") : `Status: ${load.status.replace("_", " ").toLowerCase()}.`}</p>
+          </>
+        ) : covered.length ? (
+          <>
+            <h2 className="text-lg font-bold tracking-tight">{pendingOffers.length ? `Waiting for an Accept — offered to ${pendingOffers.length}` : `${covered.length} Active driver${covered.length === 1 ? "" : "s"} in range`}</h2>
+            <p className="mt-1 text-sm text-muted">Don&apos;t claim in Curri until a driver accepts. {covered.filter((c) => !c.onTelegram).length ? `${covered.filter((c) => !c.onTelegram).length} matching driver(s) aren't on Telegram — text them.` : ""}</p>
+          </>
         ) : (
           <>
-            <h2 className="text-lg font-bold tracking-tight">Bid lane — offer, then bid after an accept</h2>
-            <p className="mt-1 text-sm text-muted">{covered.length ? `${covered.length} driver${covered.length === 1 ? "" : "s"} in range and on duty.` : "Nobody on duty in range — you can still offer to off-duty drivers nearby."}</p>
+            <h2 className="text-lg font-bold tracking-tight text-red-300">Not covered — do not claim</h2>
+            <p className="mt-1 text-sm text-foreground/90">No Active driver fits this load. If you reach someone by phone, use “Assign — confirmed by phone” below.</p>
           </>
         )}
         {bid && (
@@ -149,11 +151,11 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
         {msg && <p className={`mt-3 text-sm ${msg.ok ? "text-accent" : "text-red-400"}`}>{msg.text}</p>}
       </section>
 
-      {/* Offers (bid lane) */}
-      {load.lane === "BID" && offers.length > 0 && (
+      {/* Offers */}
+      {offers.length > 0 && (
         <section className="card mt-6 p-6">
           <h2 className="text-lg font-bold tracking-tight">Offers</h2>
-          <p className="mt-1 text-xs text-muted">Text each driver the load; record their answer here. First accept wins.</p>
+          <p className="mt-1 text-xs text-muted">Sent on Telegram; drivers tap Accept or Pass. For anyone you texted instead, record their answer here. First accept wins.</p>
           <ul className="mt-3 divide-y divide-border text-sm">
             {offers.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
@@ -174,10 +176,15 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
       <section className="card mt-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold tracking-tight">Drivers, nearest first</h2>
-          {open && (load.status === "NEW" || load.status === "OFFERED") && load.lane === "BID" && (
-            <button type="button" className={primary} disabled={pending || picked.length === 0} onClick={() => run(() => offerDispatchLoad(load.id, picked), `Offered to ${picked.length}.`)}>
-              Offer to {picked.length} selected
-            </button>
+          {open && (load.status === "NEW" || load.status === "OFFERED") && (
+            <span className="flex flex-wrap gap-2">
+              <button type="button" className={primary} disabled={pending || covered.length === 0} onClick={() => run(() => sendToActiveDrivers(load.id), "Sent to every Active driver in range.")}>
+                Send to all Active in range
+              </button>
+              <button type="button" className={ghost} disabled={pending || picked.length === 0} onClick={() => run(() => offerDispatchLoad(load.id, picked), `Offered to ${picked.length}.`)}>
+                Offer to {picked.length} selected
+              </button>
+            </span>
           )}
         </div>
         {candidates.length === 0 && <p className="mt-2 text-sm text-muted">No fleet drivers yet.</p>}
@@ -185,13 +192,13 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
           {candidates.map((c) => (
             <li key={c.profileId} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <div className="flex items-center gap-3">
-                {load.lane === "BID" && open && (load.status === "NEW" || load.status === "OFFERED") && (
+                {open && (load.status === "NEW" || load.status === "OFFERED") && (
                   <input type="checkbox" checked={picked.includes(c.profileId)} onChange={(e) => setPicked((p) => (e.target.checked ? [...p, c.profileId] : p.filter((x) => x !== c.profileId)))} />
                 )}
                 <div>
-                  <span className={`mr-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${c.covered ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted"}`}>{c.covered ? "covered" : c.onDuty ? "on duty" : "off duty"}</span>
+                  <span className={`mr-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${c.covered ? "bg-accent-soft text-accent" : "bg-surface-2 text-muted"}`}>{c.covered ? "match" : c.onDuty ? "active" : "inactive"}</span>
                   <Link href={`/admin/drivers/${c.profileId}`} className="font-medium hover:text-accent">{c.name}</Link>
-                  <span className="ml-2 text-muted">{c.vehicleLabel}{c.baseZip ? ` · ${c.baseZip}` : ""}{c.phone ? ` · ${c.phone}` : ""}</span>
+                  <span className="ml-2 text-muted">{c.vehicleLabel}{c.baseZip ? ` · ${c.baseZip}` : ""}{c.phone ? ` · ${c.phone}` : ""}{c.onTelegram ? "" : " · not on Telegram"}</span>
                   {c.reasons.length > 0 && <p className="mt-0.5 text-xs text-muted">{c.reasons.join(" · ")}</p>}
                 </div>
               </div>
@@ -201,12 +208,12 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
                 {open && (load.status === "NEW" || load.status === "OFFERED") && (
                   <button
                     type="button"
-                    className={c.covered ? primary : ghost}
-                    disabled={pending || (load.lane === "CLAIM" && !c.covered)}
-                    title={load.lane === "CLAIM" && !c.covered ? "Claim-lane loads are only assigned to covered drivers" : undefined}
-                    onClick={() => run(() => assignDispatchLoad(load.id, c.profileId), `Assigned to ${c.name}.`)}
+                    className={ghost}
+                    disabled={pending || !c.assignable}
+                    title={c.assignable ? "Only after the driver said yes to this load by phone" : "Not activated, wrong vehicle, or busy"}
+                    onClick={() => { if (confirm(`Did ${c.name} confirm this load with you by phone?`)) run(() => assignDispatchLoad(load.id, c.profileId), `Assigned to ${c.name}.`); }}
                   >
-                    Assign
+                    Assign — confirmed by phone
                   </button>
                 )}
               </div>

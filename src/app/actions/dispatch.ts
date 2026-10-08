@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { DispatchLane, DispatchStatus, VehicleClass } from "@prisma/client";
 import { requireAdmin } from "@/lib/admin";
-import { assignLoad, createLoad, offerLoad, respondOffer, setCurriActivated, setLane, transitionLoad } from "@/lib/dispatch";
+import { assignLoad, autoOffer, createLoad, offerLoad, respondOffer, setCurriActivated, setLane, transitionLoad } from "@/lib/dispatch";
 
 export async function setDispatchLane(loadId: string, lane: DispatchLane) {
   const actorId = await requireAdmin();
@@ -35,6 +35,8 @@ export async function createDispatchLoad(input: {
   notes: string;
   /** Curri's stated miles, when known. */
   miles?: string;
+  /** "Send to drivers now": offer it to every matching Active driver on Telegram right away. */
+  sendNow?: boolean;
 }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const actorId = await requireAdmin();
   const listedCents = input.listed.trim() ? parseDollars(input.listed) : null;
@@ -58,8 +60,18 @@ export async function createDispatchLoad(input: {
     },
     actorId,
   );
+  if (r.ok && input.sendNow) await autoOffer(r.id, actorId);
   if (r.ok) refresh(r.id);
   return r;
+}
+
+/** "Send to all Active in range": (re-)offer an open load to every matching Active driver on Telegram. */
+export async function sendToActiveDrivers(loadId: string): Promise<{ ok: true; offered: number; notOnTelegram: string[] } | { ok: false; error: string }> {
+  const actorId = await requireAdmin();
+  const r = await autoOffer(loadId, actorId);
+  refresh(loadId);
+  if (!r.offeredTo.length && !r.notOnTelegram.length) return { ok: false, error: "No Active driver in range matches this load." };
+  return { ok: true, offered: r.offeredTo.length, notOnTelegram: r.notOnTelegram.map((d) => d.name) };
 }
 
 export async function assignDispatchLoad(loadId: string, profileId: string) {

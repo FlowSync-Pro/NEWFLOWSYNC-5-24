@@ -95,13 +95,28 @@ export async function notifyOwner(text: string): Promise<boolean> {
   return sendSafely(telegramOwnerChatId(), text);
 }
 
-/** "New load … COVERED by X (8 mi)" with a link — what the intake door sends when a load arrives. */
-export function verdictLine(opts: { loadId: string; rush: boolean; pickupLabel: string; dropoffLabel: string; vehicle: string; tripMiles: number | null; listedCents: number | null; covered: { name: string; miles: number | null }[] }): string {
+/**
+ * What the owner's phone says when a load arrives: who the offer went to
+ * (wait for an Accept before claiming), who matches but isn't on Telegram
+ * (text them), or NOT COVERED.
+ */
+export function verdictLine(opts: {
+  loadId: string; rush: boolean; pickupLabel: string; dropoffLabel: string; vehicle: string; tripMiles: number | null; listedCents: number | null;
+  offeredTo: { name: string; miles: number | null }[];
+  notOnTelegram: { name: string; phone: string | null; miles: number | null }[];
+  offerMinutes: number;
+}): string {
   const head = `${opts.rush ? "🚨 RUSH" : "🆕 New load"} ${opts.pickupLabel} → ${opts.dropoffLabel} · ${opts.vehicle} · ~${opts.tripMiles ?? "?"} mi${opts.listedCents !== null ? ` · ${$(opts.listedCents)}` : ""}`;
-  const verdict = opts.covered.length
-    ? `✅ COVERED by ${opts.covered[0].name} (${opts.covered[0].miles ?? "?"} mi)${opts.covered.length > 1 ? ` +${opts.covered.length - 1} more` : ""} — claim it.`
-    : "⛔ NOT COVERED — nobody on duty in range. Don't claim.";
-  return `${head}\n${verdict}\n${base()}/admin/dispatch/${opts.loadId}`;
+  const lines: string[] = [];
+  if (opts.offeredTo.length) {
+    const near = opts.offeredTo[0];
+    lines.push(`📨 Offered to ${opts.offeredTo.length} Active driver${opts.offeredTo.length === 1 ? "" : "s"} (nearest ${near.name}, ${near.miles ?? "?"} mi) — open ${opts.offerMinutes} min. Don't claim until someone accepts.`);
+  }
+  if (opts.notOnTelegram.length) {
+    lines.push(`📱 Not on Telegram — text them: ${opts.notOnTelegram.slice(0, 3).map((d) => `${d.name}${d.phone ? ` ${d.phone}` : ""} (${d.miles ?? "?"} mi)`).join(", ")}${opts.notOnTelegram.length > 3 ? ` +${opts.notOnTelegram.length - 3}` : ""}`);
+  }
+  if (!lines.length) lines.push("⛔ NOT COVERED — no Active driver in range. Don't claim.");
+  return `${head}\n${lines.join("\n")}\n${base()}/admin/dispatch/${opts.loadId}`;
 }
 
 export const dispatchFeeNote = `Standard ${FLEET.dispatchFeePercent}% · faster ${FLEET.fastPayoutFeePercent}%`;
