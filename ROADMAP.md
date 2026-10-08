@@ -131,6 +131,12 @@ Shipped today after the 1a/1b checkpoint (details in `docs/DISPATCH-FLOW.md`):
 - **Intake key rotated** after it appeared in a screenshot: a new random
   `DISPATCH_INTAKE_KEY` is set in both Vercel and Fly (owner, 2026-10-08).
 
+- **No-taker ping** (after this checkpoint, free, no migration / env var): when an offer
+  window closes — or every driver passes — with nobody accepting, the owner gets "⌛ NO
+  TAKER … Don't claim" once per round. Runs on every intake call, every Telegram tap, and
+  `POST /api/dispatch/sweep`; the portal bot should call that once a minute
+  (`docs/CURSOR-TASK-PORTAL-BOT-3.md`, owner-side). Details: `docs/DISPATCH-FLOW.md`.
+
 **Not yet verified live:** the first real portal load end to end (card + FlowSync
 "Offered to N…" ping + load under /admin/dispatch + driver Accept/Pass). The bot started
 after 5 loads were already on the feed and skipped them on purpose. If the card shows a

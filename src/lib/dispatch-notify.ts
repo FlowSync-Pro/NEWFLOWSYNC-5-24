@@ -107,6 +107,15 @@ export async function notifyOwner(text: string): Promise<boolean> {
   return sendSafely(telegramOwnerChatId(), text);
 }
 
+/** The offer window closed and nobody accepted: the owner must not claim. */
+export async function notifyNoTaker(n: { loadId: string; rush: boolean; pickupLabel: string; dropoffLabel: string; vehicle: string; listedCents: number | null; passed: number; noAnswer: number }): Promise<boolean> {
+  const who = [n.passed ? `${n.passed} passed` : null, n.noAnswer ? `${n.noAnswer} didn't answer` : null].filter(Boolean).join(", ");
+  return notifyOwner(
+    `⌛ NO TAKER${n.rush ? " (RUSH)" : ""} ${n.pickupLabel} → ${n.dropoffLabel} · ${n.vehicle}${n.listedCents !== null ? ` · ${$(n.listedCents)}` : ""}\n` +
+    `Nobody accepted (${who}). Don't claim. Send it again from the board or text a driver:\n${base()}/admin/dispatch/${n.loadId}`,
+  );
+}
+
 /**
  * What the owner's phone says when a load arrives: who the offer went to
  * (wait for an Accept before claiming), who matches but isn't on Telegram

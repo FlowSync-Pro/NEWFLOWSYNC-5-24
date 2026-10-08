@@ -7,6 +7,7 @@ import {
 } from "@/lib/telegram-bot";
 import { safeSecretEqual } from "@/lib/telegram-utils";
 import { handleDispatchUpdate } from "@/lib/telegram-dispatch";
+import { sweepAndNotifyNoTakers } from "@/lib/dispatch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,6 +95,7 @@ export async function POST(request: Request) {
     // community FAQ bot handles everything else as before.
     const handled = await handleDispatchUpdate(update);
     if (!handled) await processTelegramUpdate(update);
+    if (handled) await sweepAndNotifyNoTakers(); // a driver tap is a free moment to check for "nobody accepted"
     await prisma.telegramProcessedUpdate.update({
       where: { updateId },
       data: { status: "COMPLETED" },

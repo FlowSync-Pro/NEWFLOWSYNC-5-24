@@ -152,6 +152,20 @@ If nobody had accepted it yet, the load is cancelled ("left the Curri feed") and
 driver holding an open offer is told it's gone. If a driver had already accepted, it's
 only logged — the load also leaves the feed when *we* claim it.
 
+### Once a minute → `POST /api/dispatch/sweep` (the "no taker" tick)
+
+```
+curl -sS -X POST https://flowsyncdriver.com/api/dispatch/sweep \
+  -H "Authorization: Bearer $DISPATCH_INTAKE_KEY"
+```
+
+No body. Same key as the intake door. Returns `{"ok":true,"noTaker":N}`. Each call checks
+for offered loads whose offer window closed (or every driver passed) with nobody
+accepting, notes them on the board once, and pings the owner "⌛ NO TAKER … Don't claim".
+It never assigns or claims. The same check also runs for free on every intake call and
+every driver tap on Telegram; the tick only makes the ping arrive on time in quiet
+stretches. Spec for the bot: `docs/CURSOR-TASK-PORTAL-BOT-3.md`.
+
 ### Turn off in that bot
 - Its own driver messages and commands (`/on`, `/end`, `/dispatch … @driver`, "Sent to N
   available drivers"). Drivers use the FlowSync bot: `/active`, `/inactive`.

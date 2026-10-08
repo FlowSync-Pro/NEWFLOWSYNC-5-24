@@ -223,7 +223,7 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   to every matching Active driver** (Active, activated on Curri, vehicle, radius, max trip,
   not busy, rush reach; nearest 10; 3 min open, 2 min for rush). First Accept wins; the
   owner is pinged "CLAIM NOW" (claim lane) or "place bid $X" (bid lane) and only then
-  claims in Curri — never claim without a committed driver (releasing a claim is a
+  claims in Curri; nobody accepting → "NO TAKER — don't claim" (`sweepNoTakers`, no paid cron) — never claim without a committed driver (releasing a claim is a
   violation). Manual "Assign — confirmed by phone" exists for drivers the owner reached
   by phone (still needs activated + right vehicle + not busy). Drivers see **Active /
   Inactive** (stored as `onDutyUntil`; auto-expires after their hours) on the fleet page
