@@ -4,6 +4,17 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { setDuty } from "@/lib/dispatch";
+import { telegramLinkUrl } from "@/lib/telegram-dispatch";
+
+/** "Connect Telegram": a 15-minute deep link into the bot that ties this chat to the signed-in driver. */
+export async function getTelegramLinkUrl(): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Sign in first." };
+  const id = await fleetProfileId();
+  if (!id) return { ok: false, error: "Fleet members only." };
+  const url = telegramLinkUrl(session.userId);
+  return url ? { ok: true, url } : { ok: false, error: "Telegram isn't set up on our side yet." };
+}
 
 // Driver-side: going on / off duty is the commitment that lets the dispatcher
 // claim a load for them (docs/DISPATCH-FLOW.md). Fleet members only.

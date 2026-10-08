@@ -10,7 +10,9 @@ import FleetCheckout from "@/components/FleetCheckout";
 import TrackEvent from "@/components/TrackEvent";
 import { FleetBiddingStory, FleetCapNote, FleetDisclaimer, FleetPayLaterNote, FleetTerms } from "@/components/FleetPitch";
 import DutyToggle from "@/components/DutyToggle";
+import TelegramConnect from "@/components/TelegramConnect";
 import { DUTY_DEFAULTS, vehicleClassFromType, vehicleClassLabel } from "@/lib/dispatch";
+import { telegramBotUsername } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +61,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
       where: { userId: session.userId },
       select: { firstName: true, baseZip: true, vehicleType: true, onDutyUntil: true, dutyRadiusMiles: true, dutyMaxTripMiles: true, curriActivatedAt: true },
     }),
-    prisma.user.findUnique({ where: { id: session.userId }, select: { fleetJoinedAt: true } }),
+    prisma.user.findUnique({ where: { id: session.userId }, select: { fleetJoinedAt: true, telegramChatId: true } }),
   ]);
   if (!profile) redirect("/account/setup");
 
@@ -183,6 +185,9 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
           </>
         )}
 
+        {joined && profile.curriActivatedAt && (
+          <TelegramConnect linked={!!user?.telegramChatId} available={!!telegramBotUsername() && !!process.env.AUTH_SECRET} />
+        )}
         {joined && profile.curriActivatedAt && (
           <DutyToggle
             onDuty={!!profile.onDutyUntil && profile.onDutyUntil > new Date()}

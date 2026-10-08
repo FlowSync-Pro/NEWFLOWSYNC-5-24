@@ -1,7 +1,8 @@
 import type { DispatchLane, DispatchStatus, VehicleClass } from "@prisma/client";
 import { prisma } from "./db";
-import { normalizeZip, zipCentroid, haversineMiles } from "./geo";
+import { locate, haversineMiles, zipCentroid } from "./geo";
 import { FLEET } from "./pricing";
+import { notifyDriverAssigned, notifyDriverLoadStatus, notifyOffers } from "./dispatch-notify";
 
 // Dispatch board, stage 1a — docs/DISPATCH-FLOW.md.
 //
@@ -45,6 +46,20 @@ export function vehicleClassFromType(type: string | null | undefined): VehicleCl
 
 /** A bigger vehicle may cover a smaller load's class (owner decision 2026-10-08). */
 export const canCover = (driver: VehicleClass, required: VehicleClass) => RANK[driver] >= RANK[required];
+
+/** Curri's email wording ("box truck-sized vehicle", "Sprinter Van with a Liftgate") → class. */
+export function vehicleClassFromCurriText(text: string | null | undefined): VehicleClass | null {
+  const t = (text ?? "").toLowerCase();
+  if (!t) return null;
+  if (t.includes("box truck")) return "BOX_TRUCK";
+  if (t.includes("sprinter")) return "SPRINTER_VAN";
+  if (t.includes("cargo van")) return "CARGO_VAN";
+  if (t.includes("pickup")) return "PICKUP_TRUCK";
+  if (t.includes("minivan")) return "MINIVAN";
+  if (t.includes("suv")) return "SUV";
+  if (t.includes("car")) return "CAR";
+  return null;
+}
 
 // ---- Constants ------------------------------------------------------------
 
@@ -103,43 +118,56 @@ export interface NewLoadInput {
   rush: boolean;
   /** Required unless rush (rush = now + RUSH_WINDOW_MINUTES). */
   pickupAt?: Date | null;
+  /** Street address when known; Curri's emails only give the city, so this may equal the location. */
   pickupAddress: string;
+  /** Location key: a ZIP, "City, ST", or just "City" (Curri's emails). Stored resolved. */
   pickupZip: string;
   dropoffAddress: string;
   dropoffZip: string;
   vehicleClass: VehicleClass;
   listedCents?: number | null;
+  /** Curri's own trip miles when the email states them; otherwise estimated. */
+  tripMiles?: number | null;
   notes?: string;
 }
 
-/** Road miles between two ZIPs (centroids × road factor), with a floor for same-ZIP trips. */
-export function estimateRoadMiles(zipA: string, zipB: string): number | null {
-  const a = zipCentroid(zipA);
-  const b = zipCentroid(zipB);
+/** Base points of every fleet driver with a ZIP — used to pick the right "Ontario" for a bare city name. */
+export async function fleetBasePoints(): Promise<{ lat: number; lng: number }[]> {
+  const rows = await prisma.driverProfile.findMany({ where: { baseZip: { not: null }, user: { fleetJoinedAt: { not: null } } }, select: { baseZip: true } });
+  return rows.map((r) => zipCentroid(r.baseZip)).filter((c): c is { lat: number; lng: number } => !!c);
+}
+
+/** Road miles between two location keys (centroids × road factor), with a floor for same-place trips. */
+export function estimateRoadMiles(keyA: string, keyB: string, near: { lat: number; lng: number }[] = []): number | null {
+  const a = locate(keyA, near);
+  const b = locate(keyB, near);
   if (!a || !b) return null;
   return Math.max(3, Math.round(haversineMiles(a, b) * ROAD_FACTOR * 10) / 10);
 }
 
 export async function createLoad(input: NewLoadInput, actorId: string): Promise<Result<{ id: string }>> {
-  const pickupZip = normalizeZip(input.pickupZip);
-  const dropoffZip = normalizeZip(input.dropoffZip);
-  if (!pickupZip || !zipCentroid(pickupZip)) return { ok: false, error: "Pickup ZIP isn't a US ZIP code we know." };
-  if (!dropoffZip || !zipCentroid(dropoffZip)) return { ok: false, error: "Dropoff ZIP isn't a US ZIP code we know." };
-  if (!input.pickupAddress.trim() || !input.dropoffAddress.trim()) return { ok: false, error: "Enter both addresses." };
+  const near = await fleetBasePoints();
+  const pickup = locate(input.pickupZip, near);
+  const dropoff = locate(input.dropoffZip, near);
+  if (!pickup) return { ok: false, error: `Pickup "${input.pickupZip}" isn't a ZIP or city we know. Try "City, ST".` };
+  if (!dropoff) return { ok: false, error: `Dropoff "${input.dropoffZip}" isn't a ZIP or city we know. Try "City, ST".` };
+  const pickupAddress = input.pickupAddress.trim() || pickup.label;
+  const dropoffAddress = input.dropoffAddress.trim() || dropoff.label;
   const pickupAt = input.rush ? new Date(Date.now() + RUSH_WINDOW_MINUTES * 60_000) : input.pickupAt;
   if (!pickupAt || Number.isNaN(pickupAt.getTime())) return { ok: false, error: "Pick the pickup time (or mark it rush)." };
-  const tripMiles = estimateRoadMiles(pickupZip, dropoffZip);
-  const busyUntil = new Date(pickupAt.getTime() + estimateTripMinutes(tripMiles ?? 10) * 60_000);
+  const curriMiles = typeof input.tripMiles === "number" && input.tripMiles > 0 ? Math.round(input.tripMiles * 10) / 10 : null;
+  const tripMiles = curriMiles ?? Math.max(3, Math.round(haversineMiles(pickup, dropoff) * ROAD_FACTOR * 10) / 10);
+  const busyUntil = new Date(pickupAt.getTime() + estimateTripMinutes(tripMiles) * 60_000);
   const load = await prisma.dispatchLoad.create({
     data: {
-      curriRef: input.curriRef?.trim() || null,
+      curriRef: input.curriRef?.trim().slice(0, 120) || null,
       lane: input.lane,
       rush: input.rush,
       pickupAt,
-      pickupAddress: input.pickupAddress.trim().slice(0, 200),
-      pickupZip,
-      dropoffAddress: input.dropoffAddress.trim().slice(0, 200),
-      dropoffZip,
+      pickupAddress: pickupAddress.slice(0, 200),
+      pickupZip: pickup.label,
+      dropoffAddress: dropoffAddress.slice(0, 200),
+      dropoffZip: dropoff.label,
       tripMiles,
       vehicleClass: input.vehicleClass,
       listedCents: input.listedCents ?? null,
@@ -149,8 +177,16 @@ export async function createLoad(input: NewLoadInput, actorId: string): Promise<
     },
     select: { id: true },
   });
-  await logEvent(load.id, actorId, null, "NEW", input.rush ? "Rush load" : undefined);
+  await logEvent(load.id, actorId, null, "NEW", [input.rush ? "Rush load" : null, curriMiles ? `${curriMiles} mi per Curri` : null].filter(Boolean).join(" · ") || undefined);
   return { ok: true, id: load.id };
+}
+
+/** Claim ↔ bid while the load is still open for assignment. */
+export async function setLane(loadId: string, lane: DispatchLane, actorId: string): Promise<Result> {
+  const r = await prisma.dispatchLoad.updateMany({ where: { id: loadId, status: { in: ["NEW", "OFFERED"] } }, data: { lane } });
+  if (r.count === 0) return { ok: false, error: "Lane can only change while the load is new or offered." };
+  await logEvent(loadId, actorId, null, null, `Lane → ${LANE_LABEL[lane]}`);
+  return { ok: true };
 }
 
 // ---- Candidates -----------------------------------------------------------
@@ -193,7 +229,7 @@ export interface LoadForRanking {
 }
 
 export async function rankCandidates(load: LoadForRanking, now = new Date()): Promise<Candidate[]> {
-  const pickup = zipCentroid(load.pickupZip);
+  const pickup = locate(load.pickupZip);
   const profiles = await prisma.driverProfile.findMany({
     where: { user: { fleetJoinedAt: { not: null } } },
     select: {
@@ -336,6 +372,7 @@ export async function assignLoad(loadId: string, profileId: string, actorId: str
   if (r.count === 0) return { ok: false, error: "Someone else just changed this load — reload." };
   await prisma.dispatchOffer.updateMany({ where: { loadId, response: "PENDING", driverProfileId: { not: profileId } }, data: { response: "EXPIRED", respondedAt: new Date() } });
   await logEvent(loadId, actorId, load.status, "ASSIGNED", `${c.name} (${c.milesToPickup ?? "?"} mi to pickup)${opts.viaOffer ? " — accepted the offer" : ""}`);
+  if (!opts.viaOffer) await notifyDriverAssigned(loadId); // offer accepts are confirmed on the tap itself
   return { ok: true };
 }
 
@@ -350,6 +387,8 @@ export async function offerLoad(loadId: string, profileIds: string[], actorId: s
   await prisma.dispatchOffer.createMany({ data: ids.map((driverProfileId) => ({ loadId, driverProfileId, expiresAt })) });
   if (load.status === "NEW") await prisma.dispatchLoad.update({ where: { id: loadId }, data: { status: "OFFERED" } });
   await logEvent(loadId, actorId, load.status, "OFFERED", `Offered to ${ids.length} driver${ids.length === 1 ? "" : "s"}`);
+  const sent = await notifyOffers(loadId, ids);
+  if (sent < ids.length) await logEvent(loadId, actorId, null, null, `${ids.length - sent} driver${ids.length - sent === 1 ? "" : "s"} not on Telegram — text them`);
   return { ok: true, offered: ids.length };
 }
 
@@ -357,7 +396,15 @@ export async function offerLoad(loadId: string, profileIds: string[], actorId: s
 export async function respondOffer(offerId: string, response: "ACCEPTED" | "PASSED", actorId: string): Promise<Result> {
   const offer = await prisma.dispatchOffer.findUnique({ where: { id: offerId }, include: { load: { select: { id: true, status: true } } } });
   if (!offer) return { ok: false, error: "Offer not found." };
-  if (offer.response !== "PENDING") return { ok: false, error: `Already ${offer.response.toLowerCase()}.` };
+  if (offer.response !== "PENDING") {
+    // Expired because another driver accepted first reads as "taken", not "expired".
+    if (offer.response === "EXPIRED" && offer.load.status !== "OFFERED" && offer.load.status !== "NEW") return { ok: false, error: "Taken — someone was faster." };
+    return { ok: false, error: `Already ${offer.response.toLowerCase()}.` };
+  }
+  if (offer.expiresAt.getTime() < Date.now()) {
+    await prisma.dispatchOffer.update({ where: { id: offerId }, data: { response: "EXPIRED", respondedAt: new Date() } });
+    return { ok: false, error: "This offer expired." };
+  }
   if (response === "PASSED") {
     await prisma.dispatchOffer.update({ where: { id: offerId }, data: { response: "PASSED", respondedAt: new Date() } });
     await logEvent(offer.loadId, actorId, null, null, "A driver passed");
@@ -385,6 +432,9 @@ export async function transitionLoad(loadId: string, to: DispatchStatus, actorId
     await prisma.dispatchOffer.updateMany({ where: { loadId, response: "PENDING" }, data: { response: "EXPIRED", respondedAt: new Date() } });
   }
   await logEvent(loadId, actorId, load.status, to, extras.note?.trim() || (extras.bidCents ? `Bid $${(extras.bidCents / 100).toFixed(2)}` : undefined));
+  if (load.assignedProfileId && (to === "AWARDED" || to === "LOST" || to === "CANCELLED" || to === "NEW")) {
+    await notifyDriverLoadStatus(loadId, load.assignedProfileId, to, extras.note);
+  }
   return { ok: true };
 }
 

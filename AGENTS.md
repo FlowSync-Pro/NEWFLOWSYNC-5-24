@@ -223,7 +223,15 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   COVERED only when an on-duty, Curri-activated driver fits (vehicle, radius, max trip,
   not busy). Claim-lane loads are assigned only when covered — never claim in Curri
   without a committed driver (releasing a claim is a violation). Drivers go on duty from
-  the fleet page (`DutyToggle`); admins mark "Activated on Curri" on the driver page.
+  the fleet page (`DutyToggle`) or by Telegram (`/onduty`, `/offduty` — `src/lib/telegram-dispatch.ts`,
+  linked via "Connect Telegram" on the fleet page, `User.telegramChatId`); admins mark
+  "Activated on Curri" on the driver page. Telegram carries ASSIGNED / offer (Accept, Pass)
+  / awarded / lost messages to drivers and verdict pings to the owner
+  (`src/lib/dispatch-notify.ts`). Loads arrive by hand or through the **intake door**
+  `POST /api/dispatch/intake` (bearer `DISPATCH_INTAKE_KEY`; spec `docs/DISPATCH-INTAKE.md`)
+  which an email-reading agent uses — it only creates NEW loads or mirrors Curri's bid
+  placed / won / lost / underbid emails; it never assigns or claims. Agents must not drive
+  the Curri portal (section E).
   The "$100.45 listed / $145 gig driver / $300 our bid" example is real — keep "one
   load, not a promise" next to it.
 

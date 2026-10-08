@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { assignDispatchLoad, offerDispatchLoad, respondDispatchOffer, transitionDispatchLoad } from "@/app/actions/dispatch";
+import { assignDispatchLoad, offerDispatchLoad, respondDispatchOffer, setDispatchLane, transitionDispatchLoad } from "@/app/actions/dispatch";
 
 export interface PanelLoad {
   id: string;
@@ -106,6 +106,11 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
           </div>
           {open && (
             <div className="flex flex-wrap items-center gap-2">
+              {(load.status === "NEW" || load.status === "OFFERED") && (
+                <button type="button" className={ghost} disabled={pending} onClick={() => run(() => setDispatchLane(load.id, load.lane === "CLAIM" ? "BID" : "CLAIM"), load.lane === "CLAIM" ? "Switched to the bid lane." : "Switched to the claim lane.")}>
+                  {load.lane === "CLAIM" ? "Switch to bid lane" : "Switch to claim lane"}
+                </button>
+              )}
               {(load.status === "ASSIGNED" || load.status === "OFFERED") && (
                 <button type="button" className={ghost} disabled={pending} onClick={() => run(() => transitionDispatchLoad(load.id, "NEW"), "Unassigned — back to new.")}>Unassign</button>
               )}

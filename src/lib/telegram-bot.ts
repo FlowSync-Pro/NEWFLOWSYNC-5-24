@@ -29,7 +29,12 @@ type TelegramMessage = {
   reply_to_message?: TelegramMessage;
   new_chat_members?: TelegramUser[];
 };
-export type TelegramUpdate = { update_id: number; message?: TelegramMessage };
+export type TelegramUpdate = {
+  update_id: number;
+  message?: TelegramMessage;
+  /** Inline-button taps (dispatch offers) — handled by lib/telegram-dispatch.ts. */
+  callback_query?: { id: string; from: TelegramUser; data?: string; message?: { message_id: number; chat: TelegramChat } };
+};
 
 function botConfig() {
   return {

@@ -7,8 +7,12 @@ type TelegramSentMessage = {
   message_id: number;
 };
 
+export type TelegramInlineButton = { text: string; callback_data: string };
+
 export type SendTelegramMessageOptions = {
   replyToMessageId?: number;
+  /** Rows of inline buttons under the message (dispatch offers: Accept / Pass). */
+  inlineKeyboard?: TelegramInlineButton[][];
 };
 
 function telegramToken(): string | null {
@@ -31,7 +35,9 @@ async function callTelegram<T>(
   const token = telegramToken();
   if (!token) throw new Error("Telegram bot token is not configured");
 
-  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+  // TELEGRAM_API_BASE exists only so a local test can stand in for Telegram.
+  const apiBase = process.env.TELEGRAM_API_BASE?.trim() || "https://api.telegram.org";
+  const response = await fetch(`${apiBase}/bot${token}/${method}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
@@ -67,7 +73,36 @@ export async function sendTelegramMessage(
           },
         }
       : {}),
+    ...(options.inlineKeyboard ? { reply_markup: { inline_keyboard: options.inlineKeyboard } } : {}),
   });
 
   return result.message_id;
+}
+
+/** Acknowledge an inline-button tap (the toast the driver sees). Never throws. */
+export async function answerTelegramCallback(callbackQueryId: string, text?: string): Promise<void> {
+  try {
+    await callTelegram<boolean>("answerCallbackQuery", { callback_query_id: callbackQueryId, ...(text ? { text: text.slice(0, 200), show_alert: false } : {}) });
+  } catch (e) {
+    console.error("[telegram] answerCallbackQuery failed:", e instanceof Error ? e.message : e);
+  }
+}
+
+/** Remove the buttons from an offer message once it's been answered or taken. Never throws. */
+export async function clearTelegramButtons(chatId: string, messageId: number): Promise<void> {
+  try {
+    await callTelegram<unknown>("editMessageReplyMarkup", { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } });
+  } catch (e) {
+    console.error("[telegram] editMessageReplyMarkup failed:", e instanceof Error ? e.message : e);
+  }
+}
+
+/** The bot's public username for deep links (t.me/<username>?start=…). */
+export function telegramBotUsername(): string | null {
+  return process.env.TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") || null;
+}
+
+/** The owner's private chat with the bot (Telegram user id == private chat id). */
+export function telegramOwnerChatId(): string | null {
+  return process.env.TELEGRAM_OWNER_USER_ID?.trim() || null;
 }

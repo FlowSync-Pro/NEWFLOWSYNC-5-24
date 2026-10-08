@@ -247,7 +247,20 @@ Every step visible in the load's event log.
   pickup + estimated trip time (trip miles at ~35 mph + 30 min handling); overlapping
   windows block a second assignment.
 
-## Stage 1b scope (2026-10-08) — Telegram + the intake door
+## Stage 1b (2026-10-08) — Telegram + the intake door — BUILT
+
+What Curri's emails actually contain (owner samples, 2026-10-08): city names only (no
+state, no street address, no ZIP), the vehicle size in Curri's words, "Rush" or "today at
+10:00AM (Fri 6/5)", Curri's own miles "(28 mi)", and a "View delivery" link carrying
+the delivery id. No price on the new-opportunity email. So: the board resolves city
+names via a bundled Census places table (`src/data/place-centroids.json`, `locate()` in
+`lib/geo.ts`; a bare city picks the state nearest our drivers), uses Curri's miles when
+given, and the five email types drive the load's status through the intake door
+(`docs/DISPATCH-INTAKE.md`). Subjects: "New delivery opportunity from Curri", "Curri
+delivery opportunity: bid placed", "You have been assigned a delivery!" (won), "You
+didn't receive this delivery" (lost), "Curri delivery opportunity: you've been underbid!".
+
+### Original scope
 
 Stage 1a is live. 1b removes the two manual relays: texting drivers by hand, and typing
 loads in. The owner plans to have an agent (Cursor) watch Curri's emails/push and send

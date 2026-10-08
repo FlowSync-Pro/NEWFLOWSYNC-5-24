@@ -6,6 +6,7 @@ import {
   type TelegramUpdate,
 } from "@/lib/telegram-bot";
 import { safeSecretEqual } from "@/lib/telegram-utils";
+import { handleDispatchUpdate } from "@/lib/telegram-dispatch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,8 +53,8 @@ export async function POST(request: Request) {
   }
 
   const updateId = String(update.update_id);
-  const chatId = update.message?.chat?.id;
-  const userId = update.message?.from?.id;
+  const chatId = update.message?.chat?.id ?? update.callback_query?.message?.chat?.id;
+  const userId = update.message?.from?.id ?? update.callback_query?.from?.id;
   const existing = await prisma.telegramProcessedUpdate.findUnique({
     where: { updateId },
   });
@@ -89,7 +90,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    await processTelegramUpdate(update);
+    // Dispatch first (driver linking, duty commands, offer buttons); the
+    // community FAQ bot handles everything else as before.
+    const handled = await handleDispatchUpdate(update);
+    if (!handled) await processTelegramUpdate(update);
     await prisma.telegramProcessedUpdate.update({
       where: { updateId },
       data: { status: "COMPLETED" },

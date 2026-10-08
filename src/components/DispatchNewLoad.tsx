@@ -19,7 +19,7 @@ const localNow = () => {
 export default function DispatchNewLoad() {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [f, setF] = useState({ curriRef: "", lane: "CLAIM" as "CLAIM" | "BID", rush: false, pickupAt: localNow(), pickupAddress: "", pickupZip: "", dropoffAddress: "", dropoffZip: "", vehicleClass: "CARGO_VAN" as (typeof VEHICLES)[number][0], listed: "", notes: "" });
+  const [f, setF] = useState({ curriRef: "", lane: "CLAIM" as "CLAIM" | "BID", rush: false, pickupAt: localNow(), pickupAddress: "", pickupZip: "", dropoffAddress: "", dropoffZip: "", vehicleClass: "CARGO_VAN" as (typeof VEHICLES)[number][0], listed: "", notes: "", miles: "" });
   const [error, setError] = useState<string | null>(null);
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((s) => ({ ...s, [k]: v }));
   const input = "mt-1 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-foreground outline-none focus:border-accent";
@@ -36,14 +36,14 @@ export default function DispatchNewLoad() {
   return (
     <section className="card mt-6 p-6">
       <h2 className="text-lg font-bold tracking-tight">New load</h2>
-      <p className="mt-1 text-sm text-muted">Copy it from the Curri portal. ZIPs drive the distance ranking; addresses are for the driver.</p>
+      <p className="mt-1 text-sm text-muted">Copy it from the Curri email or portal. A ZIP or a city (&quot;Fresno&quot; or &quot;Fresno, CA&quot;) drives the distance ranking; the address, when you have it, is for the driver.</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <label className="text-xs text-muted">Pickup address<input value={f.pickupAddress} onChange={(e) => set("pickupAddress", e.target.value)} placeholder="1200 W Shaw Ave, Fresno, CA" className={input} /></label>
-        <label className="text-xs text-muted">Pickup ZIP<input value={f.pickupZip} onChange={(e) => set("pickupZip", e.target.value.replace(/[^\d]/g, "").slice(0, 5))} inputMode="numeric" placeholder="93711" className={input} /></label>
-        <label className="text-xs text-muted">Dropoff address<input value={f.dropoffAddress} onChange={(e) => set("dropoffAddress", e.target.value)} placeholder="400 Clovis Ave, Clovis, CA" className={input} /></label>
-        <label className="text-xs text-muted">Dropoff ZIP<input value={f.dropoffZip} onChange={(e) => set("dropoffZip", e.target.value.replace(/[^\d]/g, "").slice(0, 5))} inputMode="numeric" placeholder="93612" className={input} /></label>
+        <label className="text-xs text-muted">Pickup ZIP or city<input value={f.pickupZip} onChange={(e) => set("pickupZip", e.target.value.slice(0, 60))} placeholder="93711 or Fresno, CA" className={input} /></label>
+        <label className="text-xs text-muted">Pickup address (optional)<input value={f.pickupAddress} onChange={(e) => set("pickupAddress", e.target.value)} placeholder="1200 W Shaw Ave, Fresno, CA" className={input} /></label>
+        <label className="text-xs text-muted">Dropoff ZIP or city<input value={f.dropoffZip} onChange={(e) => set("dropoffZip", e.target.value.slice(0, 60))} placeholder="93612 or Clovis, CA" className={input} /></label>
+        <label className="text-xs text-muted">Dropoff address (optional)<input value={f.dropoffAddress} onChange={(e) => set("dropoffAddress", e.target.value)} placeholder="400 Clovis Ave, Clovis, CA" className={input} /></label>
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-4">
+      <div className="mt-3 grid gap-3 sm:grid-cols-5">
         <label className="text-xs text-muted">Vehicle needed
           <select value={f.vehicleClass} onChange={(e) => set("vehicleClass", e.target.value as typeof f.vehicleClass)} className={input}>
             {VEHICLES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
@@ -56,6 +56,7 @@ export default function DispatchNewLoad() {
           </select>
         </label>
         <label className="text-xs text-muted">Listed price ($)<input value={f.listed} onChange={(e) => set("listed", e.target.value)} inputMode="decimal" placeholder="145.00" className={input} /></label>
+        <label className="text-xs text-muted">Curri miles<input value={f.miles} onChange={(e) => set("miles", e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" placeholder="28" className={input} /></label>
         <label className="text-xs text-muted">Curri reference<input value={f.curriRef} onChange={(e) => set("curriRef", e.target.value)} placeholder="#48213" className={input} /></label>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-[auto_1fr_2fr] sm:items-end">
