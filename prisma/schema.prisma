@@ -75,6 +75,43 @@ enum PayPlan {
   FASTER
 }
 
+/// Dispatch (docs/DISPATCH-FLOW.md). Curri's vehicle classes, in covering order.
+enum VehicleClass {
+  CAR
+  SUV
+  MINIVAN
+  PICKUP_TRUCK
+  CARGO_VAN
+  SPRINTER_VAN
+  BOX_TRUCK
+}
+
+/// CLAIM = listed price, goes in seconds, covered by on-duty pre-commitment.
+/// BID = taking bids, offered to drivers who accept first.
+enum DispatchLane {
+  CLAIM
+  BID
+}
+
+enum DispatchStatus {
+  NEW
+  OFFERED
+  ASSIGNED
+  PLACED
+  AWARDED
+  LOST
+  IN_PROGRESS
+  DELIVERED
+  CANCELLED
+}
+
+enum OfferResponse {
+  PENDING
+  ACCEPTED
+  PASSED
+  EXPIRED
+}
+
 /// One fleet payout (one completed delivery). PENDING until the owner pays it;
 /// PAID once Stripe confirms the transfer; FAILED keeps Stripe's reason and can
 /// be retried; CANCELLED for a mis-logged delivery (never deleted).
@@ -229,6 +266,17 @@ model DriverProfile {
 
   // Premium ($97) vs Standard ($17) tier.
   tier               Tier    @default(STANDARD)
+
+  // Dispatch (ADDITIVE, all optional — docs/DISPATCH-FLOW.md): where the driver
+  // starts from, whether the owner has activated them on the Curri carrier
+  // account, and their on-duty commitment (until when, radius, max trip miles).
+  baseZip          String?
+  curriActivatedAt DateTime?
+  onDutyUntil      DateTime?
+  dutyRadiusMiles  Int?
+  dutyMaxTripMiles Int?
+  dispatchLoads    DispatchLoad[]
+  dispatchOffers   DispatchOffer[]
   externalWebsiteUrl String?
 
   verified  Boolean   @default(false)
@@ -377,6 +425,79 @@ model DriverPayout {
 
   @@index([userId, status])
   @@index([status, createdAt])
+}
+
+/// A Curri opportunity on the dispatch board (src/lib/dispatch.ts). Never
+/// deleted: cancelled loads keep their events.
+model DispatchLoad {
+  id       String         @id @default(cuid())
+  curriRef String?
+  lane     DispatchLane
+  status   DispatchStatus @default(NEW)
+  /// Rush = pickup within 30 minutes of posting; otherwise the scheduled time.
+  rush     Boolean        @default(false)
+  pickupAt DateTime
+
+  pickupAddress  String
+  pickupZip      String
+  dropoffAddress String
+  dropoffZip     String
+  /// Estimated road miles pickup → dropoff (ZIP centroids × road factor).
+  tripMiles      Float?
+  vehicleClass   VehicleClass
+
+  listedCents Int?
+  bidCents    Int?
+  notes       String?
+
+  assignedProfileId String?
+  assignedProfile   DriverProfile? @relation(fields: [assignedProfileId], references: [id])
+  /// When the assigned driver is free again (pickup + estimated trip time).
+  busyUntil         DateTime?
+  /// The DriverPayout logged for this load once delivered.
+  payoutId          String?        @unique
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  offers DispatchOffer[]
+  events DispatchEvent[]
+
+  @@index([status, createdAt])
+  @@index([assignedProfileId, status])
+}
+
+/// Bid lane: one offer to one driver, single use, expires.
+model DispatchOffer {
+  id              String        @id @default(cuid())
+  loadId          String
+  load            DispatchLoad  @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id])
+  sentAt          DateTime      @default(now())
+  expiresAt       DateTime
+  /// Hash of the signed accept token (stage 1b Telegram); null when offered by hand.
+  tokenHash       String?
+  response        OfferResponse @default(PENDING)
+  respondedAt     DateTime?
+
+  @@index([loadId])
+  @@index([driverProfileId, response])
+}
+
+/// Audit log: every state change on a load, who did it, when. Append-only.
+model DispatchEvent {
+  id         String       @id @default(cuid())
+  loadId     String
+  load       DispatchLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  actorId    String?
+  fromStatus String?
+  toStatus   String?
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  @@index([loadId, createdAt])
 }
 
 model Payment {

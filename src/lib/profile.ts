@@ -15,6 +15,8 @@ export interface DriverProfile {
   vehicleType: string;
   vehicleMakeModel: string;
   vehicleYear: string;
+  // where the driver starts the day (5-digit ZIP) — fleet dispatch matching
+  baseZip: string;
   // profile
   headline: string;
   bio: string;

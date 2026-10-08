@@ -9,6 +9,8 @@ import { fleetTelegramInviteUrl } from "@/lib/telegram-invite";
 import FleetCheckout from "@/components/FleetCheckout";
 import TrackEvent from "@/components/TrackEvent";
 import { FleetBiddingStory, FleetCapNote, FleetDisclaimer, FleetPayLaterNote, FleetTerms } from "@/components/FleetPitch";
+import DutyToggle from "@/components/DutyToggle";
+import { DUTY_DEFAULTS, vehicleClassFromType, vehicleClassLabel } from "@/lib/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +55,10 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
   if (session.mustResetPassword) redirect("/reset-password");
 
   const [profile, user] = await Promise.all([
-    prisma.driverProfile.findUnique({ where: { userId: session.userId }, select: { firstName: true } }),
+    prisma.driverProfile.findUnique({
+      where: { userId: session.userId },
+      select: { firstName: true, baseZip: true, vehicleType: true, onDutyUntil: true, dutyRadiusMiles: true, dutyMaxTripMiles: true, curriActivatedAt: true },
+    }),
     prisma.user.findUnique({ where: { id: session.userId }, select: { fleetJoinedAt: true } }),
   ]);
   if (!profile) redirect("/account/setup");
@@ -176,6 +181,18 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
               <div className="mt-3"><FleetBiddingStory /></div>
             </section>
           </>
+        )}
+
+        {joined && profile.curriActivatedAt && (
+          <DutyToggle
+            onDuty={!!profile.onDutyUntil && profile.onDutyUntil > new Date()}
+            onDutyUntil={profile.onDutyUntil?.toISOString() ?? null}
+            radiusMiles={profile.dutyRadiusMiles}
+            maxTripMiles={profile.dutyMaxTripMiles}
+            baseZip={profile.baseZip}
+            vehicleLabel={vehicleClassLabel(vehicleClassFromType(profile.vehicleType))}
+            defaults={DUTY_DEFAULTS}
+          />
         )}
 
         {joined && (

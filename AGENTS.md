@@ -218,6 +218,12 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   transfer (idempotency key = payout id; cap `PAYOUT_CAP_CENTS` $1,500; only when the
   driver's Connect status is Ready). Rows (`DriverPayout`) are never edited — cancel and
   re-log. Transfers come from the FlowSync Stripe balance, which the owner tops up.
+  **Dispatch** (`/admin/dispatch`, `src/lib/dispatch.ts`, design in `docs/DISPATCH-FLOW.md`):
+  the owner enters a Curri load; the board ranks fleet drivers by ZIP distance and says
+  COVERED only when an on-duty, Curri-activated driver fits (vehicle, radius, max trip,
+  not busy). Claim-lane loads are assigned only when covered — never claim in Curri
+  without a committed driver (releasing a claim is a violation). Drivers go on duty from
+  the fleet page (`DutyToggle`); admins mark "Activated on Curri" on the driver page.
   The "$100.45 listed / $145 gig driver / $300 our bid" example is real — keep "one
   load, not a promise" next to it.
 

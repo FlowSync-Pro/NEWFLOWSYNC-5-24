@@ -14,6 +14,7 @@ import { alertIfEmailFailed } from "@/lib/alerts";
 import { sendAddCityBatch, type AddCityBatchResult } from "@/lib/add-city-email";
 import { ensureConnectAccount, syncConnectStatus, type ConnectSync } from "@/lib/stripe-connect";
 import { cancelPayout as cancelPayoutRow, logDelivery, parseDollars, payAllPending as payAllPendingRows, payPayout, type PayAllSummary, type PayResult } from "@/lib/payouts";
+import { linkPayout } from "@/lib/dispatch";
 import type { PayPlan } from "@prisma/client";
 
 // ---- Fleet payouts (Stripe Connect phase 2) ------------------------------
@@ -35,7 +36,7 @@ export async function setPayPlan(driverProfileId: string, plan: PayPlan): Promis
  */
 export async function logDeliveryForDriver(
   driverProfileId: string,
-  input: { amount: string; deliveredOn: string; note: string; payNow: boolean },
+  input: { amount: string; deliveredOn: string; note: string; payNow: boolean; dispatchLoadId?: string },
 ): Promise<{ ok: true; payoutId: string; netCents: number; pay?: PayResult } | { ok: false; error: string }> {
   const adminId = await requireAdmin();
   const driver = await prisma.driverProfile.findUnique({ where: { id: driverProfileId }, select: { userId: true } });
@@ -48,6 +49,11 @@ export async function logDeliveryForDriver(
 
   const logged = await logDelivery({ userId: driver.userId, loadCents, deliveredOn, note: input.note, createdById: adminId });
   if (!logged.ok) return logged;
+  if (input.dispatchLoadId) {
+    await linkPayout(input.dispatchLoadId, logged.payoutId, adminId);
+    revalidatePath(`/admin/dispatch/${input.dispatchLoadId}`);
+    revalidatePath("/admin/dispatch");
+  }
   const pay = input.payNow ? await payPayout(logged.payoutId) : undefined;
   revalidatePath(`/admin/drivers/${driverProfileId}`);
   revalidatePath("/admin/payouts");

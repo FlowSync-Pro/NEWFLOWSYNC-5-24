@@ -34,17 +34,21 @@ export default function AdminPayouts({
   payPlan,
   connectReady,
   payouts,
+  initial,
 }: {
   driverProfileId: string;
   payPlan: "STANDARD" | "FASTER";
   connectReady: boolean;
   payouts: PayoutRow[];
+  /** Pre-filled from a dispatch load's "Delivered → log payout" link. */
+  initial?: { loadId: string; amount: string; note: string; deliveredOn: string };
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [amount, setAmount] = useState("");
-  const [deliveredOn, setDeliveredOn] = useState(today());
-  const [note, setNote] = useState("");
+  const [amount, setAmount] = useState(initial?.amount ?? "");
+  const [deliveredOn, setDeliveredOn] = useState(initial?.deliveredOn || today());
+  const [note, setNote] = useState(initial?.note ?? "");
+  const [loadId, setLoadId] = useState(initial?.loadId);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const feePercent = payPlan === "FASTER" ? FLEET.fastPayoutFeePercent : FLEET.dispatchFeePercent;
@@ -65,14 +69,14 @@ export default function AdminPayouts({
     setMsg(null);
     if (payNow && !confirm(`Send ${$(netCents)} to this driver now? (load ${$(cents)}, ${feePercent}% fee)`)) return;
     start(async () => {
-      const r = await logDeliveryForDriver(driverProfileId, { amount, deliveredOn, note, payNow });
+      const r = await logDeliveryForDriver(driverProfileId, { amount, deliveredOn, note, payNow, dispatchLoadId: loadId });
       if (!r.ok) { setMsg({ ok: false, text: r.error }); return; }
       if (r.pay) {
         setMsg(r.pay.ok ? { ok: true, text: `Logged and paid ${$(r.pay.netCents)}.` } : { ok: false, text: `Logged, but not paid: ${r.pay.error}` });
       } else {
         setMsg({ ok: true, text: `Logged ${$(r.netCents)} net — pays with the next Friday run.` });
       }
-      setAmount(""); setNote("");
+      setAmount(""); setNote(""); setLoadId(undefined);
       router.refresh();
     });
   }
@@ -104,6 +108,7 @@ export default function AdminPayouts({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-semibold">Fleet payouts</p>
+          {loadId && <p className="mt-1 text-xs text-accent">Pre-filled from the dispatch load — check the amount, then log it.</p>}
           <p className="mt-1 text-sm text-muted">
             {connectReady ? "Stripe ready — transfers will go through." : "Stripe not ready yet — you can log deliveries, but paying waits until the driver finishes Stripe setup."}
           </p>

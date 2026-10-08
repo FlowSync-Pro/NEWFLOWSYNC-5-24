@@ -20,6 +20,7 @@ export function dbToAppProfile(db: DbProfile & { documents: Document[] }): Drive
     vehicleType: db.vehicleType ?? "",
     vehicleMakeModel: db.vehicleMakeModel ?? "",
     vehicleYear: db.vehicleYear ?? "",
+    baseZip: db.baseZip ?? "",
     headline: db.headline ?? "",
     bio: db.bio ?? "",
     hourlyRate: db.hourlyRate?.toString() ?? "",

@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { serviceToEnum } from "@/lib/enums";
+import { normalizeZip } from "@/lib/geo";
 import type { ServiceId } from "@/lib/services";
 
 const SERVICE_IDS: ServiceId[] = [
@@ -72,6 +73,8 @@ export interface ProfileInput {
   vehicleType?: string;
   vehicleMakeModel?: string;
   vehicleYear?: string;
+  /** 5-digit ZIP the driver starts from; "" clears it. Used only for fleet dispatch distance. */
+  baseZip?: string;
   /** A driver who skipped this at setup can pick (or change) it later. */
   primaryService?: ServiceId | null;
   additionalServices?: ServiceId[];
@@ -112,6 +115,8 @@ export async function saveDriverProfile(input: ProfileInput): Promise<{ ok: bool
     vehicleType: input.vehicleType,
     vehicleMakeModel: input.vehicleMakeModel,
     vehicleYear: input.vehicleYear,
+    // Only touched when provided: a valid ZIP sets it, "" clears it, anything else is ignored.
+    baseZip: input.baseZip === undefined ? undefined : input.baseZip.trim() === "" ? null : (normalizeZip(input.baseZip) ?? undefined),
     // primaryService is only touched if explicitly provided: undefined leaves
     // it alone; an explicit ServiceId sets it; null clears it back to undecided.
     primaryService:

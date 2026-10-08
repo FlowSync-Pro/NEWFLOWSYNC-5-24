@@ -21,7 +21,7 @@ import { saveDocument, removeDocument } from "@/app/actions/documents";
 import { logout } from "@/app/actions/auth";
 import { TextField, TextArea, ChipSelect, TagInput } from "./inputs";
 
-const VEHICLE_TYPES = ["Sedan", "SUV", "Cargo van", "Sprinter van", "Box truck", "Pickup truck", "Bike / scooter"];
+const VEHICLE_TYPES = ["Sedan", "SUV", "Minivan", "Pickup truck", "Cargo van", "Sprinter van", "Box truck", "Bike / scooter"];
 const RADII = ["Within 5 mi", "Within 15 mi", "Within 30 mi", "Regional"];
 const LANGS = ["English", "Spanish", "Mandarin", "French", "Vietnamese", "Tagalog"];
 
@@ -194,6 +194,7 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
       vehicleType: profile.vehicleType,
       vehicleMakeModel: profile.vehicleMakeModel,
       vehicleYear: profile.vehicleYear,
+      baseZip: profile.baseZip,
       additionalServices: profile.additionalServices,
       serviceDetails: profile.serviceDetails,
       externalWebsiteUrl: profile.externalWebsiteUrl,
@@ -388,6 +389,13 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
         <div className="grid gap-5 sm:grid-cols-2">
           <TextField label="Make & model" value={profile.vehicleMakeModel} onChange={(v) => set("vehicleMakeModel", v)} placeholder="Toyota RAV4" />
           <TextField label="Year" value={profile.vehicleYear} onChange={(v) => set("vehicleYear", v)} placeholder="2021" />
+        </div>
+        <div>
+          <TextField label="Home base ZIP code" value={profile.baseZip} onChange={(v) => set("baseZip", v.replace(/[^\d-]/g, "").slice(0, 10))} placeholder="93701" />
+          <p className="mt-1 text-xs text-muted">
+            Where you start your day. Only used to match you with nearby fleet loads — never shown to customers.
+            {profile.baseZip && !/^\d{5}(-\d{4})?$/.test(profile.baseZip.trim()) && <span className="text-red-400"> Enter a 5-digit ZIP.</span>}
+          </p>
         </div>
       </section>
 

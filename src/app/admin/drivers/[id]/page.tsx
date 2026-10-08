@@ -13,6 +13,7 @@ import AdminReviewInvite from "@/components/AdminReviewInvite";
 import AdminFleetToggle from "@/components/AdminFleetToggle";
 import AdminStripeConnect from "@/components/AdminStripeConnect";
 import AdminPayouts from "@/components/AdminPayouts";
+import AdminCurriActivation from "@/components/AdminCurriActivation";
 import { connectStatus, syncConnectStatus } from "@/lib/stripe-connect";
 
 export const dynamic = "force-dynamic";
@@ -20,12 +21,19 @@ export const metadata: Metadata = { title: "Driver operations", robots: { index:
 
 const fmt = (d: Date) => d.toLocaleDateString();
 
-export default async function AdminDriverOps({ params }: PageProps<"/admin/drivers/[id]">) {
+export default async function AdminDriverOps({ params, searchParams }: PageProps<"/admin/drivers/[id]">) {
   const session = await getSession();
   if (!session) redirect("/signin");
   if (!(await getAdminUserId())) redirect("/account");
 
   const { id } = await params;
+  // Arriving from a dispatch load's "Delivered → log payout": pre-fill the form.
+  const sp = await searchParams;
+  const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+  const loadAmountCents = str(sp.loadAmount) && /^\d+$/.test(str(sp.loadAmount)!) ? Number(sp.loadAmount) : undefined;
+  const payoutInitial = str(sp.loadId)
+    ? { loadId: str(sp.loadId)!, amount: loadAmountCents ? (loadAmountCents / 100).toFixed(2) : "", note: str(sp.loadNote) ?? "", deliveredOn: str(sp.loadDate) ?? "" }
+    : undefined;
   const driver = await prisma.driverProfile.findUnique({
     where: { id },
     include: {
@@ -98,9 +106,15 @@ export default async function AdminDriverOps({ params }: PageProps<"/admin/drive
         )}
         {driver.user.fleetJoinedAt && (
           <div className="mt-3">
+            <AdminCurriActivation driverProfileId={driver.id} activatedAt={driver.curriActivatedAt?.toISOString() ?? null} />
+          </div>
+        )}
+        {driver.user.fleetJoinedAt && (
+          <div className="mt-3">
             <AdminPayouts
               driverProfileId={driver.id}
               payPlan={driver.user.payPlan}
+              initial={payoutInitial}
               connectReady={connect?.payoutsEnabled ?? driver.user.stripeConnectPayoutsEnabled}
               payouts={driver.user.payouts.map((p) => ({
                 id: p.id,
