@@ -480,3 +480,64 @@ is added, the ping comes with the next intake call or Telegram tap.
 lib/dispatch.ts (`sweepNoTakers`, `sweepAndNotifyNoTakers`), lib/dispatch-notify.ts
 (`notifyNoTaker`), lib/intake-auth.ts (shared key check), api/dispatch/sweep,
 api/dispatch/intake and api/telegram/webhook (run the check).
+
+## Stage 2b scope (2026-10-08) — drivers see their offers and loads on the fleet page
+
+Backup for anyone who misses a Telegram message. Designed by three independent passes
+(minimal, driver-UX, safety), merged, then adversarially checked against the code.
+
+### What drivers see (one new card, "Your offers and loads", under Active/Inactive)
+- Shown to fleet members who are activated on Curri, or who already have an open offer or
+  live load (so a driver de-activated mid-load still sees it).
+- **Open offers** (up to 5, closing soonest first): the same facts as the Telegram offer —
+  RUSH tag, pickup address · time, drop address · miles, vehicle · notes, "Your pay: $net
+  (load $gross − N% fee)" ("at the listed price" on an un-bid bid-lane load), and the real
+  closing time "Open until 2:41 PM PT" (static text, no ticking countdown).
+  Filtered to PENDING, not expired, load still OFFERED — matching respondOffer's own guard,
+  so taken/expired/withdrawn offers drop off on refresh.
+- **Your loads** (up to 10): ASSIGNED / PLACED / AWARDED / IN_PROGRESS assigned to this
+  driver, limited to `busyUntil` within the last 24 h (otherwise loads whose payout was
+  logged without the dispatch link would pile up forever). Plain status lines, Telegram
+  wording: claim-lane accepted "we're claiming it in Curri now"; bid-lane accepted "we're
+  placing the bid — not yours until Curri awards it"; PLACED "waiting on Curri, don't head
+  out"; AWARDED "Confirmed — it's yours".
+- **Recently closed** (24 h, cities only): Lost / Cancelled → "You're free"; also offers this
+  driver accepted whose load was later un-assigned → "No longer yours".
+- "Can't make it? DM Nasser on Telegram right away." No release button (releasing a claim
+  is a violation).
+- A **Refresh** link (full page reload). No polling (would keep the database awake) and no
+  client component.
+- Times in Pacific time with a "PT" label (matches Telegram; the server runs in UTC).
+- Hints shown only when true: "Go Active above" only if activated; "Connect Telegram above"
+  only if activated and Telegram is configured; under every offer "No message in Telegram?
+  DM Nasser to take it." (covers drivers who linked late or whose send failed).
+
+### What drivers can do
+- **Recommended (read-only):** see everything above, and tap "Open Telegram to Accept or
+  Pass →" — the original offer's buttons still work, so accept still runs the existing
+  atomic first-accept-wins path and the owner's CLAIM NOW / place-bid ping, untouched.
+- **Optional add-on (owner Q1):** Accept / Pass buttons on the page. Needs: a server action
+  that checks the offer belongs to the signed-in driver (respondOffer has no ownership check
+  of its own), the same owner ping with a plain fallback if building it fails, and a
+  hardening of respondOffer so Accept claims the offer row first (a simultaneous Accept +
+  Pass today can both "succeed" and send the owner CLAIM NOW then "passed"). That touches
+  the shared dispatch path → ask-first, two-driver test.
+
+### Files / deploy
+Read-only version: `src/app/account/curri-fleet/page.tsx` only (+ this doc). No migration,
+no env var, no new dependency, writes no data → **SAFE**. Add-on: + `src/app/actions/duty.ts`,
+export `ownerAcceptedLine` in `src/lib/telegram-dispatch.ts`, respondOffer hardening in
+`src/lib/dispatch.ts`.
+
+### Test plan note
+Vercel previews use a copy of the real data but the Telegram webhook points at production,
+so on a preview test only the page's look (hand-made load, "Send to drivers now" off,
+answers recorded with the admin buttons). Do the one real Telegram round-trip on production
+with a load marked "TEST — do not run", then cancel it.
+
+### Side findings (separate small tasks)
+1. Drivers' replies to the FlowSync bot never reach the owner (the bot answers with its help
+   text), yet the ASSIGNED message says "Reply here if anything's wrong".
+2. Admin dispatch pages format times without a time zone → shown in UTC on Vercel.
+3. respondOffer Accept/Pass race (see add-on) exists today via a Telegram double-tap.
+4. DutyToggle "Until" time uses the browser zone in a client component (minor mismatch).
