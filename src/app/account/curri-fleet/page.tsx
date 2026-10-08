@@ -33,8 +33,8 @@ const STEPS = [
     body: "Loads are dispatched through our carrier account. You do not need your own Curri carrier account to be approved before you can start. If you are already on Curri’s waitlist, you can run with our fleet while you wait.",
   },
   {
-    title: "Nearby loads in the dispatch relay",
-    body: "When a nearby delivery is available it is sent in the dispatch relay. You choose to claim it, place a bid, or pass. You are never required to take a load.",
+    title: "Go on duty for nearby loads",
+    body: "After you're activated, connect Telegram on this page and turn on duty. On duty means nearby loads that fit your vehicle, radius, and trip length can be assigned to you. We claim or bid them in the Curri portal, then Telegram tells you the load is yours. On a bid-lane load, Telegram may ask you to Accept or Pass first. Turn duty off when you don't want loads.",
   },
   {
     title: "Complete the delivery",

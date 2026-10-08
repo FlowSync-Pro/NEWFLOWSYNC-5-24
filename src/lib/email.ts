@@ -771,12 +771,12 @@ export async function sendFleetWelcomeEmail(opts: {
       <li ${LI}>${fleetStep1}</li>
       <li ${LI}><strong style="color:#e7ecef">We add you to our carrier account.</strong> That's what gets you activated so loads can be dispatched to you. Usually same day once we have your details.</li>
       <li ${LI}><strong style="color:#e7ecef">Set up your payouts.</strong> In your account, open <strong style="color:#e7ecef">Payouts</strong> and finish Stripe's short form (bank account and tax details — about 5 minutes). That's where every payout lands, and it's what your 1099 comes from at year end. Not done yet when your first load pays? We can send the first two or three payouts another way while you set it up.</li>
-      <li ${LI}><strong style="color:#e7ecef">Loads start showing up.</strong> Claim, bid, or pass — you're never required to take one.</li>
+      <li ${LI}><strong style="color:#e7ecef">Go on duty when you want loads.</strong> After you're activated, connect Telegram from the fleet page and turn duty on. Nearby loads that fit your vehicle, radius, and trip length can be assigned to you. We claim or bid them in Curri, then Telegram tells you the load is yours. On a bid-lane load, Telegram may ask you to Accept or Pass first. Turn duty off when you don't want loads.</li>
       <li ${LI}><strong style="color:#e7ecef">Everything in Premium is unlocked in your account.</strong> The bidding calculator, the P&amp;L tracker, every guide, and the Curri mastermind — use them from day one.</li>
       ${telegram ? `<li ${LI}><strong style="color:#e7ecef">Join the fleet Telegram group</strong> once you're activated — dispatch updates and the other fleet drivers are there. <a href="${telegram}" style="color:#25e07a">Open the group →</a></li>` : ""}
     </ol>
     <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">Refund terms you agreed to at checkout: ${FLEET.refundShort} Two violations on the carrier account means removal from the fleet without a refund.</p>
-    <p ${P}>The full walkthrough, including how we bid loads instead of claiming them at the listed price, is in your account:</p>
+    <p ${P}>The full walkthrough is in your account:</p>
     <p style="margin:0 0 18px">${button(opts.fleetUrl, "Open the fleet guide")}</p>
     <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.</p>
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
