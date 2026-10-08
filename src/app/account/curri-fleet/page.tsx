@@ -14,6 +14,7 @@ import TelegramConnect from "@/components/TelegramConnect";
 import { DUTY_DEFAULTS, vehicleClassFromType, vehicleClassLabel } from "@/lib/dispatch";
 import { telegramBotUsername } from "@/lib/telegram";
 import { feePercentFor, splitLoad } from "@/lib/payouts";
+import { ptClock, ptTime } from "@/lib/pt-time";
 import type { DispatchLane, DispatchStatus, PayPlan, VehicleClass } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -115,9 +116,6 @@ async function getMyDispatch(profileId: string) {
   return { offers, live, closed, dropped: dropped.map((d) => d.load) };
 }
 
-/** Pacific time with a label, like the Telegram messages (the server runs in UTC). */
-const pt = (d: Date, opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) =>
-  `${d.toLocaleString("en-US", { ...opts, timeZone: "America/Los_Angeles" })} PT`;
 const dollars = (c: number) => `$${(c / 100).toFixed(2)}`;
 
 /** The same pay line the Telegram offer shows: the driver's net after their plan's fee. */
@@ -148,7 +146,7 @@ function LoadDetails({ load }: { load: MyLoad }) {
     <div className="space-y-0.5 text-sm text-foreground/90">
       <p>
         {load.rush && <span className="mr-2 rounded-full bg-red-400/15 px-2 py-0.5 text-[10px] font-bold uppercase text-red-300">Rush</span>}
-        Pickup {pickupWhere} · {pt(load.pickupAt)}
+        Pickup {pickupWhere} · {ptTime(load.pickupAt)}
       </p>
       <p>Drop {dropWhere}{load.tripMiles !== null ? ` · ~${load.tripMiles} mi` : ""}</p>
       <p className="text-muted">{vehicleClassLabel(load.vehicleClass)}{load.notes ? ` · ${load.notes}` : ""}</p>
@@ -167,7 +165,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
       where: { userId: session.userId },
       select: { id: true, firstName: true, baseZip: true, vehicleType: true, onDutyUntil: true, dutyRadiusMiles: true, dutyMaxTripMiles: true, curriActivatedAt: true },
     }),
-    prisma.user.findUnique({ where: { id: session.userId }, select: { fleetJoinedAt: true, telegramChatId: true, payPlan: true } }),
+    prisma.user.findUnique({ where: { id: session.userId }, select: { fleetJoinedAt: true, telegramChatId: true, payPlan: true, stripeConnectPayoutsEnabled: true } }),
   ]);
   if (!profile) redirect("/account/setup");
 
@@ -220,13 +218,14 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-foreground/90">
               Member since {user!.fleetJoinedAt!.toLocaleDateString()}. Next step is on you: send Nasser the
-              details below so we can add you on the carrier account and send your Stripe setup link. Usually
-              same day once we have them.
+              details below so we can add you on the carrier account. Usually same day once we have them.
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground/90">
               <li>Your city</li>
               <li>Your vehicle (year, make, model)</li>
-              <li>Then set up payouts below (bank details go straight to Stripe, about 5 minutes)</li>
+              {user?.stripeConnectPayoutsEnabled
+                ? <li>Payouts: set up ✓</li>
+                : <li>Then set up payouts below (bank details go straight to Stripe, about 5 minutes)</li>}
               <li>Standard pay (every Friday, {FLEET.dispatchFeePercent}%) or faster pay (1–2 business days, {FLEET.fastPayoutFeePercent}%)</li>
             </ul>
             <div className="mt-5 flex flex-wrap gap-3">
@@ -237,7 +236,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
                 Email {SUPPORT_EMAIL}
               </a>
               <Link href="/account/payouts" className="btn-ghost inline-flex rounded-full px-6 py-2.5 text-sm">
-                Set up payouts →
+                {user?.stripeConnectPayoutsEnabled ? "Your payouts →" : "Set up payouts →"}
               </Link>
             </div>
             {telegram && (
@@ -342,7 +341,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
                     <li key={o.id} className="rounded-xl border border-accent/30 bg-accent-soft p-4">
                       <LoadDetails load={o.load} />
                       {pay && <p className="mt-2 text-sm font-semibold text-foreground">{pay}</p>}
-                      <p className="mt-1 text-xs text-muted">Open until {pt(o.expiresAt, { hour: "numeric", minute: "2-digit" })}</p>
+                      <p className="mt-1 text-xs text-muted">Open until {ptClock(o.expiresAt)}</p>
                       {user?.telegramChatId && botUsername ? (
                         <>
                           <a href={`https://t.me/${botUsername}`} target="_blank" rel="noreferrer" className="btn-primary mt-3 inline-flex rounded-full px-5 py-2 text-sm">
@@ -443,35 +442,44 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
         </section>
 
         {/* Stripe is how every payout is delivered and how the 1099 gets issued.
-            Members ask for the link here; non-members see when it arrives. */}
-        <section className="mt-6 rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] p-6">
-          <h2 className="text-lg font-bold tracking-tight text-amber-300">
-            Set up a Stripe account (required{joined ? "" : " — after you join"})
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-foreground/90">
-            We pay you as an independent contractor through Stripe, and you&apos;ll receive a{" "}
-            <strong className="font-semibold text-foreground">1099 for your taxes</strong>{" "}
-            at the end of the year. Once you&apos;re on our carrier account we send you a Stripe setup link —
-            that&apos;s where every payout lands, standard Friday pay and faster payouts alike.
-          </p>
-          <p className="mt-3 text-sm leading-relaxed text-foreground/90">
-            <strong className="font-semibold text-foreground">Don&apos;t have one yet? That won&apos;t
-            hold up your first loads.</strong> We can send your first two or three payouts another
-            way while you get Stripe set up — but please get it done, because after that all pay
-            goes through Stripe.
-          </p>
-          {joined && (
-            /* Payouts run through Stripe Connect: the owner generates the onboarding
-               link, so members ask for it here rather than opening an unconnected
-               stripe.com account on their own. */
-            <a
-              href={`mailto:${SUPPORT_EMAIL}?subject=Stripe%20setup%20link`}
-              className="btn-primary mt-4 inline-flex rounded-full px-6 py-2.5 text-sm"
-            >
-              Ask for your Stripe setup link →
-            </a>
-          )}
-        </section>
+            Members set it up themselves on /account/payouts (Stripe Connect
+            Express — not a separate stripe.com account). */}
+        {joined && user?.stripeConnectPayoutsEnabled ? (
+          <section className="card mt-6 p-6">
+            <h2 className="text-lg font-bold tracking-tight text-accent">Payouts are set up ✓</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              Your Stripe account is ready — standard Friday pay and faster payouts both land there, and your
+              1099 comes from Stripe at the end of the year.
+            </p>
+            <Link href="/account/payouts" className="btn-ghost mt-4 inline-flex rounded-full px-6 py-2.5 text-sm">
+              View your payouts →
+            </Link>
+          </section>
+        ) : (
+          <section className="mt-6 rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] p-6">
+            <h2 className="text-lg font-bold tracking-tight text-amber-300">
+              Set up payouts with Stripe (required{joined ? "" : " — after you join"})
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-foreground/90">
+              We pay you as an independent contractor through Stripe, and you&apos;ll receive a{" "}
+              <strong className="font-semibold text-foreground">1099 for your taxes</strong>{" "}
+              at the end of the year. {joined ? "You" : "Once you join, you"} set it up yourself from the Payouts
+              page in your account — about 5 minutes, and your bank details go straight to Stripe, not to us.
+              That&apos;s where every payout lands, standard Friday pay and faster payouts alike.
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-foreground/90">
+              <strong className="font-semibold text-foreground">Not done yet? That won&apos;t
+              hold up your first loads.</strong> We can send your first two or three payouts another
+              way while you get Stripe set up — but please get it done, because after that all pay
+              goes through Stripe.
+            </p>
+            {joined && (
+              <Link href="/account/payouts" className="btn-primary mt-4 inline-flex rounded-full px-6 py-2.5 text-sm">
+                Set up payouts →
+              </Link>
+            )}
+          </section>
+        )}
 
         <section className="card mt-6 p-6">
           <h2 className="text-lg font-bold tracking-tight">Already on Curri’s waitlist?</h2>

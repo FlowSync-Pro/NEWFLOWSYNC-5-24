@@ -141,7 +141,13 @@ Shipped today after the 1a/1b checkpoint (details in `docs/DISPATCH-FLOW.md`):
   page, read-only, no migration / env var): `/account/curri-fleet` shows the signed-in
   driver's open offers (pay, "Open until … PT", "Open Telegram to Accept or Pass"), their
   assigned loads with plain status lines, and the last 24 h of lost / cancelled / no-longer-
-  yours loads. Accept/Pass stays in Telegram. Not yet verified live.
+  yours loads. Accept/Pass stays in Telegram. Owner testing live 2026-10-08.
+- **Four small dispatch fixes** (after this checkpoint; no migration / env var): driver
+  messages to the bot are relayed to the owner, who answers by replying; dispatch times in
+  PT everywhere (the new-load form's pickup field too, and the payout pre-fill date); Accept +
+  Pass at the same moment can no longer both count (buttons vanish once answered); the fleet
+  page points to the self-serve Payouts page instead of "ask for your Stripe setup link".
+  Details: `docs/DISPATCH-FLOW.md` → Side findings.
 
 **Not yet verified live:** the first real portal load end to end (card + FlowSync
 "Offered to N…" ping + load under /admin/dispatch + driver Accept/Pass). The bot started

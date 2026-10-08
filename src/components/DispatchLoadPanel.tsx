@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { assignDispatchLoad, offerDispatchLoad, respondDispatchOffer, sendToActiveDrivers, setDispatchLane, transitionDispatchLoad } from "@/app/actions/dispatch";
+import { ptDate, ptTime } from "@/lib/pt-time";
 
 export interface PanelLoad {
   id: string;
@@ -44,7 +45,6 @@ export interface PanelEvent { id: string; at: string; actor: string; from: strin
 export type PanelBid = { suggested: number; floor: number; worthIt: number; costPerMile: number; costPerMileSource: string; deadheadMiles: number; hours: number; forName: string } | null;
 
 const $ = (c: number | null) => (c === null ? "—" : `$${(c / 100).toFixed(2)}`);
-const when = (iso: string) => new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 export default function DispatchLoadPanel({ load, candidates, offers, events, bid }: { load: PanelLoad; candidates: PanelCandidate[]; offers: PanelOffer[]; events: PanelEvent[]; bid: PanelBid }) {
   const router = useRouter();
@@ -136,7 +136,7 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
               )}
               {(load.status === "AWARDED" || load.status === "IN_PROGRESS") && load.assigned && (
                 <Link
-                  href={`/admin/drivers/${load.assigned.profileId}?loadId=${load.id}&loadAmount=${load.bidCents ?? load.listedCents ?? ""}&loadNote=${encodeURIComponent(`Curri ${load.curriRef ?? ""} ${load.pickupZip} → ${load.dropoffZip}`.trim())}&loadDate=${load.pickupAt.slice(0, 10)}`}
+                  href={`/admin/drivers/${load.assigned.profileId}?loadId=${load.id}&loadAmount=${load.bidCents ?? load.listedCents ?? ""}&loadNote=${encodeURIComponent(`Curri ${load.curriRef ?? ""} ${load.pickupZip} → ${load.dropoffZip}`.trim())}&loadDate=${ptDate(load.pickupAt)}`}
                   className={primary}
                 >
                   Delivered → log payout
@@ -159,7 +159,7 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
           <ul className="mt-3 divide-y divide-border text-sm">
             {offers.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <span>{o.name} <span className="text-muted">· {o.response.toLowerCase()}{o.response === "PENDING" ? ` · expires ${when(o.expiresAt)}` : ""}</span></span>
+                <span>{o.name} <span className="text-muted">· {o.response.toLowerCase()}{o.response === "PENDING" ? ` · expires ${ptTime(o.expiresAt)}` : ""}</span></span>
                 {o.response === "PENDING" && load.status === "OFFERED" && (
                   <span className="flex gap-2">
                     <button type="button" className={primary} disabled={pending} onClick={() => run(() => respondDispatchOffer(load.id, o.id, "ACCEPTED"), `${o.name} accepted — assigned.`)}>Accepted</button>
@@ -227,7 +227,7 @@ export default function DispatchLoadPanel({ load, candidates, offers, events, bi
         <h2 className="text-lg font-bold tracking-tight">Log</h2>
         <ul className="mt-3 space-y-1 text-xs text-muted">
           {events.map((e) => (
-            <li key={e.id}>{when(e.at)} · {e.actor} · {e.from && e.to ? `${e.from} → ${e.to}` : e.to ?? ""}{e.note ? ` · ${e.note}` : ""}</li>
+            <li key={e.id}>{ptTime(e.at)} · {e.actor} · {e.from && e.to ? `${e.from} → ${e.to}` : e.to ?? ""}{e.note ? ` · ${e.note}` : ""}</li>
           ))}
         </ul>
       </section>

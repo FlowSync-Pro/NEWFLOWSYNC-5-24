@@ -4,6 +4,7 @@ import { FLEET } from "./pricing";
 import { SITE_URL } from "./site";
 import { sendTelegramMessage, telegramOwnerChatId } from "./telegram";
 import { splitLoad, feePercentFor } from "./payouts";
+import { ptTime } from "./pt-time";
 
 // Telegram messages for the dispatch board (stage 1b). Every function is
 // best-effort: no token, no linked chat, or a Telegram error → logged, never
@@ -11,7 +12,6 @@ import { splitLoad, feePercentFor } from "./payouts";
 
 const base = () => process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
 const $ = (c: number) => `$${(c / 100).toFixed(2)}`;
-const when = (d: Date) => d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
 
 async function sendSafely(chatId: string | null | undefined, text: string, inlineKeyboard?: { text: string; callback_data: string }[][]): Promise<boolean> {
   if (!chatId) return false;
@@ -31,7 +31,7 @@ async function loadSummary(loadId: string) {
   });
   if (!l) return null;
   const lines = [
-    `${l.rush ? "RUSH · " : ""}Pickup ${l.pickupAddress}${l.pickupAddress !== l.pickupZip ? ` (${l.pickupZip})` : ""} · ${when(l.pickupAt)}`,
+    `${l.rush ? "RUSH · " : ""}Pickup ${l.pickupAddress}${l.pickupAddress !== l.pickupZip ? ` (${l.pickupZip})` : ""} · ${ptTime(l.pickupAt)}`,
     `Drop ${l.dropoffAddress}${l.dropoffAddress !== l.dropoffZip ? ` (${l.dropoffZip})` : ""} · ~${l.tripMiles ?? "?"} mi`,
     `Vehicle: ${l.vehicleClass.replace("_", " ").toLowerCase()}${l.notes ? ` · ${l.notes}` : ""}`,
   ];

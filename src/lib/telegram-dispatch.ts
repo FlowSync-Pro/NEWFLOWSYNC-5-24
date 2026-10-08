@@ -1,8 +1,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "./db";
-import { answerTelegramCallback, sendTelegramMessage, telegramBotUsername, telegramOwnerChatId } from "./telegram";
-import { DUTY_DEFAULTS, driverCostPerMile, rankCandidates, respondOffer, setDuty, suggestBid, type LoadForRanking } from "./dispatch";
+import type { DispatchStatus } from "@prisma/client";
+import { answerTelegramCallback, clearTelegramButtons, copyTelegramMessage, sendTelegramMessage, telegramBotUsername, telegramOwnerChatId } from "./telegram";
+import { DUTY_DEFAULTS, STATUS_LABEL, driverCostPerMile, rankCandidates, respondOffer, setDuty, suggestBid, type LoadForRanking } from "./dispatch";
 import { SITE_URL } from "./site";
+import { ptTime } from "./pt-time";
 
 /** What the owner's phone says when a driver accepts: CLAIM NOW (claim lane) or the bid to place (bid lane). */
 async function ownerAcceptedLine(load: LoadForRanking & { lane: string; listedCents: number | null; pickupZip: string; dropoffZip: string }, profileId: string, name: string): Promise<string> {
@@ -61,18 +63,30 @@ export function telegramLinkUrl(userId: string): string | null {
 
 // ---- Updates ----------------------------------------------------------------
 
+type IncomingMessage = {
+  message_id: number;
+  from?: { id: number; is_bot?: boolean };
+  chat: { id: number; type: string };
+  text?: string;
+  caption?: string;
+  reply_to_message?: { message_id: number; from?: { id: number; is_bot?: boolean }; text?: string; caption?: string; forward_origin?: unknown; forward_date?: number };
+  // Present (any value) when the message is that kind — only used to label a relayed message.
+  photo?: unknown; voice?: unknown; video?: unknown; video_note?: unknown; audio?: unknown;
+  document?: unknown; location?: unknown; contact?: unknown; sticker?: unknown;
+};
+
 export type DispatchTelegramUpdate = {
   update_id: number;
-  message?: { message_id: number; from?: { id: number }; chat: { id: number; type: string }; text?: string };
+  message?: IncomingMessage;
   callback_query?: { id: string; from: { id: number }; data?: string; message?: { message_id: number; chat: { id: number } } };
 };
 
-const HELP = "This bot sends you fleet load offers.\n/active — send me offers (defaults: 8 h, 30 mi, 150 mi trips)\n/active 10 40 200 — hours, radius, max trip\n/inactive — stop offers\n/status — what you're set to\n/unlink — disconnect\n\nWhen an offer comes in, tap Accept or Pass. First to accept gets the load.";
+const HELP = "This bot sends you fleet load offers.\n/active — send me offers (defaults: 8 h, 30 mi, 150 mi trips)\n/active 10 40 200 — hours, radius, max trip\n/inactive — stop offers\n/status — what you're set to\n/unlink — disconnect\n\nWhen an offer comes in, tap Accept or Pass. First to accept gets the load.\n\nAnything else you send here goes to Nasser.";
 
 async function linkedProfile(chatId: string) {
   return prisma.user.findUnique({
     where: { telegramChatId: chatId },
-    select: { id: true, fleetJoinedAt: true, driverProfile: { select: { id: true, firstName: true, baseZip: true, vehicleType: true, onDutyUntil: true, dutyRadiusMiles: true, dutyMaxTripMiles: true, curriActivatedAt: true } } },
+    select: { id: true, fleetJoinedAt: true, driverProfile: { select: { id: true, firstName: true, lastName: true, phone: true, baseZip: true, vehicleType: true, onDutyUntil: true, dutyRadiusMiles: true, dutyMaxTripMiles: true, curriActivatedAt: true } } },
   });
 }
 
@@ -82,22 +96,45 @@ export async function handleDispatchUpdate(update: DispatchTelegramUpdate): Prom
   const m = update.message;
   if (!m?.from || m.chat.type !== "private") return false;
   const chatId = String(m.chat.id);
+  const isOwner = chatId === telegramOwnerChatId();
   const text = (m.text ?? "").trim();
-  if (!text) return false;
+
+  // The owner answering a driver's relayed message: a reply to it, not a command.
+  if (isOwner && !text.startsWith("/")) {
+    const reply = m.reply_to_message;
+    const target = relayTarget(reply);
+    if (target) return relayToDriver(chatId, m, target);
+    // A reply to a relayed location / sticker (they can't carry the marker).
+    if (reply?.from?.is_bot && reply.text === undefined && reply.caption === undefined) {
+      await sendTelegramMessage(chatId, "To answer, reply to the message with ↩️ just under it.");
+      return true;
+    }
+  }
+
+  if (!text) {
+    // A photo, voice note, location… from a linked driver goes to the owner.
+    if (isOwner || !kindOf(m)) return false;
+    const u = await linkedProfile(chatId);
+    return u?.driverProfile ? relayToOwner(chatId, m, u.driverProfile) : false;
+  }
 
   const start = /^\/start(?:@\w+)?\s+(\S+)$/.exec(text);
   if (start) return handleStart(chatId, start[1]);
 
   const cmd = /^\/(active|inactive|onduty|offduty|status|unlink|help)(?:@\w+)?(?:\s+(.*))?$/i.exec(text);
   if (!cmd) {
-    // A linked driver chatting with the bot gets the help text; the owner's own commands pass through.
-    if (chatId === telegramOwnerChatId()) return false;
+    // The owner's own messages pass through to the community bot's owner commands.
+    if (isOwner) return false;
     const u = await linkedProfile(chatId);
     if (!u) return false;
-    await sendTelegramMessage(chatId, HELP);
-    return true;
+    // A linked driver: unknown commands get the help text; anything else they write goes to the owner.
+    if (text.startsWith("/") || !u.driverProfile) {
+      await sendTelegramMessage(chatId, HELP);
+      return true;
+    }
+    return relayToOwner(chatId, m, u.driverProfile);
   }
-  if (chatId === telegramOwnerChatId() && cmd[1].toLowerCase() === "status") return false; // owner's bot /status
+  if (isOwner && cmd[1].toLowerCase() === "status") return false; // owner's bot /status
 
   const u = await linkedProfile(chatId);
   if (!u?.driverProfile) {
@@ -196,5 +233,117 @@ async function handleCallback(q: NonNullable<DispatchTelegramUpdate["callback_qu
     await answerTelegramCallback(q.id, why);
     await sendTelegramMessage(chatId, why);
   }
+  // Answered, taken or expired: take the buttons off so a second tap can't happen.
+  // (A failed safety check leaves the offer open, so its buttons stay.)
+  if (q.message && (r.ok || /Taken|assigned|expired|Already/i.test(r.error))) await clearTelegramButtons(String(q.message.chat.id), q.message.message_id);
+  return true;
+}
+
+// ---- Driver ⇄ owner relay ---------------------------------------------------
+// Whatever a linked driver sends the bot that isn't a command goes to the
+// owner's private chat; the owner answers by replying to that message and the
+// bot passes it back. Nothing is stored — the marker in the owner's copy
+// (RELAY_TAG + the admin driver link) is how a reply finds its driver.
+
+const RELAY_TAG = "↩️ Reply to this message to answer";
+const LIVE_STATUSES: DispatchStatus[] = ["ASSIGNED", "PLACED", "AWARDED", "IN_PROGRESS"];
+const siteBase = () => process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+
+/** What a non-text message is, or null for Telegram service messages (a pin, a timer change…), which aren't relayed. */
+function kindOf(m: IncomingMessage): string | null {
+  if (m.photo) return "a photo";
+  if (m.voice || m.audio) return "a voice note";
+  if (m.video || m.video_note) return "a video";
+  if (m.location) return "a location";
+  if (m.document) return "a file";
+  if (m.contact) return "a contact";
+  if (m.sticker) return "a sticker";
+  return null;
+}
+
+type RelayDriver = { id: string; firstName: string; lastName: string; phone: string | null };
+
+async function relayToOwner(chatId: string, m: IncomingMessage, p: RelayDriver): Promise<boolean> {
+  const owner = telegramOwnerChatId();
+  if (!owner) return false;
+  const name = `${p.firstName} ${p.lastName}`.trim() || "A driver";
+  // Their current load, so "can't make it" arrives with context.
+  const load = await prisma.dispatchLoad.findFirst({
+    where: { assignedProfileId: p.id, status: { in: LIVE_STATUSES }, OR: [{ busyUntil: { gt: new Date(Date.now() - 86_400_000) } }, { busyUntil: null }] },
+    orderBy: { pickupAt: "asc" },
+    select: { pickupZip: true, dropoffZip: true, status: true, pickupAt: true },
+  });
+  // Cut long text so the marker and link at the end always fit in one message.
+  const clip = (s: string | undefined, max: number) => (s && s.length > max ? `${s.slice(0, max)}…` : s);
+  const text = clip(m.text?.trim(), 3000);
+  const caption = clip(m.caption?.trim(), 500);
+  const footer = [
+    "",
+    ...(load ? [`Their load: ${load.pickupZip} → ${load.dropoffZip} · ${STATUS_LABEL[load.status].toLowerCase()} · pickup ${ptTime(load.pickupAt)}`] : []),
+    `${RELAY_TAG} ${p.firstName || "them"}.${p.phone ? ` Phone: ${p.phone}` : ""}`,
+    `${siteBase()}/admin/drivers/${p.id}`,
+  ].join("\n");
+  let delivered = false;
+  try {
+    if (text) {
+      await sendTelegramMessage(owner, `💬 ${name} (fleet driver) wrote:\n${text}\n${footer}`);
+    } else {
+      // Media is copied (never forwarded with the driver's own caption, which
+      // could imitate the marker). A photo, video, file or voice note carries
+      // our header as its caption, so replying to it works; anything else
+      // (location, sticker…) gets the header as a message right under it.
+      const asCaption = `💬 ${name} (fleet driver) sent ${kindOf(m) ?? "a message"}${caption ? `:\n${caption}` : ""}\n${footer}`;
+      if ((m.photo || m.video || m.document || m.audio || m.voice) && asCaption.length <= 1024) {
+        await copyTelegramMessage(owner, chatId, m.message_id, { caption: asCaption });
+      } else {
+        const copied = await copyTelegramMessage(owner, chatId, m.message_id);
+        await sendTelegramMessage(owner, `💬 ${name} (fleet driver) sent ${kindOf(m) ?? "a message"} ↑${caption ? `\n${caption}` : ""}\n${footer}`, { replyToMessageId: copied });
+      }
+    }
+    delivered = true;
+  } catch (e) {
+    console.error("[dispatch] relay to owner failed:", e instanceof Error ? e.message : e);
+  }
+  await sendQuietly(chatId, delivered ? "✓ Sent to Nasser. His answer will come here." : "Couldn't reach Nasser just now — please text or call him directly.");
+  return true;
+}
+
+/** A confirmation line; a failure here must not be mistaken for a failed delivery. */
+async function sendQuietly(chatId: string, text: string): Promise<void> {
+  try {
+    await sendTelegramMessage(chatId, text);
+  } catch (e) {
+    console.error("[dispatch] relay confirmation failed:", e instanceof Error ? e.message : e);
+  }
+}
+
+/** The driver a reply is meant for, when the owner replied to a relayed message. */
+function relayTarget(reply: IncomingMessage["reply_to_message"]): string | null {
+  // Only the bot's own messages — never a forwarded one, whose text the driver wrote.
+  if (!reply?.from?.is_bot || reply.forward_origin || reply.forward_date) return null;
+  const body = reply.text ?? reply.caption ?? "";
+  if (!body.startsWith("💬 ") || !body.includes(RELAY_TAG)) return null;
+  return /\/admin\/drivers\/([A-Za-z0-9_-]+)\s*$/.exec(body)?.[1] ?? null;
+}
+
+async function relayToDriver(ownerChatId: string, m: IncomingMessage, profileId: string): Promise<boolean> {
+  const p = await prisma.driverProfile.findUnique({ where: { id: profileId }, select: { firstName: true, phone: true, user: { select: { telegramChatId: true } } } });
+  const name = p?.firstName || "the driver";
+  const textThem = `text them${p?.phone ? ` at ${p.phone}` : ""}`;
+  const to = p?.user.telegramChatId;
+  if (!to) {
+    await sendQuietly(ownerChatId, `${name} isn't connected on Telegram anymore — ${textThem}.`);
+    return true;
+  }
+  let delivered = false;
+  try {
+    const text = m.text?.trim();
+    if (text) await sendTelegramMessage(to, `Nasser: ${text}`);
+    else await copyTelegramMessage(to, ownerChatId, m.message_id);
+    delivered = true;
+  } catch (e) {
+    console.error("[dispatch] relay to driver failed:", e instanceof Error ? e.message : e);
+  }
+  await sendQuietly(ownerChatId, delivered ? `✓ Sent to ${name}.` : `Couldn't send that to ${name} (they may have blocked the bot) — ${textThem}.`);
   return true;
 }

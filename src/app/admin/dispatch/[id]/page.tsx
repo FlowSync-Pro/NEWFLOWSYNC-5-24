@@ -6,6 +6,7 @@ import { getSession } from "@/lib/session";
 import { getAdminUserId } from "@/lib/admin";
 import { driverCostPerMile, rankCandidates, suggestBid, vehicleClassLabel, LANE_LABEL } from "@/lib/dispatch";
 import DispatchLoadPanel, { type PanelBid } from "@/components/DispatchLoadPanel";
+import { ptTime } from "@/lib/pt-time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Dispatch load", robots: { index: false } };
@@ -49,7 +50,7 @@ export default async function AdminDispatchLoadPage({ params }: PageProps<"/admi
           {load.pickupZip} → {load.dropoffZip}{load.curriRef ? ` · Curri ${load.curriRef}` : ""}
         </h1>
         <p className="mt-2 text-sm text-muted">
-          {load.rush ? "RUSH · " : ""}pickup {load.pickupAt.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {vehicleClassLabel(load.vehicleClass)} · {LANE_LABEL[load.lane]} · ~{load.tripMiles ?? "?"} mi
+          {load.rush ? "RUSH · " : ""}pickup {ptTime(load.pickupAt)} · {vehicleClassLabel(load.vehicleClass)} · {LANE_LABEL[load.lane]} · ~{load.tripMiles ?? "?"} mi
           {load.listedCents !== null && <> · listed ${(load.listedCents / 100).toFixed(2)}</>}
         </p>
         <p className="mt-1 text-sm text-muted">{load.pickupAddress} → {load.dropoffAddress}{load.notes ? ` · ${load.notes}` : ""}</p>

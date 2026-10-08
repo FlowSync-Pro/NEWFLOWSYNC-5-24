@@ -3,23 +3,21 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createDispatchLoad } from "@/app/actions/dispatch";
+import { fromPtWallClock, ptWallClock } from "@/lib/pt-time";
 
 const VEHICLES = [
   ["CAR", "Car"], ["SUV", "SUV"], ["MINIVAN", "Minivan"], ["PICKUP_TRUCK", "Pickup truck"],
   ["CARGO_VAN", "Cargo van"], ["SPRINTER_VAN", "Sprinter van"], ["BOX_TRUCK", "Box truck"],
 ] as const;
 
-const localNow = () => {
-  const d = new Date(Date.now() + 60 * 60_000);
-  d.setSeconds(0, 0);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-};
+// An hour from now, in Pacific time — Curri's times are PT whatever zone the owner's phone is in.
+const ptNow = () => ptWallClock(new Date(Date.now() + 60 * 60_000));
 
 /** /admin/dispatch: type a Curri opportunity in (stage 2 ingests Curri's emails instead). */
 export default function DispatchNewLoad() {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [f, setF] = useState({ curriRef: "", lane: "CLAIM" as "CLAIM" | "BID", rush: false, pickupAt: localNow(), pickupAddress: "", pickupZip: "", dropoffAddress: "", dropoffZip: "", vehicleClass: "CARGO_VAN" as (typeof VEHICLES)[number][0], listed: "", notes: "", miles: "", sendNow: true });
+  const [f, setF] = useState({ curriRef: "", lane: "CLAIM" as "CLAIM" | "BID", rush: false, pickupAt: ptNow(), pickupAddress: "", pickupZip: "", dropoffAddress: "", dropoffZip: "", vehicleClass: "CARGO_VAN" as (typeof VEHICLES)[number][0], listed: "", notes: "", miles: "", sendNow: true });
   const [error, setError] = useState<string | null>(null);
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((s) => ({ ...s, [k]: v }));
   const input = "mt-1 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-foreground outline-none focus:border-accent";
@@ -27,7 +25,7 @@ export default function DispatchNewLoad() {
   function submit() {
     setError(null);
     start(async () => {
-      const r = await createDispatchLoad({ ...f, pickupAt: new Date(f.pickupAt).toISOString() });
+      const r = await createDispatchLoad({ ...f, pickupAt: fromPtWallClock(f.pickupAt)?.toISOString() ?? "" });
       if (!r.ok) { setError(r.error); return; }
       router.push(`/admin/dispatch/${r.id}`);
     });
@@ -68,7 +66,7 @@ export default function DispatchNewLoad() {
             <input type="checkbox" checked={f.sendNow} onChange={(e) => set("sendNow", e.target.checked)} /> Send to drivers now
           </label>
         </div>
-        <label className="text-xs text-muted">Scheduled pickup<input type="datetime-local" value={f.pickupAt} disabled={f.rush} onChange={(e) => set("pickupAt", e.target.value)} className={`${input} disabled:opacity-50`} /></label>
+        <label className="text-xs text-muted">Scheduled pickup (Pacific time)<input type="datetime-local" value={f.pickupAt} disabled={f.rush} onChange={(e) => set("pickupAt", e.target.value)} className={`${input} disabled:opacity-50`} /></label>
         <label className="text-xs text-muted">Notes for the driver<input value={f.notes} onChange={(e) => set("notes", e.target.value)} placeholder="2 pallets, liftgate at dropoff" className={input} /></label>
       </div>
       {error && <p className="mt-3 text-sm text-red-400">{error}</p>}

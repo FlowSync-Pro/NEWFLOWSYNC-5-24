@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { goOffDuty, goOnDuty } from "@/app/actions/duty";
+import { ptClock } from "@/lib/pt-time";
 
 /**
  * Fleet page: Active / Inactive. Active = send me load offers within my radius
@@ -62,7 +63,7 @@ export default function DutyToggle({
           <h2 className="text-lg font-bold tracking-tight">{onDuty ? "You're Active" : "You're Inactive"}</h2>
           <p className="mt-1 text-sm text-muted">
             {onDuty
-              ? `Until ${new Date(onDutyUntil!).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · offers within ${radiusMiles ?? defaults.radiusMiles} mi of ${baseZip} · trips up to ${maxTripMiles ?? defaults.maxTripMiles} mi · ${vehicleLabel}. You'll switch to Inactive automatically after that.`
+              ? `Until ${ptClock(onDutyUntil!)} · offers within ${radiusMiles ?? defaults.radiusMiles} mi of ${baseZip} · trips up to ${maxTripMiles ?? defaults.maxTripMiles} mi · ${vehicleLabel}. You'll switch to Inactive automatically after that.`
               : "Active means we send you load offers within your radius on Telegram. You choose: tap Accept or Pass. The first driver to accept gets the load. You switch back to Inactive automatically after the hours you set."}
           </p>
         </div>

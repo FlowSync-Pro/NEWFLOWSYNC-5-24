@@ -6,12 +6,12 @@ import { getSession } from "@/lib/session";
 import { getAdminUserId } from "@/lib/admin";
 import { OPEN_STATUSES, STATUS_LABEL, vehicleClassLabel } from "@/lib/dispatch";
 import DispatchNewLoad from "@/components/DispatchNewLoad";
+import { ptTime } from "@/lib/pt-time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Dispatch", robots: { index: false } };
 
 const $ = (c: number | null) => (c === null ? "—" : `$${(c / 100).toFixed(2)}`);
-const when = (d: Date) => d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 export default async function AdminDispatchPage() {
   const session = await getSession();
@@ -31,7 +31,7 @@ export default async function AdminDispatchPage() {
         <Link href={`/admin/dispatch/${l.id}`} className="font-medium hover:text-accent">
           {l.pickupZip} → {l.dropoffZip}{l.curriRef ? ` · ${l.curriRef}` : ""}
         </Link>
-        <span className="ml-2 text-xs text-muted">{l.rush ? "RUSH · " : ""}{when(l.pickupAt)} · {vehicleClassLabel(l.vehicleClass)} · {l.lane === "CLAIM" ? "claim" : "bid"} · {l.tripMiles ?? "?"} mi</span>
+        <span className="ml-2 text-xs text-muted">{l.rush ? "RUSH · " : ""}{ptTime(l.pickupAt)} · {vehicleClassLabel(l.vehicleClass)} · {l.lane === "CLAIM" ? "claim" : "bid"} · {l.tripMiles ?? "?"} mi</span>
       </div>
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted">{l.assignedProfile ? `${l.assignedProfile.firstName} ${l.assignedProfile.lastName}` : "unassigned"}</span>

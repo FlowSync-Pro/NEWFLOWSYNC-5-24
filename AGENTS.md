@@ -231,7 +231,10 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   `src/lib/telegram-dispatch.ts`, linked via "Connect Telegram", `User.telegramChatId`;
   admins mark "Activated on Curri" on the driver page. The fleet page also lists each
   driver's own open offers, assigned loads and last-24h lost/cancelled loads, read-only
-  ("Your offers and loads", a backup for Telegram; Accept/Pass stays in Telegram). Owner decisions 2026-10-08: no paid
+  ("Your offers and loads", a backup for Telegram; Accept/Pass stays in Telegram). Anything a
+  linked driver sends the bot that isn't a command is relayed to the owner's private chat;
+  the owner answers by replying to it (nothing stored). Dispatch times show in PT
+  (`src/lib/pt-time.ts`). Owner decisions 2026-10-08: no paid
   services for dispatch (Google distance shelved; free ZIP/city estimates); Stripe Connect
   fees are covered by the dispatching fee. Loads arrive by hand or through the **intake door**
   `POST /api/dispatch/intake` (bearer `DISPATCH_INTAKE_KEY`; spec `docs/DISPATCH-INTAKE.md`)

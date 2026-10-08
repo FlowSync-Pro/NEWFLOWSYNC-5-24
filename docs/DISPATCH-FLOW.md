@@ -540,9 +540,31 @@ so on a preview test only the page's look (hand-made load, "Send to drivers now"
 answers recorded with the admin buttons). Do the one real Telegram round-trip on production
 with a load marked "TEST — do not run", then cancel it.
 
-### Side findings (separate small tasks)
+### Side findings (separate small tasks) — all FIXED 2026-10-08
 1. Drivers' replies to the FlowSync bot never reach the owner (the bot answers with its help
    text), yet the ASSIGNED message says "Reply here if anything's wrong".
+   **Fixed — driver ⇄ owner relay** (`src/lib/telegram-dispatch.ts`): anything a linked driver
+   sends the bot that isn't a command (text, photo, voice note, location…) goes to the owner's
+   private chat with their name, phone, current load and admin link; the driver gets "✓ Sent
+   to Nasser". The owner answers by **replying** to that message (text, or any media) and the
+   bot passes it back ("Nasser: …"). Nothing is stored; the reply finds its driver through
+   the "↩️ Reply to this message to answer" line + `/admin/drivers/<profileId>` link at the
+   end of the owner's copy (only bot-sent messages, only from the owner's chat). Owner
+   commands (`/status`…) and replies to FAQ-bot escalations work as before.
 2. Admin dispatch pages format times without a time zone → shown in UTC on Vercel.
+   **Fixed:** every dispatch time (admin board, load page, load panel, Active box, Telegram
+   load summaries, fleet page) uses `src/lib/pt-time.ts` → "Oct 8, 2:41 PM PT".
 3. respondOffer Accept/Pass race (see add-on) exists today via a Telegram double-tap.
+   **Fixed:** respondOffer records the answer first with a conditional update (still PENDING,
+   not expired), so of two taps at once only one counts; a failed assign undoes it (back to
+   PENDING if the load is still open, EXPIRED if another driver won). The Telegram buttons
+   are removed once the offer is answered, taken or expired.
 4. DutyToggle "Until" time uses the browser zone in a client component (minor mismatch).
+   **Fixed** with item 2.
+5. Found by review while fixing the above, also fixed: the new-load form's "Scheduled pickup"
+   field is read and pre-filled as **Pacific time** whatever zone the owner's phone is in
+   (`fromPtWallClock` / `ptWallClock`); "Delivered → log payout" pre-fills the delivery date
+   with the PT calendar day (`ptDate`), not the UTC one (a 6 PM PT pickup used to log as the
+   next day); the fleet page's member card no longer nudges "set up payouts" at a driver whose
+   Stripe payouts are already enabled. Known, not fixed: the fleet page reads the cached
+   `stripeConnectPayoutsEnabled` flag — it refreshes when the driver opens the Payouts page.

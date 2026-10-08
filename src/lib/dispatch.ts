@@ -1,4 +1,4 @@
-import type { DispatchLane, DispatchStatus, VehicleClass } from "@prisma/client";
+import type { DispatchLane, DispatchStatus, OfferResponse, VehicleClass } from "@prisma/client";
 import { prisma } from "./db";
 import { locate, haversineMiles, zipCentroid } from "./geo";
 import { FLEET } from "./pricing";
@@ -437,25 +437,50 @@ export async function autoOffer(loadId: string, actorId: string): Promise<AutoOf
 export async function respondOffer(offerId: string, response: "ACCEPTED" | "PASSED", actorId: string): Promise<Result> {
   const offer = await prisma.dispatchOffer.findUnique({ where: { id: offerId }, include: { load: { select: { id: true, status: true } } } });
   if (!offer) return { ok: false, error: "Offer not found." };
-  if (offer.response !== "PENDING") {
-    // Expired because another driver accepted first reads as "taken", not "expired".
-    if (offer.response === "EXPIRED" && offer.load.status !== "OFFERED" && offer.load.status !== "NEW") return { ok: false, error: "Taken — someone was faster." };
-    return { ok: false, error: `Already ${offer.response.toLowerCase()}.` };
-  }
-  if (offer.expiresAt.getTime() < Date.now()) {
-    await prisma.dispatchOffer.update({ where: { id: offerId }, data: { response: "EXPIRED", respondedAt: new Date() } });
+  if (offer.response !== "PENDING") return closedOffer(offer.response, offer.load.status);
+  const now = new Date();
+  if (offer.expiresAt <= now) {
+    await prisma.dispatchOffer.updateMany({ where: { id: offerId, response: "PENDING" }, data: { response: "EXPIRED", respondedAt: now } });
     return { ok: false, error: "This offer expired." };
   }
+  if (response === "ACCEPTED" && offer.load.status !== "OFFERED") return { ok: false, error: "Taken — this load was already assigned." };
+  // Record the answer first, only if the offer is still open: of two taps at
+  // once (Accept + Pass, or a double tap) exactly one gets past here, so the
+  // owner never gets CLAIM NOW and "passed" for the same offer.
+  const claimed = await prisma.dispatchOffer.updateMany({ where: { id: offerId, response: "PENDING", expiresAt: { gt: now } }, data: { response, respondedAt: now } });
+  if (claimed.count === 0) {
+    const fresh = await prisma.dispatchOffer.findUnique({ where: { id: offerId }, select: { response: true, load: { select: { status: true } } } });
+    return closedOffer(fresh?.response ?? "EXPIRED", fresh?.load.status ?? "OFFERED");
+  }
   if (response === "PASSED") {
-    await prisma.dispatchOffer.update({ where: { id: offerId }, data: { response: "PASSED", respondedAt: new Date() } });
     await logEvent(offer.loadId, actorId, null, null, "A driver passed");
     return { ok: true };
   }
-  if (offer.load.status !== "OFFERED") return { ok: false, error: "Taken — this load was already assigned." };
-  const r = await assignLoad(offer.loadId, offer.driverProfileId, actorId, { viaOffer: true });
-  if (!r.ok) return r;
-  await prisma.dispatchOffer.update({ where: { id: offerId }, data: { response: "ACCEPTED", respondedAt: new Date() } });
-  return { ok: true };
+  let r: Result;
+  try {
+    r = await assignLoad(offer.loadId, offer.driverProfileId, actorId, { viaOffer: true });
+  } catch (e) {
+    r = { ok: false, error: "Couldn't record that — try again." };
+    console.error("[dispatch] assign after accept failed:", e instanceof Error ? e.message : e);
+  }
+  if (r.ok) return r;
+  const load = await prisma.dispatchLoad.findUnique({ where: { id: offer.loadId }, select: { status: true, assignedProfileId: true } });
+  // Failed after the load was already theirs (e.g. the log write): it stands.
+  if (load?.assignedProfileId === offer.driverProfileId && load.status !== "OFFERED" && load.status !== "NEW") return { ok: true };
+  // The load didn't become theirs: another driver won the same moment, or a
+  // safety check failed (busy, vehicle). Undo the answer so the record is true.
+  const stillOpen = load?.status === "OFFERED" || load?.status === "NEW";
+  await prisma.dispatchOffer.updateMany({
+    where: { id: offerId, response: "ACCEPTED" },
+    data: stillOpen ? { response: "PENDING", respondedAt: null } : { response: "EXPIRED", respondedAt: now },
+  });
+  return stillOpen ? r : { ok: false, error: "Taken — someone was faster." };
+}
+
+/** Why an already-closed offer can't be answered. Expired because another driver won reads as "taken". */
+function closedOffer(response: OfferResponse, loadStatus: DispatchStatus): Result {
+  if (response === "EXPIRED") return { ok: false, error: loadStatus !== "OFFERED" && loadStatus !== "NEW" ? "Taken — someone was faster." : "This offer expired." };
+  return { ok: false, error: `Already ${response.toLowerCase()}.` };
 }
 
 // ---- No taker --------------------------------------------------------------
