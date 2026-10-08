@@ -16,9 +16,10 @@ miles away, two drivers on one load, a bid below cost.
 
 ## Principles
 
-1. **Never claim a load we can't cover.** A load is claimed in Curri only after a specific
-   driver has accepted it — or the owner knowingly overrides with a visible "unassigned"
-   warning and a countdown.
+1. **Never claim a load we can't cover.** A load is claimed in Curri only when a specific
+   driver is committed to it — pre-committed by being on duty within parameters (claim
+   lane) or by accepting an offer (bid lane). No override: releasing a claim is a serious
+   violation on the carrier account.
 2. **Distance decides who hears about a load.** A driver only gets offered loads within
    their radius of their base (or live location when they share it).
 3. **One driver, one load at a time.** Accepting locks the load to that driver and marks
@@ -40,14 +41,40 @@ miles away, two drivers on one load, a bid below cost.
   the realistic feed is whatever notifications the portal sends (email / SMS / push) plus
   the portal itself.
 
-Still to find out (ask the Curri rep or test once):
-- How are new opportunities announced — email, SMS, app push, portal only? Forward one
-  (redacted) so we can see what a notification contains.
-- How long does a typical opportunity stay open before someone else claims it?
-- Can a claimed load be released by the carrier, and does releasing count as a violation?
-  (Decides whether "claim first, then find the driver" is ever safe.)
-- Can the carrier account have more than one admin seat (a dispatcher for when the owner
-  is driving)?
+Answered by the owner, 2026-10-08:
+- **Announcements:** email, app push, and inside the portal. → Email is the automatic feed
+  (stage 2); push can't be ingested; the portal is the human's screen.
+- **How long a load stays open:** anywhere from seconds (hot markets, listed-price claims)
+  to minutes or longer (loads taking bids).
+- **Releasing a claimed load is a serious violation**; too many → account suspended.
+  → **Never claim without a committed driver. No "hot-load mode". Stage 4 is dropped.**
+- **Admin seats: unlimited.** → A trusted dispatcher can cover while the owner drives; the
+  board is built for more than one dispatcher from day one (every action records who).
+
+### The consequence: commitment has to happen BEFORE the load appears
+
+If the fastest loads go in seconds and a claim can never be released, "offer → driver
+accepts → owner claims" is too slow for those loads. The fix is to move the driver's
+acceptance earlier:
+
+- **Going on duty is a commitment.** When a driver sets themselves on duty they state their
+  parameters: hours, radius from their base, vehicle, max trip miles. Within those
+  parameters they are pre-accepting any load the dispatcher assigns them.
+- **The board shows "covered" or "not covered" for a load in one glance**, using only
+  on-duty drivers whose parameters fit. If covered, the dispatcher claims immediately and
+  the driver gets an "Assigned" message, not a "Do you want it?" question. If not covered,
+  the claim button stays locked.
+- **Passing an assigned load is the exception**, handled like a no-show under the fleet's
+  existing two-violations rule, because a pass after a claim is exactly what gets the
+  carrier account suspended. Drivers can always go off duty instead.
+- **Loads taking bids** (slower) keep the gentler path: offer → accept → bid.
+
+So there are two lanes on the board:
+
+| Lane | Load type | Driver step | Dispatcher step |
+|---|---|---|---|
+| Claim lane | Listed price, goes in seconds | Pre-committed by being on duty | Board says "Covered by X, 12 mi" → claim in Curri → driver gets Assigned |
+| Bid lane | Taking bids, minutes+ | Gets an offer, accepts in app | Places the suggested bid in Curri after an accept |
 
 ## What we need to know about each driver (data)
 
@@ -131,13 +158,10 @@ it exists). Removes the typing; the owner's job becomes confirm-and-place.
 ask-first) for driving miles/ETA; optional live location from the driver's phone while on
 duty, so ranking uses where they are now, not their base.
 
-**Stage 4 — Hot-load mode (only if Curri says releasing a claim is penalty-free).** For a
-load whose listed price clears the cost floor and that has an on-duty driver within a short
-radius, let the owner claim first and offer in parallel; if nobody accepts inside the
-window, the board tells him to release it in Curri. Off by default; a per-load choice.
-
-(Driver self-claim is not possible: Curri restricts opportunities, bids and claims to admin
-accounts.)
+**Stage 4 — dropped.** Claim-first-then-find-a-driver is never safe (releasing a claim is a
+serious violation), and driver self-claim is not possible (Curri restricts opportunities,
+bids and claims to admin accounts). The claim lane above, with on-duty pre-commitment, is
+how fast loads are covered without either.
 
 ## What stays manual, on purpose
 
