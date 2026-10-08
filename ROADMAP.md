@@ -108,6 +108,51 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-08: Dispatch board live (stages 1a + 1b)
+Restore point: commit `ddcdd2c` on the default branch, verified live by the owner: Connect
+Telegram linked his own account, `/status` answered, an intake test load produced the
+COVERED / NOT COVERED ping, a bid-lane offer's **Accept** tap worked after the Telegram
+webhook was re-registered with `callback_query` (command in docs/DISPATCH-FLOW.md).
+Database restore points taken BEFORE each migration: Neon snapshots
+`before-dispatch-2026-10-08` and `before-telegram-2026-10-08` on main (never expire).
+
+**Migrations applied to production 2026-10-08 (both ADDITIVE):**
+`20261008040000_dispatch_board` (enums VehicleClass / DispatchLane / DispatchStatus /
+OfferResponse; DriverProfile.baseZip, curriActivatedAt, onDutyUntil, dutyRadiusMiles,
+dutyMaxTripMiles; tables DispatchLoad, DispatchOffer, DispatchEvent) and
+`20261008060000_telegram_chat_id` (User.telegramChatId). **New env var:**
+`DISPATCH_INTAKE_KEY` (set by the owner in Vercel). Rolling the code back to `5c7f889` is
+safe with these in place.
+
+Shipped — design in `docs/DISPATCH-FLOW.md`, agent spec in `docs/DISPATCH-INTAKE.md`:
+- `/admin/dispatch` + `/admin/dispatch/[id]`: enter a load (ZIP or city; Curri's miles),
+  COVERED / NOT COVERED verdict from on-duty, Curri-activated drivers (vehicle class,
+  radius, max trip, not busy, rush reach), suggested bid with cost floor, claim lane
+  (Assign only when covered → Claimed in Curri) and bid lane (Offer → Accept → Bid placed →
+  Awarded / Lost), lane switch, Delivered → pre-filled payout, append-only log.
+- Drivers: home base ZIP on the profile; on/off duty on `/account/curri-fleet` or by
+  Telegram `/onduty` `/offduty` `/status`; "Connect Telegram"; ASSIGNED / offer with
+  Accept–Pass / confirmed / lost messages. Admin marks "Activated on Curri".
+- Owner's Telegram: verdict on every intake load, accepted / underbid / won pings.
+- Intake door `POST /api/dispatch/intake` for the email-reading agent: the five Curri
+  email types (new opportunity, bid placed, won, lost, underbid) create NEW loads or
+  mirror status; never assigns or claims. Bundled Census ZIP + places tables for
+  distance (no maps API).
+
+Open, owner-side:
+- Hand `docs/DISPATCH-INTAKE.md` and the intake key to the Cursor agent; start it on new
+  emails only. First week: compare each ping against the portal before claiming.
+- Each fleet driver: mark "Activated on Curri" (admin), ask for their home ZIP and a
+  Connect Telegram tap, then `/onduty` when they're ready to run.
+- Still open from earlier: the Stripe $1 test transfer before paying any driver; Stripe
+  balance top-up; 1099 setting in Stripe Connect; Neon password reset; the 8 drivers who
+  lost documents; one tagged attribution test purchase.
+
+Next candidates (docs/DISPATCH-FLOW.md): stage 3 — driving distance / ETA via a maps
+provider (a `GOOGLE_MAPS_API_KEY` already exists in `.env.example`) and optional live
+location while on duty; no-answer timers for offers; SMS fallback for drivers not on
+Telegram; weekly payout summary email.
+
 ## 📍 Checkpoint — 2026-10-07 (night): Stripe Connect phase 2 live — drivers can be paid
 Restore point: commit `5c7f889` on the default branch, deployed and Ready. **The live
 transfer call has NOT been exercised yet** (corrected 2026-10-07 late: the owner reported
