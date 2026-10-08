@@ -442,8 +442,8 @@ longer picks the driver. Free: Telegram + the existing board. **No migration, no
   Telegram — text them".
 
 ### Not included (would need paid services)
-- A "nobody accepted" ping when the window closes needs a per-minute scheduler (Vercel Pro
-  cron) — not built; the board shows "no taker" instead.
+- ~~A "nobody accepted" ping when the window closes needs a per-minute scheduler (Vercel Pro
+  cron) — not built.~~ **Built free (2026-10-08), see "No taker" below.**
 - Editing the other drivers' offer messages to "Taken" needs each message id stored (a
   migration) — skipped; they learn on tap.
 
@@ -459,3 +459,24 @@ lib/telegram-dispatch.ts (copy, /active /inactive), DutyToggle + fleet page copy
 DispatchNewLoad ("Send to drivers now"), DispatchLoadPanel labels. Deploy: SAFE (no
 migration, no env var, no Stripe/auth) — but it changes what drivers receive, so the owner
 says go.
+
+## No taker (2026-10-08) — BUILT, free
+
+When every offer on a load has closed — timed out, or every driver passed — with nobody
+accepting, the board notes "No taker — the offer window closed and nobody accepted
+(N passed, M no answer)" once per round of offers, marks the leftover offers expired, and
+pings the owner: "⌛ NO TAKER Rialto → Santa Ana · Box truck · $162.77 — Nobody accepted
+(…). Don't claim. Send it again from the board or text a driver." The load stays Offered;
+"Send to Active drivers" starts a new round (and a new no-taker ping if that also fails).
+
+No paid scheduler: the check (`sweepNoTakers` in `lib/dispatch.ts`) runs whenever
+something already calls the site — every intake call, every driver tap / command on the
+FlowSync Telegram bot, and `POST /api/dispatch/sweep`, which the portal bot (already
+running all day on Fly.io) calls once a minute (`docs/CURSOR-TASK-PORTAL-BOT-3.md`). A
+Postgres advisory lock keeps two checks at once from pinging twice. Until the bot's tick
+is added, the ping comes with the next intake call or Telegram tap.
+
+**No migration, no env var** (uses the existing `DISPATCH_INTAKE_KEY`). Files:
+lib/dispatch.ts (`sweepNoTakers`, `sweepAndNotifyNoTakers`), lib/dispatch-notify.ts
+(`notifyNoTaker`), lib/intake-auth.ts (shared key check), api/dispatch/sweep,
+api/dispatch/intake and api/telegram/webhook (run the check).

@@ -2,7 +2,7 @@ import type { DispatchLane, DispatchStatus, VehicleClass } from "@prisma/client"
 import { prisma } from "./db";
 import { locate, haversineMiles, zipCentroid } from "./geo";
 import { FLEET } from "./pricing";
-import { notifyDriverAssigned, notifyDriverLoadStatus, notifyOffers } from "./dispatch-notify";
+import { notifyDriverAssigned, notifyDriverLoadStatus, notifyNoTaker, notifyOffers } from "./dispatch-notify";
 
 // Dispatch board, stage 1a — docs/DISPATCH-FLOW.md.
 //
@@ -456,6 +456,77 @@ export async function respondOffer(offerId: string, response: "ACCEPTED" | "PASS
   if (!r.ok) return r;
   await prisma.dispatchOffer.update({ where: { id: offerId }, data: { response: "ACCEPTED", respondedAt: new Date() } });
   return { ok: true };
+}
+
+// ---- No taker --------------------------------------------------------------
+
+/** Event note that marks "the offer window closed with nobody accepting" — also the de-duplication key. */
+export const NO_TAKER_NOTE = "No taker — the offer window closed and nobody accepted";
+/** Loads older than this are history; the sweep leaves them alone. */
+const SWEEP_LOOKBACK_HOURS = 24;
+
+export interface NoTaker {
+  loadId: string;
+  rush: boolean;
+  pickupLabel: string;
+  dropoffLabel: string;
+  vehicleClass: VehicleClass;
+  listedCents: number | null;
+  passed: number;
+  noAnswer: number;
+}
+
+/**
+ * Offered loads whose every offer has closed — passed, or timed out — with
+ * nobody accepting. Each one is noted once per round of offers (a re-send
+ * starts a new round) so the owner can be told "don't claim". Free: it runs
+ * whenever something already calls us (the intake door, the Telegram webhook,
+ * or the portal bot's once-a-minute tick) — no paid scheduler. Never assigns,
+ * never changes the load's status.
+ */
+export async function sweepNoTakers(now = new Date()): Promise<NoTaker[]> {
+  return prisma.$transaction(async (tx) => {
+    // Two sweeps at once (intake + webhook) must not both note the same load.
+    const [lock] = await tx.$queryRaw<{ got: boolean }[]>`SELECT pg_try_advisory_xact_lock(735201) AS got`;
+    if (!lock?.got) return [];
+    const loads = await tx.dispatchLoad.findMany({
+      where: {
+        status: "OFFERED",
+        createdAt: { gte: new Date(now.getTime() - SWEEP_LOOKBACK_HOURS * 3_600_000) },
+        offers: { some: {} },
+        NOT: { offers: { some: { OR: [{ response: "ACCEPTED" }, { response: "PENDING", expiresAt: { gt: now } }] } } },
+      },
+      select: {
+        id: true, rush: true, pickupZip: true, dropoffZip: true, vehicleClass: true, listedCents: true,
+        offers: { select: { sentAt: true, response: true } },
+        events: { where: { note: { startsWith: NO_TAKER_NOTE } }, orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } },
+      },
+    });
+    const out: NoTaker[] = [];
+    for (const l of loads) {
+      const roundStart = Math.max(...l.offers.map((o) => o.sentAt.getTime()));
+      if (l.events[0] && l.events[0].createdAt.getTime() >= roundStart) continue; // already noted this round
+      const round = l.offers.filter((o) => o.sentAt.getTime() >= roundStart);
+      const passed = round.filter((o) => o.response === "PASSED").length;
+      const noAnswer = round.length - passed;
+      await tx.dispatchOffer.updateMany({ where: { loadId: l.id, response: "PENDING" }, data: { response: "EXPIRED", respondedAt: now } });
+      await tx.dispatchEvent.create({ data: { loadId: l.id, actorId: null, note: `${NO_TAKER_NOTE} (${passed} passed, ${noAnswer} no answer)` } });
+      out.push({ loadId: l.id, rush: l.rush, pickupLabel: l.pickupZip, dropoffLabel: l.dropoffZip, vehicleClass: l.vehicleClass, listedCents: l.listedCents, passed, noAnswer });
+    }
+    return out;
+  });
+}
+
+/** Sweep, then tell the owner about each load nobody took. Best-effort: never throws. */
+export async function sweepAndNotifyNoTakers(): Promise<number> {
+  try {
+    const found = await sweepNoTakers();
+    for (const n of found) await notifyNoTaker({ ...n, vehicle: vehicleClassLabel(n.vehicleClass) });
+    return found.length;
+  } catch (e) {
+    console.error("[dispatch] no-taker sweep failed:", e instanceof Error ? e.message : e);
+    return 0;
+  }
 }
 
 export async function transitionLoad(loadId: string, to: DispatchStatus, actorId: string, extras: { bidCents?: number | null; note?: string } = {}): Promise<Result> {
