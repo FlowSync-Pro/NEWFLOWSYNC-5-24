@@ -391,3 +391,15 @@ owner's explicit yes on collecting live location.
 3a: an intake load from Curri shows "Marcus — 14 mi · 22 min (drive, traffic)" and the
 verdict uses it; with the key removed the board still works on estimates. 3b: a driver
 shares live location from 40 mi away and the board ranks them from where they are.
+
+### Owner decision (2026-10-08): no new paid services for dispatch
+
+"No more monthly subscriptions out of pocket; anything that costs money comes out of the
+drivers' pocket, not mine." Consequences:
+- **3a (Google driving distance) is shelved.** The board keeps the free ZIP / city
+  estimates. Revisit only with a way to pass the cost to drivers (pricing change, ask first).
+- Everything dispatch uses today is free: Telegram bot, bundled Census tables, intake door.
+- On duty / off duty is to be presented to drivers as **Active / Inactive** (same meaning:
+  "I'm ready to take loads now").
+- Any cost that does exist (e.g. Stripe Connect payout fees) is to be passed to drivers —
+  a pricing change under AGENTS.md section D, so it needs the owner's explicit wording first.
