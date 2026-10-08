@@ -106,7 +106,7 @@ export async function handleDispatchUpdate(update: DispatchTelegramUpdate): Prom
     if (target) return relayToDriver(chatId, m, target);
     // A reply to a relayed location / sticker (they can't carry the marker).
     if (reply?.from?.is_bot && reply.text === undefined && reply.caption === undefined) {
-      await sendTelegramMessage(chatId, "To answer, reply to the message with ↩️ just under it.");
+      await sendTelegramMessage(chatId, "To answer, reply to the message with ↩️ right above it.");
       return true;
     }
   }
@@ -115,7 +115,7 @@ export async function handleDispatchUpdate(update: DispatchTelegramUpdate): Prom
     // A photo, voice note, location… from a linked driver goes to the owner.
     if (isOwner || !kindOf(m)) return false;
     const u = await linkedProfile(chatId);
-    return u?.driverProfile ? relayToOwner(chatId, m, u.driverProfile) : false;
+    return u?.driverProfile ? relayFromDriver(chatId, m, !!u.fleetJoinedAt, u.driverProfile) : false;
   }
 
   const start = /^\/start(?:@\w+)?\s+(\S+)$/.exec(text);
@@ -132,7 +132,7 @@ export async function handleDispatchUpdate(update: DispatchTelegramUpdate): Prom
       await sendTelegramMessage(chatId, HELP);
       return true;
     }
-    return relayToOwner(chatId, m, u.driverProfile);
+    return relayFromDriver(chatId, m, !!u.fleetJoinedAt, u.driverProfile);
   }
   if (isOwner && cmd[1].toLowerCase() === "status") return false; // owner's bot /status
 
@@ -221,17 +221,28 @@ async function handleCallback(q: NonNullable<DispatchTelegramUpdate["callback_qu
     const load = await prisma.dispatchLoad.findUnique({ where: { id: offer.loadId } });
     const claim = load?.lane !== "BID";
     await answerTelegramCallback(q.id, action === "accept" ? "You've got it ✅" : "Passed.");
-    await sendTelegramMessage(chatId, action === "accept"
+    // The owner's line goes first — a hiccup on the driver's copy must never lose CLAIM NOW.
+    if (action === "accept" && load) {
+      let line: string;
+      try {
+        line = await ownerAcceptedLine(load, offer.driverProfileId, name);
+      } catch (e) {
+        console.error("[dispatch] owner accepted line failed:", e instanceof Error ? e.message : e);
+        line = `✅ ${name} ACCEPTED ${load.pickupZip} → ${load.dropoffZip} — open the board:\n${siteBase()}/admin/dispatch/${load.id}`;
+      }
+      await notifyOwner(line);
+    } else if (action === "pass") {
+      await notifyOwner(`${name} passed on ${load ? `${load.pickupZip} → ${load.dropoffZip}` : offer.loadId}.`);
+    }
+    await sendQuietly(chatId, action === "accept"
       ? claim
         ? "✅ You've got it. We're claiming it in Curri now — you'll get CONFIRMED here in a moment."
         : "✅ You've got it. We're placing the bid in Curri now — you'll hear back here when it's awarded."
       : "Passed. No problem.");
-    if (action === "accept" && load) await notifyOwner(await ownerAcceptedLine(load, offer.driverProfileId, name));
-    else if (action === "pass") await notifyOwner(`${name} passed on ${load ? `${load.pickupZip} → ${load.dropoffZip}` : offer.loadId}.`);
   } else {
     const why = /Taken|assigned/i.test(r.error) ? "Taken — someone was faster." : /expired/i.test(r.error) ? "This offer expired." : r.error;
     await answerTelegramCallback(q.id, why);
-    await sendTelegramMessage(chatId, why);
+    await sendQuietly(chatId, why);
   }
   // Answered, taken or expired: take the buttons off so a second tap can't happen.
   // (A failed safety check leaves the offer open, so its buttons stay.)
@@ -263,24 +274,36 @@ function kindOf(m: IncomingMessage): string | null {
 
 type RelayDriver = { id: string; firstName: string; lastName: string; phone: string | null };
 
+/** Only current fleet members have the line to the owner; commands say the same. */
+async function relayFromDriver(chatId: string, m: IncomingMessage, member: boolean, p: RelayDriver): Promise<boolean> {
+  if (!member) {
+    await sendQuietly(chatId, "Fleet members only.");
+    return true;
+  }
+  return relayToOwner(chatId, m, p);
+}
+
+/** Cut long text so the marker and link at the end always fit in one message. */
+const clip = (s: string | null | undefined, max: number) => (s && s.length > max ? `${s.slice(0, max)}…` : s ?? undefined);
+
 async function relayToOwner(chatId: string, m: IncomingMessage, p: RelayDriver): Promise<boolean> {
   const owner = telegramOwnerChatId();
   if (!owner) return false;
-  const name = `${p.firstName} ${p.lastName}`.trim() || "A driver";
+  const name = clip(`${p.firstName} ${p.lastName}`.trim(), 80) || "A driver";
+  const first = clip(p.firstName.trim(), 40) || "them";
+  const phone = clip(p.phone?.trim(), 30);
   // Their current load, so "can't make it" arrives with context.
   const load = await prisma.dispatchLoad.findFirst({
     where: { assignedProfileId: p.id, status: { in: LIVE_STATUSES }, OR: [{ busyUntil: { gt: new Date(Date.now() - 86_400_000) } }, { busyUntil: null }] },
     orderBy: { pickupAt: "asc" },
     select: { pickupZip: true, dropoffZip: true, status: true, pickupAt: true },
   });
-  // Cut long text so the marker and link at the end always fit in one message.
-  const clip = (s: string | undefined, max: number) => (s && s.length > max ? `${s.slice(0, max)}…` : s);
   const text = clip(m.text?.trim(), 3000);
   const caption = clip(m.caption?.trim(), 500);
   const footer = [
     "",
     ...(load ? [`Their load: ${load.pickupZip} → ${load.dropoffZip} · ${STATUS_LABEL[load.status].toLowerCase()} · pickup ${ptTime(load.pickupAt)}`] : []),
-    `${RELAY_TAG} ${p.firstName || "them"}.${p.phone ? ` Phone: ${p.phone}` : ""}`,
+    `${RELAY_TAG} ${first}.${phone ? ` Phone: ${phone}` : ""}`,
     `${siteBase()}/admin/drivers/${p.id}`,
   ].join("\n");
   let delivered = false;
@@ -288,16 +311,22 @@ async function relayToOwner(chatId: string, m: IncomingMessage, p: RelayDriver):
     if (text) {
       await sendTelegramMessage(owner, `💬 ${name} (fleet driver) wrote:\n${text}\n${footer}`);
     } else {
-      // Media is copied (never forwarded with the driver's own caption, which
-      // could imitate the marker). A photo, video, file or voice note carries
-      // our header as its caption, so replying to it works; anything else
-      // (location, sticker…) gets the header as a message right under it.
-      const asCaption = `💬 ${name} (fleet driver) sent ${kindOf(m) ?? "a message"}${caption ? `:\n${caption}` : ""}\n${footer}`;
-      if ((m.photo || m.video || m.document || m.audio || m.voice) && asCaption.length <= 1024) {
-        await copyTelegramMessage(owner, chatId, m.message_id, { caption: asCaption });
+      // Media is copied as the bot's own message — never forwarded, and always
+      // with OUR caption (a driver's caption could imitate the marker). A photo,
+      // video, file or voice note carries the header as its caption, the driver's
+      // own words cut to fit Telegram's 1,024 limit, so replying to it works.
+      // Anything else (location, sticker…) is sent under a header message and
+      // replies to it, so the owner always knows who it's from.
+      const kind = kindOf(m) ?? "a message";
+      const captionable = !!(m.photo || m.video || m.document || m.audio || m.voice);
+      if (captionable) {
+        const head = `💬 ${name} (fleet driver) sent ${kind}`;
+        const room = 1024 - `${head}:\n\n${footer}`.length;
+        const words = room > 20 ? clip(caption, room) : undefined;
+        await copyTelegramMessage(owner, chatId, m.message_id, { caption: `${head}${words ? `:\n${words}` : ""}\n${footer}` });
       } else {
-        const copied = await copyTelegramMessage(owner, chatId, m.message_id);
-        await sendTelegramMessage(owner, `💬 ${name} (fleet driver) sent ${kindOf(m) ?? "a message"} ↑${caption ? `\n${caption}` : ""}\n${footer}`, { replyToMessageId: copied });
+        const header = await sendTelegramMessage(owner, `💬 ${name} (fleet driver) sent ${kind} ↓${caption ? `\n${caption}` : ""}\n${footer}`);
+        await copyTelegramMessage(owner, chatId, m.message_id, { replyToMessageId: header });
       }
     }
     delivered = true;

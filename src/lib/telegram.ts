@@ -83,12 +83,13 @@ export async function sendTelegramMessage(
  * Re-send a message's content (photo, voice note, location…) as a bot message.
  * `caption` replaces the original caption (media that can carry one only).
  */
-export async function copyTelegramMessage(toChatId: string, fromChatId: string, messageId: number, options: { caption?: string } = {}): Promise<number> {
+export async function copyTelegramMessage(toChatId: string, fromChatId: string, messageId: number, options: { caption?: string; replyToMessageId?: number } = {}): Promise<number> {
   const result = await callTelegram<{ message_id: number }>("copyMessage", {
     chat_id: toChatId,
     from_chat_id: fromChatId,
     message_id: messageId,
     ...(options.caption !== undefined ? { caption: options.caption.slice(0, 1024) } : {}),
+    ...(options.replyToMessageId ? { reply_parameters: { message_id: options.replyToMessageId, allow_sending_without_reply: true } } : {}),
   });
   return result.message_id;
 }

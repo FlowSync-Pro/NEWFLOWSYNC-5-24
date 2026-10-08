@@ -385,6 +385,8 @@ export async function assignLoad(loadId: string, profileId: string, actorId: str
   });
   if (r.count === 0) return { ok: false, error: "Someone else just changed this load — reload." };
   await prisma.dispatchOffer.updateMany({ where: { loadId, response: "PENDING", driverProfileId: { not: profileId } }, data: { response: "EXPIRED", respondedAt: new Date() } });
+  // A phone-confirmed driver's own open offer is answered too, so a later tap on it reads "already yours", not "taken".
+  if (!opts.viaOffer) await prisma.dispatchOffer.updateMany({ where: { loadId, driverProfileId: profileId, response: "PENDING" }, data: { response: "ACCEPTED", respondedAt: new Date() } });
   await logEvent(loadId, actorId, load.status, "ASSIGNED", `${c.name} (${c.milesToPickup ?? "?"} mi to pickup)${opts.viaOffer ? " — accepted the offer" : " — confirmed by phone"}`);
   if (!opts.viaOffer) await notifyDriverAssigned(loadId); // offer accepts are confirmed on the tap itself
   return { ok: true };
@@ -435,46 +437,69 @@ export async function autoOffer(loadId: string, actorId: string): Promise<AutoOf
 
 /** Record a driver's answer to an offer (by the dispatcher in 1a; by Telegram in 1b). First accept wins. */
 export async function respondOffer(offerId: string, response: "ACCEPTED" | "PASSED", actorId: string): Promise<Result> {
-  const offer = await prisma.dispatchOffer.findUnique({ where: { id: offerId }, include: { load: { select: { id: true, status: true } } } });
+  const offer = await prisma.dispatchOffer.findUnique({ where: { id: offerId }, include: { load: { select: { id: true, status: true, assignedProfileId: true } } } });
   if (!offer) return { ok: false, error: "Offer not found." };
-  if (offer.response !== "PENDING") return closedOffer(offer.response, offer.load.status);
+  const open = offer.load.status === "OFFERED" || offer.load.status === "NEW";
+  // An Accept recorded earlier whose assign never finished (the database
+  // dropped out mid-way): pick it up where it stopped instead of "already accepted".
+  const resume = offer.response === "ACCEPTED" && response === "ACCEPTED" && open && offer.load.assignedProfileId !== offer.driverProfileId;
+  if (offer.response !== "PENDING" && !resume) return closedOffer(offer.response, offer.load.status);
   const now = new Date();
   if (offer.expiresAt <= now) {
-    await prisma.dispatchOffer.updateMany({ where: { id: offerId, response: "PENDING" }, data: { response: "EXPIRED", respondedAt: now } });
+    await prisma.dispatchOffer.updateMany({ where: { id: offerId, response: offer.response }, data: { response: "EXPIRED", respondedAt: now } });
     return { ok: false, error: "This offer expired." };
   }
+  if (response === "ACCEPTED" && offer.load.assignedProfileId === offer.driverProfileId && !open) {
+    // The dispatcher already assigned them this load by phone.
+    await prisma.dispatchOffer.updateMany({ where: { id: offerId, response: "PENDING" }, data: { response: "ACCEPTED", respondedAt: now } });
+    return { ok: false, error: "Already yours — it's on you." };
+  }
   if (response === "ACCEPTED" && offer.load.status !== "OFFERED") return { ok: false, error: "Taken — this load was already assigned." };
-  // Record the answer first, only if the offer is still open: of two taps at
-  // once (Accept + Pass, or a double tap) exactly one gets past here, so the
-  // owner never gets CLAIM NOW and "passed" for the same offer.
-  const claimed = await prisma.dispatchOffer.updateMany({ where: { id: offerId, response: "PENDING", expiresAt: { gt: now } }, data: { response, respondedAt: now } });
-  if (claimed.count === 0) {
-    const fresh = await prisma.dispatchOffer.findUnique({ where: { id: offerId }, select: { response: true, load: { select: { status: true } } } });
-    return closedOffer(fresh?.response ?? "EXPIRED", fresh?.load.status ?? "OFFERED");
+  if (!resume) {
+    // Record the answer first, only if the offer is still open: of two taps at
+    // once (Accept + Pass, or a double tap) exactly one gets past here, so the
+    // owner never gets CLAIM NOW and "passed" for the same offer.
+    const claimed = await prisma.dispatchOffer.updateMany({ where: { id: offerId, response: "PENDING", expiresAt: { gt: now } }, data: { response, respondedAt: now } });
+    if (claimed.count === 0) {
+      const fresh = await prisma.dispatchOffer.findUnique({ where: { id: offerId }, select: { response: true, load: { select: { status: true } } } });
+      return closedOffer(fresh?.response ?? "EXPIRED", fresh?.load.status ?? "OFFERED");
+    }
   }
   if (response === "PASSED") {
     await logEvent(offer.loadId, actorId, null, null, "A driver passed");
     return { ok: true };
   }
   let r: Result;
+  let threw = false;
   try {
     r = await assignLoad(offer.loadId, offer.driverProfileId, actorId, { viaOffer: true });
   } catch (e) {
+    threw = true;
     r = { ok: false, error: "Couldn't record that — try again." };
     console.error("[dispatch] assign after accept failed:", e instanceof Error ? e.message : e);
   }
   if (r.ok) return r;
-  const load = await prisma.dispatchLoad.findUnique({ where: { id: offer.loadId }, select: { status: true, assignedProfileId: true } });
-  // Failed after the load was already theirs (e.g. the log write): it stands.
-  if (load?.assignedProfileId === offer.driverProfileId && load.status !== "OFFERED" && load.status !== "NEW") return { ok: true };
-  // The load didn't become theirs: another driver won the same moment, or a
-  // safety check failed (busy, vehicle). Undo the answer so the record is true.
-  const stillOpen = load?.status === "OFFERED" || load?.status === "NEW";
-  await prisma.dispatchOffer.updateMany({
-    where: { id: offerId, response: "ACCEPTED" },
-    data: stillOpen ? { response: "PENDING", respondedAt: null } : { response: "EXPIRED", respondedAt: now },
-  });
-  return stillOpen ? r : { ok: false, error: "Taken — someone was faster." };
+  try {
+    const load = await prisma.dispatchLoad.findUnique({ where: { id: offer.loadId }, select: { status: true, assignedProfileId: true } });
+    const stillOpen = load?.status === "OFFERED" || load?.status === "NEW";
+    if (load?.assignedProfileId === offer.driverProfileId && !stillOpen) {
+      // It became theirs anyway: in this call (the failure came after the
+      // assign, e.g. the log write), so it stands — or in a tap racing this
+      // one, which is the call that reports it.
+      return threw ? { ok: true } : { ok: false, error: "Already accepted." };
+    }
+    // The load didn't become theirs: another driver won the same moment, or a
+    // safety check failed (busy, vehicle). Undo the answer so the record is true.
+    await prisma.dispatchOffer.updateMany({
+      where: { id: offerId, response: "ACCEPTED" },
+      data: stillOpen ? { response: "PENDING", respondedAt: null } : { response: "EXPIRED", respondedAt: now },
+    });
+    return stillOpen ? r : { ok: false, error: "Taken — someone was faster." };
+  } catch (e) {
+    // Couldn't even undo it; the next tap resumes from the ACCEPTED row (see `resume`).
+    console.error("[dispatch] accept clean-up failed:", e instanceof Error ? e.message : e);
+    return { ok: false, error: "Couldn't record that — try again." };
+  }
 }
 
 /** Why an already-closed offer can't be answered. Expired because another driver won reads as "taken". */

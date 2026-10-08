@@ -568,3 +568,10 @@ with a load marked "TEST — do not run", then cancel it.
    next day); the fleet page's member card no longer nudges "set up payouts" at a driver whose
    Stripe payouts are already enabled. Known, not fixed: the fleet page reads the cached
    `stripeConnectPayoutsEnabled` flag — it refreshes when the driver opens the Payouts page.
+6. Second review round, also fixed: an Accept recorded but never assigned (database blip
+   mid-tap) is resumed by the next tap instead of being stuck "accepted"; a driver assigned
+   by phone who then taps Accept on their own offer hears "Already yours", not "Taken"; the
+   owner's CLAIM NOW is sent before the driver's confirmation, so a Telegram hiccup on the
+   driver's copy can't lose it; relayed media always carries OUR caption (driver captions
+   clipped to fit, names/phones clipped), location-type media is sent under its header; and
+   only current fleet members can message the owner through the bot.
