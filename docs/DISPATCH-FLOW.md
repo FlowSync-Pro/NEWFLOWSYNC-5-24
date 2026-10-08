@@ -321,3 +321,19 @@ Accept on their phone; the owner's phone says who accepted.
 contains (paste one, redacted) — decides what the agent can fill in; (2) the owner's
 pings to his private chat with the bot (default) or the relay group; (3) drivers may go
 on duty by Telegram command as well as the page (recommended yes).
+
+### Telegram webhook registration (ops note, 2026-10-08)
+
+Telegram only delivers the update kinds the webhook was registered for. The offer
+buttons need `callback_query`, so after any change to what the bot handles, re-register
+(run on the owner's computer; placeholders come from Vercel env vars, never commit them):
+
+```
+curl -sS "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
+  -d url=https://flowsyncdriver.com/api/telegram/webhook \
+  -d secret_token=<TELEGRAM_WEBHOOK_SECRET> \
+  -d 'allowed_updates=["message","callback_query"]'
+```
+
+Check what is registered with `…/getWebhookInfo`. Symptom when it's missing: Accept /
+Pass taps do nothing (no toast), while text commands still work.
