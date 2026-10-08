@@ -108,6 +108,39 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-08 (late): automatic offers + portal bot combined
+Restore point: commit `233fd67` on the default branch (site code as of `8959755`). No
+migrations and no new env vars since the previous checkpoint.
+
+Shipped today after the 1a/1b checkpoint (details in `docs/DISPATCH-FLOW.md`):
+- **Stage 2 — automatic offers** (`5386fc4`): every incoming load is offered on Telegram to
+  every matching Active driver (nearest 10; 3 min, 2 min for rush); first Accept wins; the
+  owner is pinged "CLAIM NOW" (claim lane) or "place bid $X (floor $Y)" (bid lane) and only
+  then claims. Drivers see **Active / Inactive** (`/active`, `/inactive`; old commands still
+  work; auto-off after their hours). Manual "Assign — confirmed by phone" kept.
+- **Owner decisions:** no paid services for dispatch (Google distance shelved); Stripe
+  Connect fees are covered by the dispatching fee.
+- **Portal bot combined** (`8959755`): the owner's separate "Curri Dispatch" bot
+  (`curri-dispatch-relay` on Fly.io, built with Cursor, not in this repo) reads the Curri
+  carrier portal feed and posts each new load — addresses, pay, accessories — and each
+  "left the feed" to `POST /api/dispatch/intake`. This board does the matching and offers;
+  that bot no longer messages drivers (its /on, /end, /dispatch and the "$25 / removal" line
+  are gone) and sends one private info card per load to the owner only. Specs:
+  `docs/CURSOR-TASK-PORTAL-BOT.md`, `docs/CURSOR-TASK-PORTAL-BOT-2.md`; intake fields in
+  `docs/DISPATCH-INTAKE.md`. Reading the portal is the owner's choice and risk (section E).
+- **Intake key rotated** after it appeared in a screenshot: a new random
+  `DISPATCH_INTAKE_KEY` is set in both Vercel and Fly (owner, 2026-10-08).
+
+**Not yet verified live:** the first real portal load end to end (card + FlowSync
+"Offered to N…" ping + load under /admin/dispatch + driver Accept/Pass). The bot started
+after 5 loads were already on the feed and skipped them on purpose. If the card shows a
+⚠️ line, the Fly and Vercel keys don't match.
+
+Open, owner-side (unchanged): each fleet driver — "Activated on Curri", home ZIP, Connect
+Telegram, `/active`; the Stripe $1 test transfer before paying any driver; Stripe balance
+top-up; 1099 setting; Neon password reset; the 8 drivers who lost documents; one tagged
+attribution purchase; attorney review (fleet refund clause, contractor terms).
+
 ## 📍 Checkpoint — 2026-10-08: Dispatch board live (stages 1a + 1b)
 Restore point: commit `ddcdd2c` on the default branch, verified live by the owner: Connect
 Telegram linked his own account, `/status` answered, an intake test load produced the
