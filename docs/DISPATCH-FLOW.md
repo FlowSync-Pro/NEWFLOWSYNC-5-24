@@ -405,3 +405,57 @@ drivers' pocket, not mine." Consequences:
   a pricing change under AGENTS.md section D, so it needs the owner's explicit wording first.
 - **Decided 2026-10-08: Stripe Connect fees are covered by the dispatching fee** (15% /
   20%). No separate payout fee; receipts and pricing stay as they are.
+
+## Stage 2 scope (2026-10-08) — automatic offers to Active drivers
+
+Owner decision: when a load comes in, the board offers it automatically to every Active
+driver in range; first Accept wins; then the owner claims (or bids) in Curri. The owner no
+longer picks the driver. Free: Telegram + the existing board. **No migration, no env var.**
+
+### Wording: Active / Inactive
+- "On duty / off duty" becomes **Active / Inactive** everywhere drivers see it (fleet page,
+  bot replies, board labels). Meaning changes slightly: Active = "send me offers in my
+  radius; I choose", no longer "you may claim for me without asking".
+- Bot: `/active [hours radius maxtrip]`, `/inactive`, `/status`; `/onduty` and `/offduty`
+  keep working as aliases. Database fields stay (`onDutyUntil`, …) — no rename.
+- Active switches itself off after the hours the driver set (default 8), so nobody gets
+  offers at 2 AM because they forgot.
+
+### Flow
+1. A load arrives (intake agent, or the form with "Send to drivers now" ticked — default on).
+2. The board ranks drivers as today. Everyone who passes the hard filters (Active, activated
+   on Curri, vehicle, within radius, trip within max, not busy, can make a rush pickup) and
+   is linked on Telegram gets the offer at once — nearest 10 max.
+3. Offer window: 3 min scheduled, 2 min rush. Taps after the window → "Expired".
+4. First Accept wins (atomic, already built). Everyone else's tap → "Taken".
+5. Owner ping: claim lane → "✅ Marcus accepted (8 mi) — CLAIM NOW in Curri"; bid lane →
+   "✅ Marcus accepted — place bid $X (floor $Y)". Then "Claimed in Curri" / "Bid placed"
+   on the board as today; Curri's won/lost emails keep mirroring.
+6. Nobody in range → the owner ping says "NOT COVERED — no Active driver in range"
+   (already built); no offers sent.
+
+### Kept
+- Manual **Assign** stays, relabelled "Assign — driver confirmed by phone", for when the
+  owner has already talked to a driver. Claim-lane guard unchanged: never claim without a
+  committed driver.
+- Drivers not on Telegram can't get automatic offers; the board lists them as "not on
+  Telegram — text them".
+
+### Not included (would need paid services)
+- A "nobody accepted" ping when the window closes needs a per-minute scheduler (Vercel Pro
+  cron) — not built; the board shows "no taker" instead.
+- Editing the other drivers' offer messages to "Taken" needs each message id stored (a
+  migration) — skipped; they learn on tap.
+
+### Trade-off to accept
+Loads that go in seconds now wait for a driver's tap before the owner can claim. Active
+drivers with Telegram notifications on usually tap within a minute; the very fastest loads
+may be lost. That is the price of never claiming without consent.
+
+### Files
+lib/dispatch-intake.ts (auto-offer after create), lib/dispatch.ts (broadcast helper; lane-
+specific owner ping on accept; rush window), lib/dispatch-notify.ts and
+lib/telegram-dispatch.ts (copy, /active /inactive), DutyToggle + fleet page copy,
+DispatchNewLoad ("Send to drivers now"), DispatchLoadPanel labels. Deploy: SAFE (no
+migration, no env var, no Stripe/auth) — but it changes what drivers receive, so the owner
+says go.
