@@ -30,16 +30,24 @@ miles away, two drivers on one load, a bid below cost.
    (terms-of-service risk, brittle, and the opposite of "no mistakes"). AGENTS.md section E.
 6. **Everything is logged.** Every state change has who/when, so a dispute is answerable.
 
-## Step 0 — ask Curri two questions before building anything
+## What Curri allows (owner, 2026-10-08)
 
-These two answers can remove most of the build:
+- **Only admin accounts** on the carrier portal can see new opportunities and prices, place
+  bids, claim, and see delivery history. Drivers cannot. So the claim/bid is always a human
+  with admin access — the owner or a dispatcher he trusts — and "driver self-claim" is off
+  the table.
+- **API/webhook: unknown.** There is a carrier portal website. Until Curri confirms an API,
+  the realistic feed is whatever notifications the portal sends (email / SMS / push) plus
+  the portal itself.
 
-- **Can drivers on our carrier account see and accept loads themselves** (in the Curri
-  driver app or a carrier sub-login)? If yes, dispatch becomes: let nearby drivers
-  self-claim inside Curri, and our system only tracks, pays and audits.
-- **Is there a carrier API or webhook** for new opportunities, awards and completions? If
-  yes, ingestion is automatic and reliable. If not, opportunity emails/SMS from Curri are
-  the ingestion source.
+Still to find out (ask the Curri rep or test once):
+- How are new opportunities announced — email, SMS, app push, portal only? Forward one
+  (redacted) so we can see what a notification contains.
+- How long does a typical opportunity stay open before someone else claims it?
+- Can a claimed load be released by the carrier, and does releasing count as a violation?
+  (Decides whether "claim first, then find the driver" is ever safe.)
+- Can the carrier account have more than one admin seat (a dispatcher for when the owner
+  is driving)?
 
 ## What we need to know about each driver (data)
 
@@ -123,9 +131,13 @@ it exists). Removes the typing; the owner's job becomes confirm-and-place.
 ask-first) for driving miles/ETA; optional live location from the driver's phone while on
 duty, so ranking uses where they are now, not their base.
 
-**Stage 4 — Driver self-serve.** If Curri allows drivers on the carrier account to claim
-loads themselves, flip the model: nearby drivers claim directly in Curri; our board
-ingests the award and runs the payout. Dispatch becomes exception-handling only.
+**Stage 4 — Hot-load mode (only if Curri says releasing a claim is penalty-free).** For a
+load whose listed price clears the cost floor and that has an on-duty driver within a short
+radius, let the owner claim first and offer in parallel; if nobody accepts inside the
+window, the board tells him to release it in Curri. Off by default; a per-load choice.
+
+(Driver self-claim is not possible: Curri restricts opportunities, bids and claims to admin
+accounts.)
 
 ## What stays manual, on purpose
 
