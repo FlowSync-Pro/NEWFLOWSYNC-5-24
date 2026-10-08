@@ -178,7 +178,7 @@ Split in two so the board is usable within days and the Telegram half lands afte
 
 **Data (one additive migration, backup first):**
 - `DriverProfile`: `baseZip`, `baseLat`, `baseLng` (filled from the bundled ZIP table),
-  `vehicleClass` (enum: CAR, SUV, MINIVAN, PICKUP, CARGO_VAN, SPRINTER, BOX_TRUCK, FLATBED),
+  `vehicleClass` (enum, Curri's names — owner 2026-10-08: CAR, SUV, MINIVAN, PICKUP_TRUCK, CARGO_VAN, SPRINTER_VAN, BOX_TRUCK),
   `curriActivatedAt`, `onDutyUntil`, `dutyRadiusMiles`, `dutyMaxTripMiles`.
 - `DispatchLoad`: Curri reference, pickup/dropoff address + ZIP + lat/lng, vehicle class
   required, listed price, lane (CLAIM / BID), pickup time, notes, status
@@ -231,3 +231,18 @@ section E: both are needed for the function and stated on the fleet page).
 Enter a load → board says "Covered by X, N mi" → Assign → (1b: X gets the Telegram
 message) → Mark placed / Awarded / Delivered → Log delivery opens pre-filled → payout.
 Every step visible in the load's event log.
+
+### Decisions (owner, 2026-10-08)
+- **Vehicle classes** are Curri's: car, SUV, minivan, pickup truck, cargo van, sprinter van,
+  box truck. A load's required class is a hard filter; a bigger class may cover a smaller
+  one only where Curri allows it (rank: car < SUV < minivan < pickup truck < cargo van <
+  sprinter van < box truck).
+- **On-duty defaults:** 30-mile radius, 150 max trip miles, 8-hour shift.
+- **Suggested bid:** the bidding calculator's formula as it stands (miles × cost per mile +
+  hours × hourly target, dispatching fee included), cost per mile from the driver's P&L
+  when they have one, else the calculator default.
+- **Pickup timing:** two kinds. *Rush* — pickup within 30 minutes of posting; the board
+  treats the window as now → now + 30 min and only counts drivers close enough to make it.
+  *Scheduled* — the pickup time Curri shows. A driver's **busy window** = pickup start →
+  pickup + estimated trip time (trip miles at ~35 mph + 30 min handling); overlapping
+  windows block a second assignment.
