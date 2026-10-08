@@ -337,3 +337,57 @@ curl -sS "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
 
 Check what is registered with `…/getWebhookInfo`. Symptom when it's missing: Accept /
 Pass taps do nothing (no toast), while text commands still work.
+
+## Stage 3 scope (2026-10-08) — real driving distance, and live location
+
+Today the board ranks by straight-line distance × 1.25 from each driver's home ZIP (or a
+city centre). Two weaknesses: a river, a mountain or a freeway gap makes "12 mi" really
+40 minutes; and a driver who is 60 miles from home right now is ranked as if they were home.
+
+### 3a — driving miles and minutes (Google, key already in the project)
+
+- Reuse `GOOGLE_MAPS_API_KEY` (already used by `src/lib/distance.ts` for trip auto-mileage).
+- When a load is created: keep the free straight-line pass as a **pre-filter** (drivers
+  within 1.5 × their radius, max 20), then ask Google **once** for driving miles + minutes
+  from each of those drivers to the pickup (one matrix request, ≤ 20 elements), and once
+  for pickup → dropoff.
+- Rush loads ask for **traffic-aware** minutes ("departure now"); scheduled loads use
+  normal minutes. Rush "can make it" = traffic minutes ≤ 30.
+- Store the answers on the load (one additive JSON column, `DispatchLoad.driveCache`) so
+  page views and re-ranks don't call Google again. Refresh button re-asks.
+- Ranking and COVERED use driving miles/minutes when present; the board labels each number
+  "drive" or "est." so it's clear which is which. Radius stays in miles (what drivers set).
+- **Fallback**: no key, quota hit, or Google error → today's straight-line estimate, logged,
+  never blocks a load.
+- Google has moved its distance service to the newer "Routes API" (Compute Route Matrix);
+  the old Distance Matrix may not be enable-able on a new project. Build against Routes
+  API; keep `lib/distance.ts` for trips unchanged.
+
+### 3b — live location while on duty (optional, sensitive)
+
+- Driver shares **Telegram live location** with the bot (attach → Location → Share live
+  location, 8 h). The bot receives updates; we keep **only the latest point** and its time.
+  No trail, no history.
+- Used for ranking only while fresh (< 15 min) and on duty; otherwise the home ZIP.
+- Cleared on `/offduty`, on duty expiry, and when Telegram reports sharing stopped.
+- Visible to admins as "live · 4 min ago · 18 drive min to pickup" — no map, never shown to
+  other drivers or customers.
+- Needs: three nullable columns on DriverProfile (`liveLat`, `liveLng`, `liveAt`), the
+  webhook re-registered with `edited_message` added, a line in the privacy policy and on
+  the fleet page. **Precise location of contractors is the most sensitive data this site
+  would hold** — owner decision, and worth an attorney's glance alongside the contractor
+  terms already owed.
+
+### Not in stage 3
+No-answer timers on offers (need a per-minute scheduler — Vercel Pro cron), SMS fallback,
+route maps on the board, multi-stop loads.
+
+### Approval needed
+3a: one additive migration (`driveCache`), Google Routes API enabled on the key's project,
+a budget alert. 3b: one additive migration, webhook re-registration, privacy copy, the
+owner's explicit yes on collecting live location.
+
+### Done looks like
+3a: an intake load from Curri shows "Marcus — 14 mi · 22 min (drive, traffic)" and the
+verdict uses it; with the key removed the board still works on estimates. 3b: a driver
+shares live location from 40 mi away and the board ranks them from where they are.
