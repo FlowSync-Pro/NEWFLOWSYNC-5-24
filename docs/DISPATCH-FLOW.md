@@ -483,6 +483,11 @@ api/dispatch/intake and api/telegram/webhook (run the check).
 
 ## Stage 2b scope (2026-10-08) — drivers see their offers and loads on the fleet page
 
+**BUILT 2026-10-08 — read-only version** (owner: "yes to all 4 recommendations"):
+read-only, the "Open Telegram to Accept or Pass" link, "Can't make it? DM Nasser on Telegram
+right away", times in PT. All of it is in `getMyDispatch` and the "Your offers and loads" card in
+`src/app/account/curri-fleet/page.tsx`. The on-page Accept / Pass add-on below is NOT built.
+
 Backup for anyone who misses a Telegram message. Designed by three independent passes
 (minimal, driver-UX, safety), merged, then adversarially checked against the code.
 

@@ -137,6 +137,12 @@ Shipped today after the 1a/1b checkpoint (details in `docs/DISPATCH-FLOW.md`):
   `POST /api/dispatch/sweep`; the portal bot should call that once a minute
   (`docs/CURSOR-TASK-PORTAL-BOT-3.md`, owner-side). Details: `docs/DISPATCH-FLOW.md`.
 
+- **Stage 2b — drivers' offers and loads on the fleet page** (after this checkpoint, one
+  page, read-only, no migration / env var): `/account/curri-fleet` shows the signed-in
+  driver's open offers (pay, "Open until … PT", "Open Telegram to Accept or Pass"), their
+  assigned loads with plain status lines, and the last 24 h of lost / cancelled / no-longer-
+  yours loads. Accept/Pass stays in Telegram. Not yet verified live.
+
 **Not yet verified live:** the first real portal load end to end (card + FlowSync
 "Offered to N…" ping + load under /admin/dispatch + driver Accept/Pass). The bot started
 after 5 loads were already on the feed and skipped them on purpose. If the card shows a

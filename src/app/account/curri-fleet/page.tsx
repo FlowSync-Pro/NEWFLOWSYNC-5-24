@@ -13,6 +13,8 @@ import DutyToggle from "@/components/DutyToggle";
 import TelegramConnect from "@/components/TelegramConnect";
 import { DUTY_DEFAULTS, vehicleClassFromType, vehicleClassLabel } from "@/lib/dispatch";
 import { telegramBotUsername } from "@/lib/telegram";
+import { feePercentFor, splitLoad } from "@/lib/payouts";
+import type { DispatchLane, DispatchStatus, PayPlan, VehicleClass } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +36,7 @@ const STEPS = [
   },
   {
     title: "Go Active for nearby loads",
-    body: "After you're activated, connect Telegram on this page and set yourself Active. While you're Active, loads that fit your vehicle, radius, and trip length are offered to you on Telegram with Accept and Pass. The first driver to accept gets the load; we claim or bid it in the Curri portal, then Telegram confirms it's yours. Go Inactive when you don't want offers — you also switch off automatically after the hours you set.",
+    body: "After you're activated, connect Telegram on this page and set yourself Active. While you're Active, loads that fit your vehicle, radius, and trip length are offered to you on Telegram with Accept and Pass. The first driver to accept gets the load; we claim or bid it in the Curri portal, then Telegram confirms it's yours. Go Inactive when you don't want offers — you also switch off automatically after the hours you set. Missed a Telegram message? Your open offers and your loads are also listed on this page.",
   },
   {
     title: "Complete the delivery",
@@ -50,6 +52,110 @@ const STEPS = [
   },
 ];
 
+// ---- "Your offers and loads" — a read-only backup for Telegram (docs/DISPATCH-FLOW.md, stage 2b) ----
+
+const LIVE_STATUSES: DispatchStatus[] = ["ASSIGNED", "PLACED", "AWARDED", "IN_PROGRESS"];
+const DAY_MS = 86_400_000;
+
+const LOAD_FIELDS = {
+  id: true, lane: true, status: true, rush: true, pickupAt: true, busyUntil: true,
+  pickupAddress: true, pickupZip: true, dropoffAddress: true, dropoffZip: true,
+  tripMiles: true, vehicleClass: true, listedCents: true, bidCents: true, notes: true,
+} as const;
+
+type MyLoad = {
+  id: string; lane: DispatchLane; status: DispatchStatus; rush: boolean; pickupAt: Date; busyUntil: Date | null;
+  pickupAddress: string; pickupZip: string; dropoffAddress: string; dropoffZip: string;
+  tripMiles: number | null; vehicleClass: VehicleClass; listedCents: number | null; bidCents: number | null; notes: string | null;
+};
+
+/**
+ * Everything this driver should see about dispatch, scoped to their own
+ * profile id (never a URL parameter). Kept outside the component so "now" is
+ * computed in a plain helper, not during render.
+ */
+async function getMyDispatch(profileId: string) {
+  const now = new Date();
+  const dayAgo = new Date(now.getTime() - DAY_MS);
+  const [offers, live, closed, dropped] = await Promise.all([
+    // Open offers: same guard respondOffer uses (pending, not expired, load still offered).
+    prisma.dispatchOffer.findMany({
+      where: { driverProfileId: profileId, response: "PENDING", expiresAt: { gt: now }, load: { status: "OFFERED" } },
+      orderBy: { expiresAt: "asc" },
+      take: 5,
+      select: { id: true, expiresAt: true, load: { select: LOAD_FIELDS } },
+    }),
+    // Live loads assigned to this driver; past ones drop off 24 h after their estimated finish.
+    prisma.dispatchLoad.findMany({
+      where: { assignedProfileId: profileId, status: { in: LIVE_STATUSES }, OR: [{ busyUntil: { gt: dayAgo } }, { busyUntil: null }] },
+      orderBy: { pickupAt: "asc" },
+      take: 10,
+      select: LOAD_FIELDS,
+    }),
+    // Lost / cancelled in the last 24 h — so nobody drives to a pickup that isn't theirs.
+    prisma.dispatchLoad.findMany({
+      where: { assignedProfileId: profileId, status: { in: ["LOST", "CANCELLED"] }, updatedAt: { gt: dayAgo } },
+      orderBy: { updatedAt: "desc" },
+      take: 10,
+      select: { id: true, status: true, pickupZip: true, dropoffZip: true },
+    }),
+    // Accepted in the last 24 h but no longer assigned to this driver (un-assigned or re-assigned).
+    prisma.dispatchOffer.findMany({
+      where: {
+        driverProfileId: profileId,
+        response: "ACCEPTED",
+        respondedAt: { gt: dayAgo },
+        load: { OR: [{ assignedProfileId: null }, { assignedProfileId: { not: profileId } }] },
+      },
+      orderBy: { respondedAt: "desc" },
+      take: 10,
+      select: { load: { select: { id: true, pickupZip: true, dropoffZip: true } } },
+    }),
+  ]);
+  return { offers, live, closed, dropped: dropped.map((d) => d.load) };
+}
+
+/** Pacific time with a label, like the Telegram messages (the server runs in UTC). */
+const pt = (d: Date, opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) =>
+  `${d.toLocaleString("en-US", { ...opts, timeZone: "America/Los_Angeles" })} PT`;
+const dollars = (c: number) => `$${(c / 100).toFixed(2)}`;
+
+/** The same pay line the Telegram offer shows: the driver's net after their plan's fee. */
+function payText(load: MyLoad, plan: PayPlan): string | null {
+  const gross = load.bidCents ?? load.listedCents;
+  if (!gross) return null;
+  const pct = feePercentFor(plan);
+  const atListed = load.lane === "BID" && load.bidCents === null ? " at the listed price" : "";
+  return `Your pay: ${dollars(splitLoad(gross, pct).netCents)}${atListed} (load ${dollars(gross)} − ${pct}% dispatching fee)`;
+}
+
+/** What a live load means for the driver, in the Telegram wording. */
+function statusText(load: MyLoad): string {
+  if (load.status === "ASSIGNED") {
+    return load.lane === "BID"
+      ? "Accepted — we're placing the bid. Not yours until Curri awards it, so don't head out yet."
+      : "Accepted — we're claiming it in Curri now. You'll see “Confirmed” here and on Telegram.";
+  }
+  if (load.status === "PLACED") return "Bid placed — waiting on Curri. Not yours yet, so don't head out.";
+  if (load.status === "AWARDED") return "Confirmed — Curri awarded us this load. It's yours.";
+  return "In progress.";
+}
+
+function LoadDetails({ load }: { load: MyLoad }) {
+  const pickupWhere = load.pickupAddress && load.pickupAddress !== load.pickupZip ? `${load.pickupAddress} (${load.pickupZip})` : load.pickupZip;
+  const dropWhere = load.dropoffAddress && load.dropoffAddress !== load.dropoffZip ? `${load.dropoffAddress} (${load.dropoffZip})` : load.dropoffZip;
+  return (
+    <div className="space-y-0.5 text-sm text-foreground/90">
+      <p>
+        {load.rush && <span className="mr-2 rounded-full bg-red-400/15 px-2 py-0.5 text-[10px] font-bold uppercase text-red-300">Rush</span>}
+        Pickup {pickupWhere} · {pt(load.pickupAt)}
+      </p>
+      <p>Drop {dropWhere}{load.tripMiles !== null ? ` · ~${load.tripMiles} mi` : ""}</p>
+      <p className="text-muted">{vehicleClassLabel(load.vehicleClass)}{load.notes ? ` · ${load.notes}` : ""}</p>
+    </div>
+  );
+}
+
 export default async function CurriFleetPage({ searchParams }: PageProps<"/account/curri-fleet">) {
   const sp = await searchParams;
   const session = await getSession();
@@ -59,13 +165,19 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
   const [profile, user] = await Promise.all([
     prisma.driverProfile.findUnique({
       where: { userId: session.userId },
-      select: { firstName: true, baseZip: true, vehicleType: true, onDutyUntil: true, dutyRadiusMiles: true, dutyMaxTripMiles: true, curriActivatedAt: true },
+      select: { id: true, firstName: true, baseZip: true, vehicleType: true, onDutyUntil: true, dutyRadiusMiles: true, dutyMaxTripMiles: true, curriActivatedAt: true },
     }),
-    prisma.user.findUnique({ where: { id: session.userId }, select: { fleetJoinedAt: true, telegramChatId: true } }),
+    prisma.user.findUnique({ where: { id: session.userId }, select: { fleetJoinedAt: true, telegramChatId: true, payPlan: true } }),
   ]);
   if (!profile) redirect("/account/setup");
 
   const joined = !!user?.fleetJoinedAt;
+  // Dispatch backup view — fleet members only; non-members cost no extra queries.
+  const mine = joined ? await getMyDispatch(profile.id) : null;
+  const botUsername = telegramBotUsername();
+  const telegramReady = !!botUsername && !!process.env.AUTH_SECRET;
+  const isActive = !!profile.onDutyUntil && profile.onDutyUntil > new Date();
+  const showDispatch = !!mine && (!!profile.curriActivatedAt || mine.offers.length + mine.live.length + mine.closed.length + mine.dropped.length > 0);
   // Fleet members only — the one place drivers are pointed to Telegram.
   const telegram = joined ? fleetTelegramInviteUrl() : null;
   // Just paid from this page: fire the browser Purchase pixel with the Stripe
@@ -190,7 +302,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
         )}
         {joined && profile.curriActivatedAt && (
           <DutyToggle
-            onDuty={!!profile.onDutyUntil && profile.onDutyUntil > new Date()}
+            onDuty={isActive}
             onDutyUntil={profile.onDutyUntil?.toISOString() ?? null}
             radiusMiles={profile.dutyRadiusMiles}
             maxTripMiles={profile.dutyMaxTripMiles}
@@ -198,6 +310,92 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
             vehicleLabel={vehicleClassLabel(vehicleClassFromType(profile.vehicleType))}
             defaults={DUTY_DEFAULTS}
           />
+        )}
+
+        {showDispatch && mine && (
+          <section className="card mt-6 p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold tracking-tight">Your offers and loads</h2>
+                <p className="mt-1 text-sm text-muted">
+                  A backup for your Telegram messages. Offers stay open only 2–3 minutes and the first driver to
+                  accept gets the load. This list doesn&apos;t update by itself — tap Refresh.
+                </p>
+                {profile.curriActivatedAt && !user?.telegramChatId && telegramReady && (
+                  <p className="mt-1 text-sm text-amber-300">Automatic offers only go to drivers connected on Telegram — connect above.</p>
+                )}
+              </div>
+              {/* A full page reload so the list is rebuilt on the server. */}
+              <a href="/account/curri-fleet" className="btn-ghost rounded-full px-5 py-2 text-sm">Refresh</a>
+            </div>
+
+            <h3 className="mt-5 text-sm font-semibold uppercase tracking-widest text-accent">Open offers</h3>
+            {mine.offers.length === 0 ? (
+              <p className="mt-2 text-sm text-muted">
+                No open offers right now.{profile.curriActivatedAt && !isActive ? " Go Active above to get offers." : ""}
+              </p>
+            ) : (
+              <ul className="mt-2 space-y-3">
+                {mine.offers.map((o) => {
+                  const pay = payText(o.load, user!.payPlan);
+                  return (
+                    <li key={o.id} className="rounded-xl border border-accent/30 bg-accent-soft p-4">
+                      <LoadDetails load={o.load} />
+                      {pay && <p className="mt-2 text-sm font-semibold text-foreground">{pay}</p>}
+                      <p className="mt-1 text-xs text-muted">Open until {pt(o.expiresAt, { hour: "numeric", minute: "2-digit" })}</p>
+                      {user?.telegramChatId && botUsername ? (
+                        <>
+                          <a href={`https://t.me/${botUsername}`} target="_blank" rel="noreferrer" className="btn-primary mt-3 inline-flex rounded-full px-5 py-2 text-sm">
+                            Open Telegram to Accept or Pass →
+                          </a>
+                          <p className="mt-2 text-xs text-muted">No message in Telegram? DM Nasser on Telegram to take it.</p>
+                        </>
+                      ) : (
+                        <p className="mt-2 text-xs text-muted">Reply to Nasser&apos;s text, or DM him on Telegram, to take it.</p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <h3 className="mt-6 text-sm font-semibold uppercase tracking-widest text-accent">Your loads</h3>
+            {mine.live.length === 0 ? (
+              <p className="mt-2 text-sm text-muted">No loads assigned to you right now.</p>
+            ) : (
+              <>
+                <ul className="mt-2 space-y-3">
+                  {mine.live.map((l) => {
+                    const pay = payText(l, user!.payPlan);
+                    return (
+                      <li key={l.id} className="rounded-xl border border-border bg-surface-2/60 p-4">
+                        <p className={`mb-2 text-sm font-semibold ${l.status === "AWARDED" || l.status === "IN_PROGRESS" ? "text-accent" : "text-foreground"}`}>{statusText(l)}</p>
+                        <LoadDetails load={l} />
+                        {pay && <p className="mt-2 text-sm text-foreground/90">{pay}</p>}
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="mt-3 text-sm text-muted">Can&apos;t make it? DM Nasser on Telegram right away.</p>
+              </>
+            )}
+
+            {mine.closed.length + mine.dropped.length > 0 && (
+              <>
+                <h3 className="mt-6 text-sm font-semibold uppercase tracking-widest text-muted">Last 24 hours — you&apos;re free</h3>
+                <ul className="mt-2 space-y-1 text-sm text-muted">
+                  {mine.closed.map((l) => (
+                    <li key={`c-${l.id}`}>
+                      {l.pickupZip} → {l.dropoffZip}: {l.status === "LOST" ? "Not this one — Curri gave the load to another carrier." : "Cancelled."} You&apos;re free.
+                    </li>
+                  ))}
+                  {mine.dropped.map((l) => (
+                    <li key={`d-${l.id}`}>{l.pickupZip} → {l.dropoffZip}: No longer yours. You&apos;re free.</li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
         )}
 
         {joined && (

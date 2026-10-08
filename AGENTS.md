@@ -229,7 +229,9 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   Inactive** (stored as `onDutyUntil`; auto-expires after their hours) on the fleet page
   (`DutyToggle`) or by Telegram `/active` `/inactive` (`/onduty` `/offduty` still work) —
   `src/lib/telegram-dispatch.ts`, linked via "Connect Telegram", `User.telegramChatId`;
-  admins mark "Activated on Curri" on the driver page. Owner decisions 2026-10-08: no paid
+  admins mark "Activated on Curri" on the driver page. The fleet page also lists each
+  driver's own open offers, assigned loads and last-24h lost/cancelled loads, read-only
+  ("Your offers and loads", a backup for Telegram; Accept/Pass stays in Telegram). Owner decisions 2026-10-08: no paid
   services for dispatch (Google distance shelved; free ZIP/city estimates); Stripe Connect
   fees are covered by the dispatching fee. Loads arrive by hand or through the **intake door**
   `POST /api/dispatch/intake` (bearer `DISPATCH_INTAKE_KEY`; spec `docs/DISPATCH-INTAKE.md`)
