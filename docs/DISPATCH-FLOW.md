@@ -169,3 +169,65 @@ Placing the claim/bid in Curri and assigning the driver on the carrier account �
 Curri gives carriers an official way to do it programmatically. Both are one action each,
 and the system makes sure they happen with a committed, in-range driver and a bid that
 clears cost.
+
+## Stage 1 scope (2026-10-08) — the dispatch board
+
+Split in two so the board is usable within days and the Telegram half lands after.
+
+### Stage 1a — board, ranking, assignment (no new external services)
+
+**Data (one additive migration, backup first):**
+- `DriverProfile`: `baseZip`, `baseLat`, `baseLng` (filled from the bundled ZIP table),
+  `vehicleClass` (enum: CAR, SUV, MINIVAN, PICKUP, CARGO_VAN, SPRINTER, BOX_TRUCK, FLATBED),
+  `curriActivatedAt`, `onDutyUntil`, `dutyRadiusMiles`, `dutyMaxTripMiles`.
+- `DispatchLoad`: Curri reference, pickup/dropoff address + ZIP + lat/lng, vehicle class
+  required, listed price, lane (CLAIM / BID), pickup time, notes, status
+  (NEW → ASSIGNED | OFFERED → ACCEPTED → PLACED → AWARDED | LOST → IN_PROGRESS → DELIVERED;
+  CANCELLED / EXPIRED with reason), assigned driver, bid amount, who created it.
+- `DispatchOffer`: load, driver, sent/expires, single-use token hash, response.
+- `DispatchEvent`: audit log — load, actor, from → to, note, time. Never deleted.
+
+**Distance:** a bundled US ZIP-centroid table (Census ZCTA gazetteer, public domain,
+~1 MB) + straight-line miles. No maps API. "Within radius" is judged on this; driving
+distance is stage 3.
+
+**Admin `/admin/dispatch`:** new-load form; open loads with state; per load: ranked
+candidates (miles to pickup, vehicle, on duty, busy), the **covered / not covered** verdict
+from on-duty drivers whose parameters fit, suggested bid (bidding-calculator formula:
+miles × cost per mile + hours × hourly target, plus the dispatching fee; cost per mile from
+the driver's P&L when present, else the calculator default), and buttons: Assign (claim
+lane), Offer (bid lane; in 1a this records the offer and the owner texts the driver),
+Mark placed (amount), Awarded / Lost, In progress, Delivered → opens "Log delivery" on the
+driver's page pre-filled with amount and Curri reference. Claim-lane Assign is disabled
+when not covered — no override.
+
+**Driver side:** profile edit gets base ZIP and vehicle class; the fleet page gets an
+on-duty toggle with parameters (hours, radius, max trip miles) and shows "on duty until".
+Admin driver page gets "Activated on Curri" (date) next to the fleet toggle.
+
+**Dispatchers:** anyone in `ADMIN_EMAILS` for now; every event records who.
+
+### Stage 1b — Telegram
+
+- Linking: a "Connect Telegram" button on the fleet page opens the existing bot with a
+  signed start token; the webhook stores the driver's chat id (`User.telegramChatId`).
+- On duty / off duty by bot command (`/onduty 30` = 30-mile radius, `/offduty`) as well as
+  the page toggle.
+- Claim lane: "Assigned" message with pickup, dropoff, time, pay. Bid lane: offer message
+  with Accept / Pass buttons (signed, single-use, 3-minute default); first accept wins
+  atomically; the rest see "taken".
+- Owner/dispatcher pinged on accept, pass, and no-answer.
+
+### Not in stage 1
+Email ingest of Curri notifications (stage 2), driving distance / ETA and live location
+(stage 3), SMS, dispatcher roles beyond the admin list, multi-stop loads.
+
+### Approval needed
+Migration (backup first); a ~1 MB data file in the repo; Telegram bot changes (token
+already provided by the owner); **new personal-data fields** (base ZIP, Telegram chat id —
+section E: both are needed for the function and stated on the fleet page).
+
+### Done looks like
+Enter a load → board says "Covered by X, N mi" → Assign → (1b: X gets the Telegram
+message) → Mark placed / Awarded / Delivered → Log delivery opens pre-filled → payout.
+Every step visible in the load's event log.
