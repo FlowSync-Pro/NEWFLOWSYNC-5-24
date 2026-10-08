@@ -103,6 +103,63 @@ Body: `You were underbid by another courier. Click to bid lower than $99.99 or '
 Effect: the owner's Telegram gets "UNDERBID — beat $99.99 or claim now" with a link.
 Nothing changes on the load.
 
+## The portal-feed bot ("Curri Dispatch") — owner decision 2026-10-08
+
+The owner runs a separate bot (built with Cursor, not in this repo) that watches the
+Curri carrier portal's opportunity feed. It sees more than the emails: street addresses,
+pay, rate per mile, accessories. Decision: **combine** — that bot keeps watching, but
+posts every load here instead of messaging drivers itself. This board does the matching,
+the Telegram offers, first-accept-wins and the owner's "CLAIM NOW" ping, so drivers deal
+with one bot only.
+
+Reading the portal feed is the owner's choice and the owner's risk with Curri (it is
+automation against their site; AGENTS.md section E asks for owner confirmation, which he
+gave by running it). The bot must never claim, bid, assign or click anything in the portal.
+
+### New load in the feed → `kind: "opportunity"`
+
+```json
+{
+  "kind": "opportunity",
+  "source": "portal",
+  "curriRef": "del_74CYDVWBBY",
+  "rush": true,
+  "pickupAddress": "Eagle Roofing Products, 2352 N Locust Ave, Rialto",
+  "dropoffAddress": "2020 S Yale St, Santa Ana",
+  "pickupCity": "Rialto, CA",
+  "dropoffCity": "Santa Ana, CA",
+  "vehicle": "Box Truck",
+  "miles": 41,
+  "pay": 162.77,
+  "accessories": "Liftgate · Priority: rush"
+}
+```
+
+- `curriRef` — the `del_…` id. Required; it de-duplicates and matches later events.
+- `pickupCity` / `dropoffCity` — optional when the address ends in the city (the board
+  takes the last part of the address); sending "City, ST" is more reliable.
+- `pay` (or `listed`) — dollars, number or text. `accessories` — liftgate and other
+  extras become driver notes; "Priority: rush" also sets rush.
+- Non-rush loads need `pickupAt` (ISO 8601, UTC).
+
+### Load left the feed → `kind: "event", type: "gone"`
+
+```json
+{ "kind": "event", "type": "gone", "curriRef": "del_LY9R7VNZQW" }
+```
+
+If nobody had accepted it yet, the load is cancelled ("left the Curri feed") and every
+driver holding an open offer is told it's gone. If a driver had already accepted, it's
+only logged — the load also leaves the feed when *we* claim it.
+
+### Turn off in that bot
+- Its own driver messages and commands (`/on`, `/end`, `/dispatch … @driver`, "Sent to N
+  available drivers"). Drivers use the FlowSync bot: `/active`, `/inactive`.
+- "Claim on Curri portal, then dispatch" prompts. Claim only after this board's
+  "✅ … ACCEPTED — CLAIM NOW".
+- The "$25 / removal" line — not in the fleet terms on the site. Any driver charge is a
+  terms and pricing change (AGENTS.md sections C–E) and needs attorney review first.
+
 ## Rules for the agent
 
 - Post every email exactly once; the door is idempotent on `curriRef` for

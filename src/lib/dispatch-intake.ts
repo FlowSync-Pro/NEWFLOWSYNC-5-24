@@ -1,12 +1,14 @@
 import type { DispatchLane } from "@prisma/client";
 import { prisma } from "./db";
 import { autoOffer, createLoad, OFFER_MINUTES, OFFER_MINUTES_RUSH, transitionLoad, vehicleClassFromCurriText, vehicleClassLabel } from "./dispatch";
-import { notifyOwner, verdictLine } from "./dispatch-notify";
+import { notifyOffersWithdrawn, notifyOwner, verdictLine } from "./dispatch-notify";
 import { parseDollars } from "./payouts";
 
-// The intake door (docs/DISPATCH-INTAKE.md): an agent that reads Curri's
-// emails posts them here. It only ever creates loads as NEW or mirrors what
-// Curri said about a load we already have. It never assigns, never claims.
+// The intake door (docs/DISPATCH-INTAKE.md): agents that watch Curri — the
+// email reader, and the owner's portal-feed bot ("Curri Dispatch") — post
+// loads here. It only ever creates loads (then auto-offers them to Active
+// drivers) or mirrors what Curri said about a load we already have. It never
+// assigns, never claims.
 
 export const INTAKE_ACTOR = "intake";
 
@@ -18,20 +20,30 @@ export type IntakePayload =
       rush?: boolean;
       /** ISO or "today at 10:00AM (Fri 6/5)" is the agent's job to convert; we need ISO. */
       pickupAt?: string;
-      /** "Santa Fe Springs", "Santa Fe Springs, CA" or a ZIP. */
-      pickupCity: string;
-      dropoffCity: string;
+      /** "Santa Fe Springs", "Santa Fe Springs, CA" or a ZIP. Optional when the address ends in the city. */
+      pickupCity?: string;
+      dropoffCity?: string;
+      /** Full street address when the source has it (the portal feed does), e.g. "Eagle Roofing Products, 2352 N Locust Ave, Rialto". */
+      pickupAddress?: string;
+      dropoffAddress?: string;
       /** Curri's wording, e.g. "box truck-sized vehicle" or "Sprinter Van with a Liftgate". */
       vehicle: string;
       /** Curri's "(28 mi)". */
       miles?: number;
       lane?: DispatchLane;
-      listed?: string;
+      /** Listed price — dollars as text ("162.77") or a number. `pay` is accepted as the same thing. */
+      listed?: string | number;
+      pay?: string | number;
+      /** "Liftgate", "Priority: rush" … — added to the driver notes. */
+      accessories?: string;
       notes?: string;
+      /** Where the agent saw it: "email" or "portal". Logged only. */
+      source?: string;
     }
   | {
       kind: "event";
-      type: "bid_placed" | "won" | "lost" | "underbid";
+      /** "gone" = the load left Curri's feed (taken by someone, or withdrawn). */
+      type: "bid_placed" | "won" | "lost" | "underbid" | "gone";
       curriRef: string;
       amount?: string;
       driverName?: string;
@@ -60,19 +72,47 @@ export async function ingest(payload: IntakePayload): Promise<IntakeResult> {
   return { ok: false, error: "kind must be \"opportunity\" or \"event\"." };
 }
 
+/** Text or number dollars → cents; null when absent; NaN-safe. */
+function dollarsToCents(v: string | number | undefined | null): number | null | "bad" {
+  if (v === undefined || v === null || v === "") return null;
+  const c = parseDollars(typeof v === "number" ? v.toFixed(2) : v);
+  return c === null ? "bad" : c;
+}
+
+/**
+ * The location key for the board: the city given, else the tail of the
+ * address — "…, Rialto" → "Rialto", "…, Santa Ana, CA 92704" → "92704".
+ */
+export function locationFrom(city: string | undefined, address: string | undefined): string {
+  if (city?.trim()) return city.trim();
+  const a = (address ?? "").trim();
+  if (!a) return "";
+  const zip = /\b(\d{5})(?:-\d{4})?\s*$/.exec(a);
+  if (zip) return zip[1];
+  const parts = a.split(",").map((x) => x.trim()).filter(Boolean);
+  if (parts.length >= 2 && /^[A-Za-z]{2}$/.test(parts[parts.length - 1])) return `${parts[parts.length - 2]}, ${parts[parts.length - 1]}`;
+  return parts[parts.length - 1] ?? "";
+}
+
 async function ingestOpportunity(p: Extract<IntakePayload, { kind: "opportunity" }>): Promise<IntakeResult> {
   if (!p.curriRef?.trim()) return { ok: false, error: "curriRef is required." };
+  const pickupKey = locationFrom(p.pickupCity, p.pickupAddress);
+  const dropoffKey = locationFrom(p.dropoffCity, p.dropoffAddress);
+  if (!pickupKey || !dropoffKey) return { ok: false, error: "Send pickupCity/dropoffCity or addresses that end in the city." };
   const curriRef = normalizeCurriRef(p.curriRef);
   const existing = await findByRef(curriRef);
   if (existing) return { ok: true, loadId: existing.id, status: existing.status, duplicate: true };
 
   const vehicleClass = vehicleClassFromCurriText(p.vehicle);
   if (!vehicleClass) return { ok: false, error: `Couldn't read the vehicle from "${p.vehicle}".` };
-  const rush = !!p.rush;
+  const rush = !!p.rush || /priority:\s*rush/i.test(p.accessories ?? "");
   const pickupAt = !rush && p.pickupAt ? new Date(p.pickupAt) : null;
   if (!rush && (!pickupAt || Number.isNaN(pickupAt.getTime()))) return { ok: false, error: "pickupAt (ISO) is required unless rush is true." };
-  const listedCents = p.listed?.trim() ? parseDollars(p.listed) : null;
-  const liftgate = /liftgate/i.test(p.vehicle) ? "Liftgate required" : null;
+  const listed = dollarsToCents(p.listed ?? p.pay);
+  if (listed === "bad") return { ok: false, error: "listed/pay must be a dollar amount, e.g. 162.77." };
+  const listedCents = listed;
+  const liftgate = /liftgate/i.test(`${p.vehicle} ${p.accessories ?? ""}`) ? "Liftgate required" : null;
+  const extras = (p.accessories ?? "").replace(/accessories:\s*/i, "").replace(/priority:\s*rush/i, "").replace(/liftgate/i, "").replace(/[·,\s]+$|^[·,\s]+/g, "").trim();
 
   const r = await createLoad(
     {
@@ -80,18 +120,19 @@ async function ingestOpportunity(p: Extract<IntakePayload, { kind: "opportunity"
       lane: p.lane === "BID" ? "BID" : "CLAIM",
       rush,
       pickupAt,
-      pickupAddress: "",
-      pickupZip: p.pickupCity,
-      dropoffAddress: "",
-      dropoffZip: p.dropoffCity,
+      pickupAddress: p.pickupAddress?.trim() ?? "",
+      pickupZip: pickupKey,
+      dropoffAddress: p.dropoffAddress?.trim() ?? "",
+      dropoffZip: dropoffKey,
       vehicleClass,
       listedCents,
       tripMiles: typeof p.miles === "number" ? p.miles : null,
-      notes: [liftgate, p.notes?.trim()].filter(Boolean).join(" · "),
+      notes: [liftgate, extras || null, p.notes?.trim()].filter(Boolean).join(" · "),
     },
     INTAKE_ACTOR,
   );
   if (!r.ok) return r;
+  if (p.source) await prisma.dispatchEvent.create({ data: { loadId: r.id, actorId: INTAKE_ACTOR, note: `Source: ${String(p.source).slice(0, 40)}` } });
 
   // Offer it straight away to every matching Active driver on Telegram (owner decision 2026-10-08).
   const offers = await autoOffer(r.id, INTAKE_ACTOR);
@@ -121,6 +162,21 @@ async function ingestEvent(p: Extract<IntakePayload, { kind: "event" }>): Promis
   }
 
   if (!load) return { ok: false, error: "No load with that curriRef in the last 48 h." };
+
+  if (p.type === "gone") {
+    // A load also leaves the feed when WE claim it, so only withdraw loads nobody
+    // has accepted yet. Once a driver is on it, just note it.
+    if (load.status === "NEW" || load.status === "OFFERED") {
+      const open = await prisma.dispatchOffer.findMany({ where: { loadId: load.id, response: "PENDING" }, select: { id: true } });
+      const r = await transitionLoad(load.id, "CANCELLED", INTAKE_ACTOR, { note: "Left the Curri feed before anyone accepted (another carrier took it, or it was withdrawn)" });
+      if (!r.ok) return r;
+      await notifyOffersWithdrawn(load.id, open.map((o) => o.id));
+    } else {
+      await prisma.dispatchEvent.create({ data: { loadId: load.id, actorId: INTAKE_ACTOR, note: `Left the Curri feed (load is ${load.status.toLowerCase()} — likely our claim)` } });
+    }
+    const fresh = await prisma.dispatchLoad.findUnique({ where: { id: load.id }, select: { status: true } });
+    return { ok: true, loadId: load.id, status: fresh?.status ?? load.status };
+  }
 
   const note = `Curri email: ${p.type.replace("_", " ")}${amountCents ? ` $${(amountCents / 100).toFixed(2)}` : ""}${p.driverName ? ` · driver ${p.driverName}` : ""}`;
   if (p.type === "bid_placed") {
