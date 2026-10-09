@@ -58,7 +58,7 @@ name, phone or email in a URL.
 | --- | --- | --- |
 | A — Verified listing | Sales → **Purchase** | `https://flowsyncdriver.com/pricing?utm_source=meta&utm_campaign=verified` |
 | B — Load-rate quiz | Leads → **Lead** | `https://flowsyncdriver.com/tools/earnings?utm_source=meta&utm_campaign=quiz` |
-| C — Fleet (Employment category) | Sales → **Purchase** | `https://flowsyncdriver.com/?utm_source=meta&utm_campaign=fleet#fleet` |
+| C — Fleet (Employment category) | Sales → **Purchase** | `https://flowsyncdriver.com/?utm_source=meta&utm_campaign=fleet#curri-fleet` |
 | R — Retargeting (visited, no purchase) | Sales → **Purchase** | `https://flowsyncdriver.com/pricing?utm_source=meta&utm_campaign=retarget` |
 
 ---
