@@ -19,16 +19,38 @@ import { SUPPORT_EMAIL } from "@/lib/site";
 // Never throws. Callers are Stripe webhooks — a failed alert must never fail a
 // fulfillment or cause Stripe to retry a charge.
 
+/** The support inbox plus every ADMIN_EMAILS address, de-duplicated. */
+const ownerInboxes = () => [...new Set([SUPPORT_EMAIL, ...adminEmails()].map((e) => e.trim().toLowerCase()))];
+
 export async function alertOwner(message: string): Promise<void> {
   // Always log, so the signal exists in Vercel logs even if email fails.
   console.error(`[alert] ${message}`);
 
-  const to = [...new Set([SUPPORT_EMAIL, ...adminEmails()].map((e) => e.trim().toLowerCase()))];
-
   try {
-    await sendOwnerAlertEmail(to, message);
+    await sendOwnerAlertEmail(ownerInboxes(), message);
   } catch (e) {
     console.error("[alert] email notify failed:", e instanceof Error ? e.message : e);
+  }
+}
+
+/**
+ * An email copy of a message a fleet driver sent the FlowSync bot (the relay in
+ * lib/telegram-dispatch.ts), to the same inboxes as alertOwner — for when the
+ * owner isn't watching Telegram. Unlike alertOwner it does NOT write the message
+ * to the server log: drivers' words and phone numbers stay out of Vercel logs
+ * (the subject line carries only the driver's name). Never throws; true when at
+ * least one inbox accepted it.
+ */
+export async function emailOwnerDriverMessage(message: string): Promise<boolean> {
+  try {
+    return await sendOwnerAlertEmail(ownerInboxes(), message, {
+      subjectPrefix: "[FlowSync]",
+      label: "FLOWSYNC · DRIVER MESSAGE",
+      footer: "A copy of a message a fleet driver sent the FlowSync Telegram bot. Replying to this email does not reach the driver.",
+    });
+  } catch (e) {
+    console.error("[relay] email copy failed:", e instanceof Error ? e.message : e);
+    return false;
   }
 }
 

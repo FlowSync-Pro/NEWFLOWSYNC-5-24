@@ -233,7 +233,8 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   driver's own open offers, assigned loads and last-24h lost/cancelled loads, read-only
   ("Your offers and loads", a backup for Telegram; Accept/Pass stays in Telegram). Anything a
   linked driver sends the bot that isn't a command is relayed to the owner's private chat;
-  the owner answers by replying to it (nothing stored). Dispatch times show in PT
+  the owner answers by replying to it (nothing stored), and gets an email copy at the
+  alert inboxes (`emailOwnerDriverMessage` in `src/lib/alerts.ts`; words kept out of logs). Dispatch times show in PT
   (`src/lib/pt-time.ts`). Owner decisions 2026-10-08: no paid
   services for dispatch (Google distance shelved; free ZIP/city estimates); Stripe Connect
   fees are covered by the dispatching fee. Loads arrive by hand or through the **intake door**

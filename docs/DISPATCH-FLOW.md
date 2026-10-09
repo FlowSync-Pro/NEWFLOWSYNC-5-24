@@ -551,6 +551,12 @@ with a load marked "TEST — do not run", then cancel it.
    the "↩️ Reply to this message to answer" line + `/admin/drivers/<profileId>` link at the
    end of the owner's copy (only bot-sent messages, only from the owner's chat). Owner
    commands (`/status`…) and replies to FAQ-bot escalations work as before.
+   **Email copy (owner decision 2026-10-09):** each relayed message is also emailed to the
+   support inbox + ADMIN_EMAILS (`emailOwnerDriverMessage`): driver name in the subject only,
+   the words, load, phone, admin link and how to answer in the body; photos/voice stay in
+   Telegram (the email says what was sent). If Telegram to the owner fails but the email
+   goes, the driver hears "✓ Sent to Nasser by email. If it's urgent, call or text him too."
+   Unlike other owner alerts, the message is never written to the server log.
 2. Admin dispatch pages format times without a time zone → shown in UTC on Vercel.
    **Fixed:** every dispatch time (admin board, load page, load panel, Active box, Telegram
    load summaries, fleet page) uses `src/lib/pt-time.ts` → "Oct 8, 2:41 PM PT".

@@ -5,6 +5,7 @@ import { answerTelegramCallback, clearTelegramButtons, copyTelegramMessage, send
 import { DUTY_DEFAULTS, STATUS_LABEL, driverCostPerMile, rankCandidates, respondOffer, setDuty, suggestBid, type LoadForRanking } from "./dispatch";
 import { SITE_URL } from "./site";
 import { ptTime } from "./pt-time";
+import { emailOwnerDriverMessage } from "./alerts";
 
 /** What the owner's phone says when a driver accepts: CLAIM NOW (claim lane) or the bid to place (bid lane). */
 async function ownerAcceptedLine(load: LoadForRanking & { lane: string; listedCents: number | null; pickupZip: string; dropoffZip: string }, profileId: string, name: string): Promise<string> {
@@ -333,7 +334,28 @@ async function relayToOwner(chatId: string, m: IncomingMessage, p: RelayDriver):
   } catch (e) {
     console.error("[dispatch] relay to owner failed:", e instanceof Error ? e.message : e);
   }
-  await sendQuietly(chatId, delivered ? "✓ Sent to Nasser. His answer will come here." : "Couldn't reach Nasser just now — please text or call him directly.");
+  // An email copy too, for when the owner isn't watching Telegram (owner
+  // decision 2026-10-09). If Telegram failed but the email went, it still
+  // reached him. Media stays in Telegram; the email says what was sent.
+  const kind = kindOf(m) ?? "a message";
+  const emailed = await emailOwnerDriverMessage([
+    `💬 Message from ${name} (fleet driver)`,
+    "",
+    text ?? (caption ? `Sent ${kind} with the note:\n${caption}` : `Sent ${kind}.`),
+    ...(text ? [] : [delivered ? "Open your Telegram chat with the bot to see it." : "It didn't reach Telegram — ask them to resend it."]),
+    "",
+    ...(load ? [`Their load: ${load.pickupZip} → ${load.dropoffZip} · ${STATUS_LABEL[load.status].toLowerCase()} · pickup ${ptTime(load.pickupAt)}`] : []),
+    ...(phone ? [`Phone: ${phone}`] : []),
+    `Driver page: ${siteBase()}/admin/drivers/${p.id}`,
+    "",
+    delivered
+      ? "To answer: in Telegram, long-press the bot's copy of this message and tap Reply — or call or text them."
+      : "Telegram didn't get this one — call or text them.",
+  ].join("\n"));
+  await sendQuietly(chatId,
+    delivered ? "✓ Sent to Nasser. His answer will come here."
+    : emailed ? "✓ Sent to Nasser by email. If it's urgent, call or text him too."
+    : "Couldn't reach Nasser just now — please text or call him directly.");
   return true;
 }
 

@@ -129,6 +129,10 @@ always re-check before sending.
 Still open: the first real fleet purchase's alert email (wording from `fcee774`), and
 everything owner-side in the checkpoints below.
 
+- **Driver messages also by email** (after this checkpoint; no migration / env var): every
+  message a fleet driver sends the bot is emailed to the alert inboxes as well as relayed on
+  Telegram; if Telegram is down the email still goes. Owner decision 2026-10-09.
+
 ## 📍 Checkpoint — 2026-10-09 (evening): owner alert wording for new fleet members
 Restore point: commit `fcee774` on the default branch (deployed, Ready — owner confirmed).
 No migrations and no new env vars. Owner-approved RISKY-by-file deploy (it lives in the
