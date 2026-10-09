@@ -6,6 +6,7 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { FLEET, listingPrice, OFFER_WINDOW_HOURS, premiumUpgradePrice } from "@/lib/pricing";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 /** Where a fleet buyer lands once signed in: the fleet page with their next steps. */
 const FLEET_LANDING = "/account/curri-fleet?welcome=1";
@@ -122,6 +123,13 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
             <AuthPanel next={next} />
           </div>
         )}
+
+        {/* Locked-out buyers (owner decision 2026-10-09): the two fixes that work without us. */}
+        <p className="mt-6 text-center text-sm leading-relaxed text-muted">
+          Paid but can&apos;t get in? Tap <strong className="font-medium text-foreground">Forgot password?</strong> and use the
+          email you paid with (check spam), or email{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-accent underline-offset-4 hover:underline">{SUPPORT_EMAIL}</a>.
+        </p>
       </div>
     </div>
   );

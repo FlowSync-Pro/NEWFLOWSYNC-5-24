@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { marketingEnabled } from "@/lib/marketing";
 import { runFollowups } from "@/lib/followups";
 import { runLeadFollowups } from "@/lib/leads";
+import { alertIfPaidUnrecorded } from "@/lib/paid-unrecorded";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,9 @@ function authorized(req: Request): boolean {
 
 export async function GET(req: Request) {
   if (!authorized(req)) return new NextResponse("Unauthorized", { status: 401 });
-  if (!marketingEnabled()) return NextResponse.json({ ok: true, skipped: "marketing email is off (no postal address set)" });
-  return NextResponse.json({ ok: true, results: [...(await runFollowups()), await runLeadFollowups()] });
+  // Safety check, not marketing — runs even when marketing email is off: anyone
+  // who paid in the last 2 days but isn't recorded on the site → owner email.
+  const paidCheck = await alertIfPaidUnrecorded();
+  if (!marketingEnabled()) return NextResponse.json({ ok: true, paidCheck, skipped: "marketing email is off (no postal address set)" });
+  return NextResponse.json({ ok: true, paidCheck, results: [...(await runFollowups()), await runLeadFollowups()] });
 }

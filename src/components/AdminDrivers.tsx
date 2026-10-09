@@ -57,7 +57,7 @@ function engagementDetail(d: AdminDriverRow): string {
   return `${last}${streak} · setup ${d.launchPct}%`;
 }
 
-function DriverCard({ driver }: { driver: AdminDriverRow }) {
+function DriverCard({ driver, focused }: { driver: AdminDriverRow; focused?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [tempPw, setTempPw] = useState<string | null>(null);
@@ -89,7 +89,7 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
   const premium = driver.tier === "PREMIUM";
 
   return (
-    <div className="card p-6">
+    <div id={`driver-${driver.id}`} className={`card scroll-mt-24 p-6 ${focused ? "ring-2 ring-accent" : ""}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -176,8 +176,9 @@ function DriverCard({ driver }: { driver: AdminDriverRow }) {
 
 type Tab = "review" | "unpaid" | "verified" | "cold" | "all";
 
-export default function AdminDrivers({ drivers }: { drivers: AdminDriverRow[] }) {
-  const [tab, setTab] = useState<Tab>("review");
+export default function AdminDrivers({ drivers, focusId }: { drivers: AdminDriverRow[]; focusId?: string }) {
+  // A link to one driver (?driver=<id>) opens the All tab so their card is on the page.
+  const [tab, setTab] = useState<Tab>(focusId && drivers.some((d) => d.id === focusId) ? "all" : "review");
 
   const buckets: Record<Tab, AdminDriverRow[]> = {
     review: drivers.filter((d) => !d.verified && d.paid),
@@ -218,7 +219,7 @@ export default function AdminDrivers({ drivers }: { drivers: AdminDriverRow[] })
         </div>
       ) : (
         <div className="space-y-4">
-          {shown.map((d) => <DriverCard key={d.id} driver={d} />)}
+          {shown.map((d) => <DriverCard key={d.id} driver={d} focused={d.id === focusId} />)}
         </div>
       )}
     </div>
