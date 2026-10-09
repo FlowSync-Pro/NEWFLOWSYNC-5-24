@@ -108,6 +108,20 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-09 (evening): owner alert wording for new fleet members
+Restore point: commit `fcee774` on the default branch (deployed, Ready — owner confirmed).
+No migrations and no new env vars. Owner-approved RISKY-by-file deploy (it lives in the
+Stripe webhook, `src/app/api/stripe/webhook/route.ts`), but text only: the "🚚 New Curri
+fleet member" alert now says to add them on the carrier account and mark "Activated on
+Curri" once they send their city and vehicle, that they set up Stripe payouts themselves
+(Payouts page), "Send Stripe setup link" on the admin page if they get stuck — plus a link
+to that driver's admin page. No change to what the webhook does.
+
+**Not yet verified:** the new wording appears only on the next real fleet purchase — check
+that alert email and tap the admin link. No test purchase needed.
+
+Everything else is unchanged from the checkpoints below (open owner-side items included).
+
 ## 📍 Checkpoint — 2026-10-09 (later): fleet sales pages — trust, real proof, SEO, verified live
 Restore point: commit `702e52b` on the default branch (deployed, Ready, verified on the live
 site by the owner). Copy, images and SEO only — no migrations, no env vars, no checkout,
