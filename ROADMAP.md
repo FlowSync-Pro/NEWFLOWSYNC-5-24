@@ -108,11 +108,29 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
-- **Stage 2c — Accept / Pass on the fleet page** (built after the checkpoint below; no
-  migration / env var): each open offer on `/account/curri-fleet` has ✅ Accept (asks first)
-  and Pass, running the same first-tap-wins path as Telegram; the owner's line says "(on the
-  website)"; a page Accept is confirmed on Telegram; drivers not on Telegram can answer too.
-  Details: `docs/DISPATCH-FLOW.md` → Stage 2c.
+## 📍 Checkpoint — 2026-10-09 (stage 2c): Accept / Pass on the fleet page
+Restore point: commit `4736f4b` on the default branch (deployed, Ready — owner confirmed).
+No migrations, no env vars, no new dependency. Changes the live dispatch path, so it went
+out on the owner's "push" after a two-driver test. Rollback: the previous deployment,
+`e60ea51`.
+
+Shipped (owner answers 2026-10-09, all yes): each open offer on `/account/curri-fleet` has
+**✅ Accept** (asks first: "only accept loads you'll run") and **Pass**. Same first-tap-wins
+path as Telegram — `answerMyOffer` checks the offer is the signed-in fleet member's, then
+`respondOffer`; `announceOfferAnswer` (now shared with the Telegram button handler) sends
+the owner's CLAIM NOW / place-bid / "passed" line first, tagged "(on the website)", then
+confirms a page Accept to the driver on Telegram. Drivers not on Telegram can answer too.
+The result shows as a notice (`?answer=<fixed code>`), in Telegram's words; driver-specific
+reasons (busy, wrong vehicle) show on the offer, which stays open. Limit: the Telegram offer
+message keeps its buttons after a page answer (tapping them later says "Already …").
+Tested: 24/24 (incl. page-vs-Telegram races, same-driver Accept+Pass, forged / non-member /
+signed-out refusals) and the earlier Telegram suite re-run clean.
+
+**Not yet verified live:** a "TEST — do not run" load offered to a driver → Accept on the
+fleet page → page says "You've got it", owner gets "ACCEPTED (on the website) … CLAIM NOW",
+driver gets the Telegram confirmation. Don't claim it in Curri; cancel it after.
+
+Still open: the live checks in the checkpoints below and everything owner-side.
 
 ## 📍 Checkpoint — 2026-10-09 (overnight): dates right everywhere
 Restore point: commit `0ecbd27` on the default branch (deployed, Ready — owner confirmed;
