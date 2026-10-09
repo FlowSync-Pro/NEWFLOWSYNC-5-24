@@ -6,6 +6,8 @@ import { addTrip, deleteTrip, addInspection, estimateTripMiles } from "@/app/act
 import { fileToScaledDataUrl } from "@/lib/image";
 import { INSPECTION_ITEMS, money, sumTrips, tripStats, type TripView } from "@/lib/trips";
 import TripMap from "./TripMap";
+import { calendarDay } from "@/lib/pt-time";
+import { deviceYmd, useDeviceToday } from "@/lib/use-device-today";
 
 export interface InspectionView {
   id: string;
@@ -16,7 +18,7 @@ export interface InspectionView {
 }
 
 const field = "w-full rounded-xl border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none focus:border-accent";
-const todayStr = () => new Date().toISOString().slice(0, 10);
+// Inspections are moments (logged "now"); shown on this device's calendar.
 const fmtDate = (s: string) => new Date(s).toLocaleDateString();
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
@@ -109,7 +111,9 @@ function InspectionSection({ inspections, onDone }: { inspections: InspectionVie
 
 function TripForm({ onDone }: { onDone: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [f, setF] = useState({ date: todayStr(), startAddress: "", pickupAddress: "", dropoffAddress: "", earnings: "", paidMiles: "", deadheadMiles: "", fuel: "", tolls: "", otherExpenses: "", durationMinutes: "", notes: "" });
+  // date "" = today on the driver's own calendar (filled in once the page is in their browser).
+  const today = useDeviceToday();
+  const [f, setF] = useState({ date: "", startAddress: "", pickupAddress: "", dropoffAddress: "", earnings: "", paidMiles: "", deadheadMiles: "", fuel: "", tolls: "", otherExpenses: "", durationMinutes: "", notes: "" });
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [calc, setCalc] = useState(false);
@@ -141,20 +145,20 @@ function TripForm({ onDone }: { onDone: () => void }) {
     e.preventDefault();
     setBusy(true); setError(null);
     const res = await addTrip({
-      date: f.date, pickupAddress: f.pickupAddress, dropoffAddress: f.dropoffAddress,
+      date: f.date || today || deviceYmd(), pickupAddress: f.pickupAddress, dropoffAddress: f.dropoffAddress,
       earnings: Number(f.earnings), paidMiles: Number(f.paidMiles), deadheadMiles: Number(f.deadheadMiles),
       fuel: Number(f.fuel), tolls: Number(f.tolls), otherExpenses: Number(f.otherExpenses),
       durationMinutes: Number(f.durationMinutes), notes: f.notes, photos,
     });
     setBusy(false);
-    if (res.ok) { setF({ date: todayStr(), startAddress: "", pickupAddress: "", dropoffAddress: "", earnings: "", paidMiles: "", deadheadMiles: "", fuel: "", tolls: "", otherExpenses: "", durationMinutes: "", notes: "" }); setPhotos([]); setCalcMsg(null); onDone(); }
+    if (res.ok) { setF({ date: "", startAddress: "", pickupAddress: "", dropoffAddress: "", earnings: "", paidMiles: "", deadheadMiles: "", fuel: "", tolls: "", otherExpenses: "", durationMinutes: "", notes: "" }); setPhotos([]); setCalcMsg(null); onDone(); }
     else setError(res.error ?? "Couldn't save the trip.");
   };
 
   return (
     <form onSubmit={submit} className="card space-y-3 p-6 lg:sticky lg:top-24">
       <h2 className="text-lg font-semibold">Log a trip</h2>
-      <input className={field} type="date" value={f.date} onChange={(e) => set("date", e.target.value)} />
+      <input className={field} type="date" value={f.date || today} onChange={(e) => set("date", e.target.value)} />
       <input className={field} placeholder="Starting location (optional — for deadhead)" value={f.startAddress} onChange={(e) => set("startAddress", e.target.value)} />
       <input className={field} placeholder="Pickup address" value={f.pickupAddress} onChange={(e) => set("pickupAddress", e.target.value)} required />
       <input className={field} placeholder="Drop-off address" value={f.dropoffAddress} onChange={(e) => set("dropoffAddress", e.target.value)} required />
@@ -219,7 +223,7 @@ function TripList({ trips, onDone }: { trips: TripView[]; onDone: () => void }) 
             <button onClick={() => setOpen(expanded ? null : t.id)} className="flex w-full items-center justify-between gap-4 p-5 text-left">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{t.pickupAddress} → {t.dropoffAddress}</p>
-                <p className="text-xs text-muted">{fmtDate(t.date)} · {s.totalMiles.toFixed(1)} mi ({t.deadheadMiles.toFixed(1)} deadhead)</p>
+                <p className="text-xs text-muted">{calendarDay(t.date)} · {s.totalMiles.toFixed(1)} mi ({t.deadheadMiles.toFixed(1)} deadhead)</p>
               </div>
               <div className="text-right">
                 <p className={`font-bold ${s.profitCents >= 0 ? "text-accent" : "text-red-400"}`}>{money(s.profitCents)}</p>

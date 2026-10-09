@@ -15,12 +15,11 @@ import AdminStripeConnect from "@/components/AdminStripeConnect";
 import AdminPayouts from "@/components/AdminPayouts";
 import AdminCurriActivation from "@/components/AdminCurriActivation";
 import { connectStatus, syncConnectStatus } from "@/lib/stripe-connect";
-import { ptDay } from "@/lib/pt-time";
+import { calendarDay, ptDay } from "@/lib/pt-time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Driver operations", robots: { index: false } };
 
-const fmt = (d: Date) => d.toLocaleDateString();
 
 export default async function AdminDriverOps({ params, searchParams }: PageProps<"/admin/drivers/[id]">) {
   const session = await getSession();
@@ -199,7 +198,7 @@ export default async function AdminDriverOps({ params, searchParams }: PageProps
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{t.pickupAddress} → {t.dropoffAddress}</p>
-                      <p className="text-xs text-muted">{fmt(new Date(t.date))} · {s.totalMiles.toFixed(1)} mi ({t.deadheadMiles.toFixed(1)} deadhead) · {Math.floor(t.durationMinutes / 60)}h {t.durationMinutes % 60}m</p>
+                      <p className="text-xs text-muted">{calendarDay(t.date)} · {s.totalMiles.toFixed(1)} mi ({t.deadheadMiles.toFixed(1)} deadhead) · {Math.floor(t.durationMinutes / 60)}h {t.durationMinutes % 60}m</p>
                     </div>
                     <div className="text-right">
                       <p className={`font-bold ${s.profitCents >= 0 ? "text-accent" : "text-red-400"}`}>{money(s.profitCents)}</p>

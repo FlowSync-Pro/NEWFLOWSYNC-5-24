@@ -114,9 +114,13 @@ owner's Vercel/Stripe/Resend accounts, then deploy.
   dates (license expiry, verified-load date) show exactly as entered (`calendarDay`, UTC) —
   a license expiring Mar 15 no longer reads "3/14"; the admin "add completed load" form
   defaults to today in PT. The license expired/valid rule is unchanged (safety rule).
-  **Open, needs owner approval:** the driver trip log (P&L) date pre-fill/display mismatch
-  (fixing the display alone would shift past evening entries a day), and the payout form's
-  "Delivered on" default (UTC "tomorrow" in the evening; payments area).
+  **Then (owner-approved 2026-10-09):** the driver trip log and the free P&L tool pre-fill
+  today on the driver's OWN calendar (`useDeviceToday`, `src/lib/use-device-today.ts` —
+  blank during the server render, then the device's date) instead of the UTC date, and
+  trips show as entered (`calendarDay`) on the trip log, the driver's photo list and the
+  admin driver page. Past trips logged on an evening with the old pre-fill now show the
+  date actually saved (a day later than before) — expected, no data changed. The payout
+  form's "Delivered on" defaults to and caps at today in Pacific time.
 
 ## 📍 Checkpoint — 2026-10-09 (late night): driver messages also reach the owner by email
 Restore point: commit `f52e225` on the default branch (deployed, Ready — owner confirmed).

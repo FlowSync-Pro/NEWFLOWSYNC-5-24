@@ -16,9 +16,9 @@ import {
   type Tx,
   type TxType,
 } from "@/lib/pnl";
+import { deviceYmd, useDeviceToday } from "@/lib/use-device-today";
 
 const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
-const todayStr = () => new Date().toISOString().slice(0, 10);
 // Module-scope so the render-purity lint rule doesn't flag the Date.now() call.
 const makeTxId = () => `${Date.now()}`;
 
@@ -40,7 +40,9 @@ export default function ProfitLossTracker({ cloud = false }: { cloud?: boolean }
   const [type, setType] = useState<TxType>("income");
   const [category, setCategory] = useState(INCOME_CATEGORIES[0]);
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(todayStr());
+  // date "" = today on this device's calendar (filled in once the page is in the browser).
+  const today = useDeviceToday();
+  const [date, setDate] = useState("");
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -108,7 +110,7 @@ export default function ProfitLossTracker({ cloud = false }: { cloud?: boolean }
       type,
       category,
       amount: amt,
-      date: date || todayStr(),
+      date: date || today || deviceYmd(),
       note: note.trim() || undefined,
     };
     update([tx, ...txs]);
@@ -233,7 +235,7 @@ export default function ProfitLossTracker({ cloud = false }: { cloud?: boolean }
                 <label className="text-sm font-medium">Date</label>
                 <input
                   type="date"
-                  value={date}
+                  value={date || today}
                   onChange={(e) => setDate(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none focus:border-accent"
                 />

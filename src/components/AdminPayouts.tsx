@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cancelPayout, logDeliveryForDriver, payPayoutNow, setPayPlan } from "@/app/actions/admin";
 import { FLEET } from "@/lib/pricing";
+import { ptDate } from "@/lib/pt-time";
 
 export interface PayoutRow {
   id: string;
@@ -19,7 +20,8 @@ export interface PayoutRow {
 
 const $ = (c: number) => `$${(c / 100).toFixed(2)}`;
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-const today = () => new Date().toISOString().slice(0, 10);
+// Today in Pacific time — the owner's calendar; the UTC date is already "tomorrow" on a PT evening.
+const today = () => ptDate(new Date());
 
 const STATUS_CLS: Record<PayoutRow["status"], string> = {
   PENDING: "bg-surface-2 text-muted",

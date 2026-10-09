@@ -197,7 +197,7 @@ export default function DriverExperienceEditor({
             {photoTrips.map((t) => (
               <div key={t.tripId} className="card p-5">
                 <p className="text-sm font-medium">{t.route}</p>
-                <p className="text-xs text-muted">{new Date(t.date).toLocaleDateString()}</p>
+                <p className="text-xs text-muted">{calendarDay(t.date)}</p>
                 <div className="mt-3 flex flex-wrap gap-3">
                   {t.photos.map((p, i) => {
                     const isPublic = t.publicPhotos.includes(p);
