@@ -23,7 +23,7 @@ export default async function AccountEditPage() {
 
   const db = await prisma.driverProfile.findUnique({
     where: { userId: session.userId },
-    include: { documents: true },
+    include: { documents: true, vehicles: { orderBy: { sortOrder: "asc" } } },
   });
   if (!db) redirect("/account/setup");
 

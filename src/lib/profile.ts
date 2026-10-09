@@ -11,10 +11,14 @@ export interface DriverProfile {
   // without a primaryService aren't publicly listed until they pick one.
   primaryService?: ServiceId;
   additionalServices: ServiceId[];
-  // vehicle
+  // vehicle (the main one; dispatch and emails read these)
   vehicleType: string;
   vehicleMakeModel: string;
   vehicleYear: string;
+  /** Accessories on the main vehicle — only from lib/vehicles.ts accessoriesFor(vehicleType). */
+  vehicleAccessories: string[];
+  /** Extra vehicles. The VIN is for the driver's and owner's records only — blank on public pages. */
+  vehicles: ExtraVehicle[];
   // where the driver starts the day (5-digit ZIP) — fleet dispatch matching
   baseZip: string;
   // profile
@@ -34,6 +38,16 @@ export interface DriverProfile {
   // "STANDARD" | "PREMIUM"
   tier?: string;
   externalWebsiteUrl?: string;
+}
+
+export interface ExtraVehicle {
+  /** Database id; "" for one the driver just added and hasn't saved. */
+  id: string;
+  type: string;
+  makeModel: string;
+  year: string;
+  vin: string;
+  accessories: string[];
 }
 
 export type DocKey =

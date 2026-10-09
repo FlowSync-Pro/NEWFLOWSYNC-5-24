@@ -11,7 +11,9 @@ import {
   WEEKDAYS,
   type DocKey,
   type DriverProfile,
+  type ExtraVehicle,
 } from "@/lib/profile";
+import { VEHICLE_TYPES, accessoriesFor, pruneAccessories } from "@/lib/vehicles";
 import { getService, SERVICES, type ServiceId } from "@/lib/services";
 import { isPremiumTier } from "@/lib/pricing";
 import { fileToScaledDataUrl, fileToSquareDataUrl } from "@/lib/image";
@@ -19,9 +21,8 @@ import UpgradeButton from "./UpgradeButton";
 import { saveDriverProfile, type ProfileInput } from "@/app/actions/profile";
 import { saveDocument, removeDocument } from "@/app/actions/documents";
 import { logout } from "@/app/actions/auth";
-import { TextField, TextArea, ChipSelect, TagInput } from "./inputs";
+import { TextField, TextArea, ChipSelect, ChipMulti, TagInput } from "./inputs";
 
-const VEHICLE_TYPES = ["Sedan", "SUV", "Minivan", "Pickup truck", "Cargo van", "Sprinter van", "Box truck", "Bike / scooter"];
 const RADII = ["Within 5 mi", "Within 15 mi", "Within 30 mi", "Regional"];
 const LANGS = ["English", "Spanish", "Mandarin", "French", "Vietnamese", "Tagalog"];
 
@@ -168,6 +169,16 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
     }
   };
 
+  // Accessories belong to a vehicle type: changing the type drops any that
+  // aren't on the new list (Sedan / Minivan / SUV have none, so they clear).
+  const setVehicleType = (t: string) =>
+    setProfile((p) => ({ ...p, vehicleType: t, vehicleAccessories: pruneAccessories(t, p.vehicleAccessories) }));
+  const setVehicle = (i: number, patch: Partial<ExtraVehicle>) =>
+    setProfile((p) => ({ ...p, vehicles: p.vehicles.map((v, k) => (k === i ? { ...v, ...patch } : v)) }));
+  const addVehicle = () =>
+    setProfile((p) => ({ ...p, vehicles: [...p.vehicles, { id: "", type: "", makeModel: "", year: "", vin: "", accessories: [] }] }));
+  const removeVehicle = (i: number) => setProfile((p) => ({ ...p, vehicles: p.vehicles.filter((_, k) => k !== i) }));
+
   const toggleDay = (day: string) =>
     setProfile((p) => ({
       ...p,
@@ -194,13 +205,19 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
       vehicleType: profile.vehicleType,
       vehicleMakeModel: profile.vehicleMakeModel,
       vehicleYear: profile.vehicleYear,
+      vehicleAccessories: profile.vehicleAccessories,
+      vehicles: profile.vehicles.map((v) => ({ id: v.id, type: v.type, makeModel: v.makeModel, year: v.year, vin: v.vin, accessories: v.accessories })),
       baseZip: profile.baseZip,
       additionalServices: profile.additionalServices,
       serviceDetails: profile.serviceDetails,
       externalWebsiteUrl: profile.externalWebsiteUrl,
     };
     try {
-      await saveDriverProfile(input);
+      const r = await saveDriverProfile(input);
+      if (!r.ok) {
+        setError(r.error);
+        return;
+      }
       flash();
     } catch {
       setError("Couldn't save your changes. Please try again.");
@@ -385,11 +402,20 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
       {/* Vehicle */}
       <section className="card mt-6 space-y-5 p-7">
         <h2 className="text-lg font-semibold">Vehicle</h2>
-        <ChipSelect label="Vehicle type" options={VEHICLE_TYPES} value={profile.vehicleType} onChange={(v) => set("vehicleType", v)} />
+        <ChipSelect label="Vehicle type" options={[...VEHICLE_TYPES]} value={profile.vehicleType} onChange={setVehicleType} />
         <div className="grid gap-5 sm:grid-cols-2">
           <TextField label="Make & model" value={profile.vehicleMakeModel} onChange={(v) => set("vehicleMakeModel", v)} placeholder="Toyota RAV4" />
           <TextField label="Year" value={profile.vehicleYear} onChange={(v) => set("vehicleYear", v)} placeholder="2021" />
         </div>
+        {accessoriesFor(profile.vehicleType).length > 0 && (
+          <ChipMulti
+            label="Accessories you have"
+            hint="Tick what's on this vehicle. Customers can filter the directory by these."
+            options={[...accessoriesFor(profile.vehicleType)]}
+            value={profile.vehicleAccessories}
+            onChange={(v) => set("vehicleAccessories", v)}
+          />
+        )}
         <div>
           <TextField label="Home base ZIP code" value={profile.baseZip} onChange={(v) => set("baseZip", v.replace(/[^\d-]/g, "").slice(0, 10))} placeholder="93701" />
           <p className="mt-1 text-xs text-muted">
@@ -397,6 +423,50 @@ export default function AccountEditor({ initial, isAdmin = false }: { initial: D
             {profile.baseZip && !/^\d{5}(-\d{4})?$/.test(profile.baseZip.trim()) && <span className="text-red-400"> Enter a 5-digit ZIP.</span>}
           </p>
         </div>
+      </section>
+
+      {/* More vehicles */}
+      <section className="card mt-6 space-y-5 p-7">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">More vehicles</h2>
+            <p className="mt-1 text-sm text-muted">
+              Run more than one? Add each so customers filtering by vehicle can find you. The VIN is required and stays private.
+            </p>
+          </div>
+          <button type="button" onClick={addVehicle} className="btn-ghost shrink-0 rounded-full px-4 py-2 text-sm">+ Add a vehicle</button>
+        </div>
+        {profile.vehicles.length === 0 && <p className="text-sm text-muted">No extra vehicles yet.</p>}
+        {profile.vehicles.map((v, i) => (
+          <div key={v.id || `new-${i}`} className="space-y-4 rounded-xl border border-border bg-surface-2 p-5">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Vehicle {i + 2}</p>
+              <button type="button" onClick={() => removeVehicle(i)} className="text-xs text-red-400 hover:underline">Remove</button>
+            </div>
+            <ChipSelect
+              label="Vehicle type"
+              options={[...VEHICLE_TYPES]}
+              value={v.type}
+              onChange={(t) => setVehicle(i, { type: t, accessories: pruneAccessories(t, v.accessories) })}
+            />
+            <div className="grid gap-5 sm:grid-cols-3">
+              <TextField label="Make & model" value={v.makeModel} onChange={(x) => setVehicle(i, { makeModel: x })} placeholder="Ford Transit" />
+              <TextField label="Year" value={v.year} onChange={(x) => setVehicle(i, { year: x })} placeholder="2019" />
+              <div>
+                <TextField label="VIN" value={v.vin} onChange={(x) => setVehicle(i, { vin: x.toUpperCase().slice(0, 17) })} placeholder="17 characters" />
+                <p className="mt-1 text-xs text-muted">Required. Kept private — never shown to customers.</p>
+              </div>
+            </div>
+            {accessoriesFor(v.type).length > 0 && (
+              <ChipMulti
+                label="Accessories you have"
+                options={[...accessoriesFor(v.type)]}
+                value={v.accessories}
+                onChange={(a) => setVehicle(i, { accessories: a })}
+              />
+            )}
+          </div>
+        ))}
       </section>
 
       {/* Service-specific */}

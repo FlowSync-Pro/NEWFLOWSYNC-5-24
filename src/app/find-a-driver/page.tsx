@@ -30,6 +30,9 @@ export default async function FindADriverPage() {
       // verified and unexpired).
       verifiedLoads: { select: { rating: true } },
       licenses: { select: { kind: true, customLabel: true, status: true, expiresAt: true } },
+      // Extra vehicles for the vehicle filter: the type they picked and its
+      // accessories only — no make/model, never the VIN.
+      vehicles: { select: { type: true, accessories: true }, orderBy: { sortOrder: "asc" } },
     },
     // Premium first, then newest. The component also re-groups Premium into
     // a "Featured" section visually; ordering here keeps SSR snapshot tidy.
@@ -53,6 +56,12 @@ export default async function FindADriverPage() {
       tier: db.tier,
       rating: xp.rating,
       credentials: xp.credentials,
+      // Main vehicle first (the one dispatch uses), then the extras. A driver
+      // with no vehicle on file has an empty list and shows under "All" only.
+      vehicles: [
+        ...(db.vehicleType?.trim() ? [{ type: db.vehicleType.trim(), accessories: db.vehicleAccessories }] : []),
+        ...db.vehicles.map((v) => ({ type: v.type, accessories: v.accessories })),
+      ],
     });
   }
 

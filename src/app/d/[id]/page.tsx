@@ -22,6 +22,9 @@ async function fetchProfile(id: string) {
       trips: { select: { publicPhotos: true } },
       verifiedLoads: { orderBy: { date: "desc" } },
       licenses: true,
+      // Extra vehicles for the Vehicle box — selected WITHOUT the VIN, which
+      // is never loaded into a public page.
+      vehicles: { select: { id: true, type: true, makeModel: true, year: true, accessories: true }, orderBy: { sortOrder: "asc" } },
       _count: { select: { trips: true } },
     },
   });

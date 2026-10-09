@@ -30,6 +30,8 @@ export default async function ProfilePage() {
       trips: { select: { publicPhotos: true } },
       verifiedLoads: { orderBy: { date: "desc" } },
       licenses: true,
+      // Same public shape as /d/[id] — no VIN — so the preview matches.
+      vehicles: { select: { id: true, type: true, makeModel: true, year: true, accessories: true }, orderBy: { sortOrder: "asc" } },
       _count: { select: { trips: true } },
     },
   });
