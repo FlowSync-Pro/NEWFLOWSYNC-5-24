@@ -108,20 +108,36 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
-- **Recovery page upgrade** (after the checkpoint below; owner "go both" 2026-10-09; copy +
-  one read-only list, no migration / env var): fleet recovery texts link `/curri-fleet` and
-  mention pay over time; every sales row has its one follow-up (fleet: honest room-this-month
-  from real activation counts); new "Fleet drivers — ask for a referral" list. The abandoned-
-  checkout owner alert (Stripe webhook) carries the new fleet text too — deployed on the
-  owner's "push".
+## 📍 Checkpoint — 2026-10-09 (afternoon): recovery page + "Paid, can't get in" — verified live
+Restore point: commit `1fd110f` on the default branch (merge of PR #57; deployed and
+verified on the live site by the owner). No migrations, no env vars, no new dependency;
+read-only plus copy. Both pieces touch Stripe-adjacent code, so both went out on the
+owner's go. Rollback: the deployment before `d28737a`, which is `fd34191`.
 
-- **"Paid, can't get in" safety net** (branch `claude/paid-cant-get-in`, opened as a PR; owner
-  "go all 3" 2026-10-09 after a $47 buyer couldn't sign in): (1) first tab on
-  `/admin/recovery` — paid in Stripe but not recorded on the site / still on the temporary
-  password / never finished setup, with support texts and a link to the driver's admin
-  card (Reset password); (2) daily safety email from the 7 AM job when a paid checkout from
-  the last 2 days isn't recorded (requires `CRON_SECRET` in Vercel); (3) a help line on the
-  sign-in page. Read-only; no migration / env var. Deploys when the PR is merged.
+Shipped:
+- **Recovery page upgrade** (`d28737a`, owner "go both"): fleet recovery texts link
+  `/curri-fleet` (real runs) and mention pay over time (Klarna/Afterpay/Affirm, "if you're
+  eligible"); every sales row has its one follow-up ("last one from me on this"; the fleet
+  one says "still room this month" only when this month's activations are under the cap of
+  10, otherwise "first in line for next month"); new "Fleet drivers — ask for a referral"
+  list with each driver's existing link and the $50 terms (read-only, never creates codes).
+  The abandoned-checkout owner alert carries the new fleet text too.
+- **"Paid, can't get in"** (PR #57, `356df30`, owner "go all 3" after a $47 buyer couldn't
+  sign in): first tab on `/admin/recovery` — paid in Stripe but not recorded on the site
+  (no Payment row for the session, `src/lib/paid-unrecorded.ts`; fix = Resend in Stripe),
+  paid but still on the temporary password (Forgot-password text + link that opens their
+  card on `/admin` with Reset password), and paid + signed in but never finished setup;
+  name/phone come from the Stripe checkout when there's no profile. Daily safety email from
+  `/api/cron/followups` (runs before the marketing gate) when a paid checkout from the last
+  2 days isn't recorded. Sign-in page line: "Paid but can't get in? Tap Forgot password? …".
+- **Workflow note:** the owner promoted the PR's preview to production in Vercel before
+  merging. It was merged minutes later, so main matches live again. Next time: merge first
+  (merging deploys); promoting an unmerged preview means the next push to main would undo it.
+
+**Owner-side, open:** confirm `CRON_SECRET` is set in Vercel (without it the daily safety
+email and the daily follow-up emails don't run); text Anthony (paid $47 Oct 8, still on the
+temporary password, no profile) the Forgot-password steps; text/email the $97 buyer from
+Sep 30 who never finished setup. Plus everything owner-side in the checkpoints below.
 
 ## 📍 Checkpoint — 2026-10-09 (stage 2c): Accept / Pass on the fleet page — verified live
 Restore point: commit `4736f4b` on the default branch (deployed, Ready, and the Accept
