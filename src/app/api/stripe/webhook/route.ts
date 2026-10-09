@@ -431,11 +431,14 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     vehicleType: user.driverProfile?.vehicleType,
   }));
 
-  // The carrier-account add and the Stripe Connect link are manual steps.
+  // The carrier-account add is a manual step; drivers set up Stripe payouts
+  // themselves at /account/payouts (the admin page can still send a link).
   await alertOwner(
     `🚚 New Curri fleet member: ${firstName} ${user.driverProfile?.lastName ?? md.lastName ?? ""}\n` +
       `Email: ${user.email}\nPaid: $${((session.amount_total ?? 0) / 100).toFixed(2)} (${md.source ?? "homepage"})\n\n` +
-      `Next: add them on the carrier account and send their Stripe setup link once they reply with their details.`,
+      `Next: once they send their city and vehicle, add them on the carrier account and mark "Activated on Curri" on their admin page. ` +
+      `They set up Stripe payouts themselves from their account (Payouts page) — if they get stuck, use "Send Stripe setup link" on their admin page.` +
+      (user.driverProfile ? `\n${base}/admin/drivers/${user.driverProfile.id}` : ""),
   );
 
   if (md.ref && tempPassword) await attributeReferral(user.id, md.ref);

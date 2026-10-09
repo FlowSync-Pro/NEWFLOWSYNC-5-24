@@ -144,9 +144,10 @@ name only; blur customer names, addresses, labels and photos; show no payment me
 than Stripe; captions state only what the screenshot shows; keep "not a promise" beside any
 dollar figure. Re-run `make-proof`-style cropping (sharp is already installed via Next.js).
 
-Known, not done (small, ask first): the new-fleet-member alert email still says "send their
-Stripe setup link" (`src/app/api/stripe/webhook/route.ts` — Stripe webhook file); the fleet
-page reads the cached Stripe "payouts enabled" flag.
+Known, not done (small, ask first): the fleet page reads the cached Stripe "payouts
+enabled" flag. (Fixed after this checkpoint, owner-approved: the new-fleet-member alert email
+no longer says "send their Stripe setup link" — it points to self-serve payouts and the admin
+driver page.)
 
 Open, owner-side: Search Console "Request indexing" for `/curri-fleet`; optionally Apple
 Pay / Google Pay in Stripe → Settings → Payment methods; more proof media (delivery-detail
