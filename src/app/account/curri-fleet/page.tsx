@@ -14,6 +14,7 @@ import TelegramConnect from "@/components/TelegramConnect";
 import { DUTY_DEFAULTS, vehicleClassFromType, vehicleClassLabel } from "@/lib/dispatch";
 import { telegramBotUsername } from "@/lib/telegram";
 import { feePercentFor, splitLoad } from "@/lib/payouts";
+import { syncConnectStatus } from "@/lib/stripe-connect";
 import { ptClock, ptTime } from "@/lib/pt-time";
 import type { DispatchLane, DispatchStatus, PayPlan, VehicleClass } from "@prisma/client";
 
@@ -118,6 +119,28 @@ async function getMyDispatch(profileId: string) {
 
 const dollars = (c: number) => `$${(c / 100).toFixed(2)}`;
 
+/**
+ * Whether the driver's Stripe payouts are ready. The saved flag only updates
+ * when something asks Stripe, so a driver who finished Stripe's form and came
+ * straight here would still see "set up payouts". When they have a Stripe
+ * account but the flag says not ready, ask Stripe (the same sync the Payouts
+ * page runs) — capped at 3 s so a slow Stripe never holds the page up; on a
+ * timeout or no Stripe key, the saved flag is used. Ready drivers cost no call.
+ */
+async function payoutsReady(userId: string, u: { stripeConnectAccountId: string | null; stripeConnectPayoutsEnabled: boolean } | null): Promise<boolean> {
+  if (!u?.stripeConnectAccountId || u.stripeConnectPayoutsEnabled) return !!u?.stripeConnectPayoutsEnabled;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), 3000); });
+  try {
+    const synced = await Promise.race([syncConnectStatus(userId), timeout]);
+    return synced?.payoutsEnabled ?? false;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** The same pay line the Telegram offer shows: the driver's net after their plan's fee. */
 function payText(load: MyLoad, plan: PayPlan): string | null {
   const gross = load.bidCents ?? load.listedCents;
@@ -165,11 +188,12 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
       where: { userId: session.userId },
       select: { id: true, firstName: true, baseZip: true, vehicleType: true, onDutyUntil: true, dutyRadiusMiles: true, dutyMaxTripMiles: true, curriActivatedAt: true },
     }),
-    prisma.user.findUnique({ where: { id: session.userId }, select: { fleetJoinedAt: true, telegramChatId: true, payPlan: true, stripeConnectPayoutsEnabled: true } }),
+    prisma.user.findUnique({ where: { id: session.userId }, select: { fleetJoinedAt: true, telegramChatId: true, payPlan: true, stripeConnectAccountId: true, stripeConnectPayoutsEnabled: true } }),
   ]);
   if (!profile) redirect("/account/setup");
 
   const joined = !!user?.fleetJoinedAt;
+  const stripeReady = joined ? await payoutsReady(session.userId, user) : false;
   // Dispatch backup view — fleet members only; non-members cost no extra queries.
   const mine = joined ? await getMyDispatch(profile.id) : null;
   const botUsername = telegramBotUsername();
@@ -223,7 +247,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground/90">
               <li>Your city</li>
               <li>Your vehicle (year, make, model)</li>
-              {user?.stripeConnectPayoutsEnabled
+              {stripeReady
                 ? <li>Payouts: set up ✓</li>
                 : <li>Then set up payouts below (bank details go straight to Stripe, about 5 minutes)</li>}
               <li>Standard pay (every Friday, {FLEET.dispatchFeePercent}%) or faster pay (1–2 business days, {FLEET.fastPayoutFeePercent}%)</li>
@@ -236,7 +260,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
                 Email {SUPPORT_EMAIL}
               </a>
               <Link href="/account/payouts" className="btn-ghost inline-flex rounded-full px-6 py-2.5 text-sm">
-                {user?.stripeConnectPayoutsEnabled ? "Your payouts →" : "Set up payouts →"}
+                {stripeReady ? "Your payouts →" : "Set up payouts →"}
               </Link>
             </div>
             {telegram && (
@@ -444,7 +468,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
         {/* Stripe is how every payout is delivered and how the 1099 gets issued.
             Members set it up themselves on /account/payouts (Stripe Connect
             Express — not a separate stripe.com account). */}
-        {joined && user?.stripeConnectPayoutsEnabled ? (
+        {joined && stripeReady ? (
           <section className="card mt-6 p-6">
             <h2 className="text-lg font-bold tracking-tight text-accent">Payouts are set up ✓</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">

@@ -158,10 +158,12 @@ name only; blur customer names, addresses, labels and photos; show no payment me
 than Stripe; captions state only what the screenshot shows; keep "not a promise" beside any
 dollar figure. Re-run `make-proof`-style cropping (sharp is already installed via Next.js).
 
-Known, not done (small, ask first): the fleet page reads the cached Stripe "payouts
-enabled" flag. (Fixed after this checkpoint, owner-approved: the new-fleet-member alert email
-no longer says "send their Stripe setup link" — it points to self-serve payouts and the admin
-driver page.)
+Known, not done: nothing open from this checkpoint. (Fixed after it, owner-approved: the
+new-fleet-member alert email no longer says "send their Stripe setup link"; and the fleet
+page now asks Stripe for the real payouts status when the saved flag says "not ready" —
+capped at 3 s, no call for drivers already ready. A driver whose payouts Stripe later
+disables still shows "set up ✓" until the Payouts page, the admin page or a payout run
+re-syncs; payouts themselves always re-check before sending.)
 
 Open, owner-side: Search Console "Request indexing" for `/curri-fleet`; optionally Apple
 Pay / Google Pay in Stripe → Settings → Payment methods; more proof media (delivery-detail
