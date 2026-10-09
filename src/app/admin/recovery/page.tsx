@@ -11,14 +11,18 @@ import {
   fleetPitchText,
   fleetReferralLink,
   listingFollowUpText,
+  paidNotRecordedText,
   premiumFollowUpText,
   premiumPitchText,
   recoveryText,
   referralAskText,
+  stuckNoPasswordText,
+  unfinishedSetupText,
   unpaidFollowUpText,
   unpaidSignupText,
 } from "@/lib/recovery";
-import { fromPtWallClock, ptDate, ptDay } from "@/lib/pt-time";
+import { fromPtWallClock, ptDate, ptDay, ptTime } from "@/lib/pt-time";
+import { checkoutContacts, paidButUnrecorded, productLabel } from "@/lib/paid-unrecorded";
 import RecoveryLists, { type RecoveryGroup, type RecoveryRow } from "@/components/RecoveryLists";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +32,7 @@ const LOOKBACK_DAYS = 60;
 const MAX_SESSIONS = 600;
 
 const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000);
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000);
 
 const ago = (d: Date) => {
   const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
@@ -102,7 +107,39 @@ export default async function AdminRecoveryPage() {
 
   const since = daysAgo(90);
   const spots = await fleetSpotsThisMonth();
-  const [abandoned, unpaid, paidNotFleet, fleetMembers] = await Promise.all([
+  const [unrecorded, noPassword, unfinished, abandoned, unpaid, paidNotFleet, fleetMembers] = await Promise.all([
+    // Paid in Stripe, but the site never recorded it (no account / upgrade made).
+    paidButUnrecorded(30),
+    // Paid over an hour ago, account made, but still on the temporary password.
+    prisma.user.findMany({
+      where: {
+        role: "DRIVER",
+        mustResetPassword: true,
+        payments: { some: { status: "PAID", type: { in: ["LISTING", "FLEET"] }, createdAt: { gte: daysAgo(30), lte: hoursAgo(1) } } },
+      },
+      select: {
+        id: true, email: true, name: true,
+        driverProfile: { select: { id: true, firstName: true, phone: true } },
+        payments: { where: { status: "PAID" }, orderBy: { createdAt: "asc" }, take: 1, select: { amount: true, type: true, createdAt: true, stripeSessionId: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    }),
+    // Paid, signed in (set their password) but never finished setup — no profile, so no live listing.
+    prisma.user.findMany({
+      where: {
+        role: "DRIVER",
+        mustResetPassword: false,
+        driverProfile: { is: null },
+        payments: { some: { status: "PAID", type: { in: ["LISTING", "FLEET"] }, createdAt: { gte: daysAgo(30), lte: hoursAgo(1) } } },
+      },
+      select: {
+        id: true, email: true, name: true,
+        payments: { where: { status: "PAID" }, orderBy: { createdAt: "asc" }, take: 1, select: { amount: true, type: true, createdAt: true, stripeSessionId: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    }),
     abandonedCheckouts(spots.room),
     prisma.user.findMany({
       where: { role: "DRIVER", createdAt: { gte: since }, payments: { none: { status: "PAID" } } },
@@ -126,8 +163,68 @@ export default async function AdminRecoveryPage() {
   ]);
 
   const nameOf = (u: { name: string | null; driverProfile: { firstName: string } | null }) => u.driverProfile?.firstName || u.name?.split(" ")[0] || "";
+  // Buyers with no profile yet: the name and phone they typed at checkout (read from Stripe).
+  const contacts = await checkoutContacts(
+    [...noPassword.filter((u) => !u.driverProfile?.phone), ...unfinished].map((u) => u.payments[0]?.stripeSessionId).filter((x): x is string => !!x),
+  );
+  const contactOf = (sessionId: string | null | undefined) => (sessionId ? contacts.get(sessionId) : undefined);
+  const paidLine = (pay: { amount: number; type: string; createdAt: Date } | undefined) =>
+    pay ? `Paid $${(pay.amount / 100).toFixed(0)} ${pay.type === "FLEET" ? "fleet" : "listing"} · ${ptDay(pay.createdAt)}` : "Paid";
 
   const groups: RecoveryGroup[] = [
+    {
+      key: "stuck",
+      title: "Paid, can't get in",
+      blurb:
+        (unrecorded.error ? `${unrecorded.error} ` : "") +
+        `Already paid you — fix these first; a locked-out buyer is a refund or chargeback waiting to happen. ` +
+        `"NOT on the site" = Stripe's "payment succeeded" message never arrived: Stripe → Developers → Webhooks → your flowsyncdriver.com endpoint → open the failed checkout.session.completed for that session → Resend (safe — never records a payment twice). ` +
+        `If every delivery is failing, update STRIPE_WEBHOOK_SECRET in Vercel and redeploy first. ` +
+        `"Still on the temporary password" = account made, they never set their own: the text walks them through Forgot password (or open their card and tap Reset password, when they have one). ` +
+        `"Never finished setup" = signed in but no name / service yet, so their listing isn't live.`,
+      rows: [
+        ...unrecorded.rows.map((r) => ({
+          id: `u-${r.sessionId}`,
+          name: r.name,
+          email: r.email,
+          phone: r.phone,
+          meta: `Paid ${productLabel(r.product, r.amountCents)} · ${ptTime(r.created)} · NOT on the site (Stripe session ${r.sessionId})`,
+          text: paidNotRecordedText(r.firstName, r.existingAccount, r.product === "fleet" ? "Curri fleet" : r.product === "upgrade" ? "Premium upgrade" : "listing"),
+          mailSubject: "Your FlowSync payment",
+        })),
+        ...noPassword
+          .filter((u) => !isAdminEmail(u.email))
+          .map((u) => {
+            const pay = u.payments[0];
+            const c = contactOf(pay?.stripeSessionId);
+            return {
+              id: `np-${u.id}`,
+              name: u.driverProfile?.firstName ?? (c?.name || u.name || ""),
+              email: u.email,
+              phone: u.driverProfile?.phone ?? c?.phone ?? null,
+              meta: `${paidLine(pay)} · account made, still on the temporary password${u.driverProfile ? "" : " · no profile yet"}`,
+              text: stuckNoPasswordText(nameOf(u) || c?.name.split(" ")[0], u.email),
+              mailSubject: "Getting into your FlowSync account",
+              ...(u.driverProfile ? { link: { href: `/admin?driver=${u.driverProfile.id}#driver-${u.driverProfile.id}`, label: "Open their card (Reset password)" } } : {}),
+            };
+          }),
+        ...unfinished
+          .filter((u) => !isAdminEmail(u.email))
+          .map((u) => {
+            const pay = u.payments[0];
+            const c = contactOf(pay?.stripeSessionId);
+            return {
+              id: `ns-${u.id}`,
+              name: c?.name || u.name || "",
+              email: u.email,
+              phone: c?.phone ?? null,
+              meta: `${paidLine(pay)} · signed in but never finished setup — listing isn't live`,
+              text: unfinishedSetupText((c?.name || u.name || "").split(" ")[0]),
+              mailSubject: "Your FlowSync listing isn't live yet",
+            };
+          }),
+      ],
+    },
     {
       key: "abandoned",
       title: "Abandoned checkouts",

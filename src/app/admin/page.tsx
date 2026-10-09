@@ -48,7 +48,10 @@ function PipeStat({ label, value, tone }: { label: string; value: number; tone?:
   );
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
+  // ?driver=<profile id> (from the recovery page) opens that driver's card on the All tab.
+  const sp = await searchParams;
+  const focusDriverId = typeof sp.driver === "string" ? sp.driver : undefined;
   const session = await getSession();
   if (!session) redirect("/signin");
 
@@ -244,7 +247,7 @@ export default async function AdminPage() {
           <AdminAddDriver />
         </div>
         <div className="mt-3">
-          <AdminDrivers drivers={drivers} />
+          <AdminDrivers drivers={drivers} focusId={focusDriverId} />
         </div>
       </div>
     </div>

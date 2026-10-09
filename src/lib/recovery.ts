@@ -130,3 +130,32 @@ export function referralAskText(firstName: string | null | undefined, link: stri
     `— if you share it, just mention you get a bonus if they join.`
   );
 }
+
+// ---- Paid, can't get in -------------------------------------------------------
+// Support texts, not sales: these people already paid. No follow-up.
+
+/** Paid in Stripe but the site never recorded it — the owner is fixing it (Resend in Stripe). */
+export function paidNotRecordedText(firstName: string | null | undefined, existingAccount: boolean, what: string): string {
+  const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
+  return existingAccount
+    ? `${hi}it's Nas from FlowSync — got your payment for the ${what}, thank you! It isn't showing on your account yet; I'm fixing that now and will text you when it's done. Sorry for the wait.`
+    : `${hi}it's Nas from FlowSync — got your payment, thank you! Your account is still being set up on our side. You'll get an email with your login shortly — sorry for the wait. Reply here with any questions.`;
+}
+
+/** Paid and the account exists, but they never set their own password (still on the temporary one). */
+export function stuckNoPasswordText(firstName: string | null | undefined, email: string): string {
+  const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
+  return (
+    `${hi}it's Nas from FlowSync — your payment came through, but it looks like you haven't gotten into your account yet. ` +
+    `Go to ${base()}/forgot-password, enter ${email}, and you'll get a link to set your password (check spam for an email from FlowSync). Text me if it doesn't come.`
+  );
+}
+
+/** Paid and signed in, but never finished setup — their listing isn't live. */
+export function unfinishedSetupText(firstName?: string | null): string {
+  const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
+  return (
+    `${hi}it's Nas from FlowSync — thanks for joining! Your listing isn't live yet because your profile isn't finished. ` +
+    `Sign in at ${base()}/signin and add your name and the service you offer (about 2 minutes). Reply here if anything's in the way.`
+  );
+}

@@ -115,6 +115,14 @@ owner's Vercel/Stripe/Resend accounts, then deploy.
   checkout owner alert (Stripe webhook) carries the new fleet text too — deployed on the
   owner's "push".
 
+- **"Paid, can't get in" safety net** (branch `claude/paid-cant-get-in`, opened as a PR; owner
+  "go all 3" 2026-10-09 after a $47 buyer couldn't sign in): (1) first tab on
+  `/admin/recovery` — paid in Stripe but not recorded on the site / still on the temporary
+  password / never finished setup, with support texts and a link to the driver's admin
+  card (Reset password); (2) daily safety email from the 7 AM job when a paid checkout from
+  the last 2 days isn't recorded (requires `CRON_SECRET` in Vercel); (3) a help line on the
+  sign-in page. Read-only; no migration / env var. Deploys when the PR is merged.
+
 ## 📍 Checkpoint — 2026-10-09 (stage 2c): Accept / Pass on the fleet page — verified live
 Restore point: commit `4736f4b` on the default branch (deployed, Ready, and the Accept
 test verified on the live site by the owner).

@@ -258,8 +258,15 @@ lead magnets; the gated ones are the account versions.
 **Abandoned-checkout recovery (live):** new-buyer Checkouts (listing, homepage fleet)
 expire after 60 minutes with Stripe recovery on and a phone field (owner-approved
 personal-data field). `checkout.session.expired` → recovery email + owner alert email (to the support inbox + `ADMIN_EMAILS`) with a
-ready-to-send text. `/admin/recovery` lists abandoned checkouts, unpaid signups, paid
-non-fleet drivers, Verified-not-Premium drivers, and fleet drivers to ask for a referral
+ready-to-send text. `/admin/recovery` lists, FIRST, **"Paid, can't get in"** (owner decision 2026-10-09): paid
+in Stripe but never recorded on the site (no Payment row for the session —
+`src/lib/paid-unrecorded.ts`; fix = Resend in Stripe), paid but still on the temporary
+password, and paid + signed in but never finished setup (no profile, listing not live),
+each with a support text (name/phone from the Stripe checkout when there's no profile);
+the daily job `/api/cron/followups` runs the same Stripe check (last 2 days) BEFORE its
+marketing gate and emails the owner if anyone is unrecorded (needs `CRON_SECRET`), and the
+sign-in page says "Paid but can't get in? … Forgot password …". Then abandoned checkouts,
+unpaid signups, paid non-fleet drivers, Verified-not-Premium drivers, and fleet drivers to ask for a referral
 (their existing link + the $50 terms; read-only — no referral codes created there), with
 copy/SMS/mailto buttons; every sales row also carries its one follow-up. All
 message copy lives in `src/lib/recovery.ts`: current price, the real increase date while

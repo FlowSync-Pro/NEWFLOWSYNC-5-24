@@ -14,6 +14,8 @@ export interface RecoveryRow {
   /** The one follow-up: two days later, only if they haven't replied. None for favors (referral asks). */
   followUp?: string;
   mailSubject: string;
+  /** An admin page to act from (e.g. the driver's card with "Reset password"). */
+  link?: { href: string; label: string };
 }
 
 export interface RecoveryGroup {
@@ -87,6 +89,7 @@ export default function RecoveryLists({ groups }: { groups: RecoveryGroup[] }) {
                         {sms && <a href={sms} className="rounded-full border border-accent/40 bg-accent-soft px-4 py-2 text-xs font-medium text-accent">Text</a>}
                         {mail && <a href={mail} className="rounded-full border border-border px-4 py-2 text-xs text-muted hover:text-foreground">Email</a>}
                         <CopyButton value={r.text} />
+                        {r.link && <a href={r.link.href} className="rounded-full border border-border px-4 py-2 text-xs text-muted hover:text-foreground">{r.link.label}</a>}
                       </div>
                     </div>
                     <p className="mt-3 rounded-lg border border-border bg-surface-2 p-3 text-xs leading-relaxed text-muted">{r.text}</p>
