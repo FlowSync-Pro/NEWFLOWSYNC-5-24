@@ -12,6 +12,7 @@ import { SITE_URL } from "@/lib/site";
 import { createReviewInviteToken, REVIEW_INVITE_DAYS } from "@/lib/review-invite";
 import { alertIfEmailFailed } from "@/lib/alerts";
 import { sendAddCityBatch, type AddCityBatchResult } from "@/lib/add-city-email";
+import { sendFleetInviteBatch, type FleetInviteBatchResult } from "@/lib/fleet-invite-email";
 import { ensureConnectAccount, syncConnectStatus, type ConnectSync } from "@/lib/stripe-connect";
 import { cancelPayout as cancelPayoutRow, logDelivery, parseDollars, payAllPending as payAllPendingRows, payPayout, type PayAllSummary, type PayResult } from "@/lib/payouts";
 import { linkPayout } from "@/lib/dispatch";
@@ -128,6 +129,19 @@ export async function sendAddCityEmails(): Promise<{ ok: true; result: AddCityBa
     return { ok: true, result };
   } catch (e) {
     console.error("[add-city] batch failed:", e);
+    return { ok: false, error: "The batch stopped partway. Reload the page to see how many are still waiting, then try again." };
+  }
+}
+
+/** Owner-only: send the one-time Curri fleet invite to the next batch (see /admin/fleet-invite). */
+export async function sendFleetInviteEmails(): Promise<{ ok: true; result: FleetInviteBatchResult } | { ok: false; error: string }> {
+  await requireAdmin();
+  try {
+    const result = await sendFleetInviteBatch();
+    revalidatePath("/admin/fleet-invite");
+    return { ok: true, result };
+  } catch (e) {
+    console.error("[fleet-invite] batch failed:", e);
     return { ok: false, error: "The batch stopped partway. Reload the page to see how many are still waiting, then try again." };
   }
 }
