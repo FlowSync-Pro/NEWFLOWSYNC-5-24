@@ -17,14 +17,13 @@ export function listingPriceLine(): string {
     : `It's $${listingPrice()} one-time.`;
 }
 
-// The fleet is NOT covered by the 30-day guarantee (AGENTS.md §D): it's
-// refundable until activation, then earned. Same terms as FLEET.refundShort.
-const FLEET_REFUND_TEXT = "fully refundable until you're activated on our carrier account, then non-refundable";
-
-// Pay over time — Klarna, Afterpay and Affirm are on for the fleet checkout
-// (owner decision 2026-10-01; the lender pays us in full). Same words as the
-// site's FleetPayLaterNote: "if you're eligible" — the lenders decide.
-const PAY_LATER = "you can split it into payments at checkout (Klarna, Afterpay or Affirm, if you're eligible)";
+// Fleet texts (owner decision 2026-10-09): short and direct, one hook, one
+// guarantee, one link — nothing to think over. The guarantee is the fleet's own
+// (FLEET.refundShort; full terms on /refund-policy and at checkout), not the
+// listing's 30-day one. Never an income promise: it promises the REFUND.
+const FLEET_HOOK =
+  "Got a van, box truck or pickup + trailer? Join my Curri fleet: I bid the loads, you run the ones you want, paid every Friday.";
+const FLEET_GUARANTEE = `Make your $${FLEET.price} back in your first ${FLEET.guaranteeDays} days or I refund all of it. No questions asked.`;
 
 /** A driver's personal fleet referral link — the same one their account's "Refer drivers" card shows (ReferralCard). */
 export const fleetReferralLink = (code: string) => `${base()}/?ref=${code}#curri-fleet`;
@@ -33,11 +32,7 @@ export const fleetReferralLink = (code: string) => `${base()}/?ref=${code}#curri
 export function recoveryText(product: RecoveryProduct, firstName?: string | null): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
   if (product === "fleet") {
-    return (
-      `${hi}it's Nas from FlowSync. You started joining the Curri fleet but didn't finish — any question I can answer? ` +
-      `Here are real runs from one of our drivers: ${base()}/curri-fleet — $${FLEET.price} one-time, ${FLEET_REFUND_TEXT}. ` +
-      `And ${PAY_LATER}.`
-    );
+    return `${hi}Nas from FlowSync. ${FLEET_HOOK}\n\n${FLEET_GUARANTEE}\n\n${base()}/curri-fleet`;
   }
   return (
     `${hi}it's Nas from FlowSync. You started your driver listing but didn't finish. ` +
@@ -58,11 +53,7 @@ export function unpaidSignupText(firstName?: string | null): string {
 /** Text for a paid driver who isn't in the Curri fleet. */
 export function fleetPitchText(firstName?: string | null): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
-  return (
-    `${hi}it's Nas. I'm adding a few drivers to my Curri carrier account. I bid the loads, you run the ones you want, paid every Friday, ${FLEET.dispatchFeePercent}% dispatch fee, no monthly fee. ` +
-    `Real runs here: ${base()}/curri-fleet — $${FLEET.price} one-time, ${FLEET_REFUND_TEXT}, and ${PAY_LATER}. ` +
-    `Join from your account (Curri fleet): ${base()}/account/curri-fleet — or reply and I'll walk you through it.`
-  );
+  return `${hi}Nas from FlowSync. ${FLEET_HOOK}\n\n${FLEET_GUARANTEE}\n\nJoin from your account: ${base()}/account/curri-fleet`;
 }
 
 /** Text for a Verified driver who hasn't upgraded to Premium. */
@@ -83,17 +74,17 @@ const lastOne = (firstName?: string | null) => `${firstName ? `Hey ${firstName},
 
 /**
  * Fleet follow-up. `roomThisMonth` must come from real numbers — the admin
- * page compares this month's activations with FLEET.monthlyCap. When the month
- * is full it says so (first in line for next month) instead of claiming room.
+ * page compares this month's activations with FLEET.monthlyCap. It claims no
+ * room; when the month is full it says so, because the buyer would start next
+ * month (the guarantee's days count from activation, so they lose nothing).
  */
 export function fleetFollowUpText(firstName: string | null | undefined, roomThisMonth: boolean, from: "public" | "account"): string {
   const link = from === "account" ? `${base()}/account/curri-fleet` : `${base()}/curri-fleet`;
   return (
-    lastOne(firstName) +
-    (roomThisMonth
-      ? `I take on up to ${FLEET.monthlyCap} new fleet drivers a month and there's still room this month. `
-      : `This month's fleet spots are taken, so if you join now you'd be first in line for next month — still ${FLEET_REFUND_TEXT}. `) +
-    `If now's not the time, no worries: ${link}`
+    `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
+    `If the fleet doesn't pay for itself in your first ${FLEET.guaranteeDays} days, I refund the $${FLEET.price}. You can't lose. ` +
+    (roomThisMonth ? "" : "This month's spots are full, so you'd start next month. ") +
+    link
   );
 }
 

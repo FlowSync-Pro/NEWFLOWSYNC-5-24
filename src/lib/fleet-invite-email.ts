@@ -11,7 +11,7 @@ import { SITE_URL } from "@/lib/site";
 // driver (EmailLog kind below), 48h gap from other marketing email, unsubscribe
 // link and postal footer added for you. Every price and term comes from
 // lib/pricing.ts (AGENTS.md §D): $297 one-time, the 15% / 20% fee, the
-// refund-until-activated rule, the monthly cap. Never the offer-page prices.
+// make-it-back guarantee, the monthly cap. Never the offer-page prices.
 
 export const FLEET_INVITE_KIND = "fleet-invite-2026-10";
 /** Per click: 40 × (SEND_GAP_MS + a DB round trip) stays inside the page's 60s maxDuration. */
@@ -42,8 +42,8 @@ export function fleetInviteEmail(firstName: string): { subject: string; heading:
     </ul>
     <p ${P}><strong style="color:#e8eef1">Why a carrier account.</strong> Gig accounts wait to be offered a load at the listed price. We bid. A real one from our own week: a load was posted at $100.45 and we bid $300 and won it, while the app was texting a gig driver $145 for the same job. That's one load, not a promise — every load is different, bids don't always win, and how many loads come up depends on your market.</p>
     <p ${P}><strong style="color:#e8eef1">What it costs.</strong> $${FLEET.price} one-time. It includes everything in Premium — the bidding calculator, the P&amp;L tracker, the ads guide and my Curri mastermind course. You can split it into payments at checkout (Klarna, Afterpay or Affirm, if you're eligible).</p>
-    <p ${P}><strong style="color:#e8eef1">Refund.</strong> ${esc(FLEET.refundShort)} Two violations on the carrier account means removal from the fleet without a refund.</p>
-    <p ${P}><strong style="color:#e8eef1">Activation.</strong> I activate every driver myself — usually the same day once you send me your city and vehicle. I take on up to ${FLEET.monthlyCap} new fleet drivers a month; if this month's spots are taken when you join, you're first in line for next month, and your fee stays refundable until you're activated.</p>
+    <p ${P}><strong style="color:#e8eef1">The guarantee.</strong> ${esc(FLEET.refundShort)} <a href="${SITE_URL}/refund-policy" style="color:#25e07a">Full terms</a>.</p>
+    <p ${P}><strong style="color:#e8eef1">Activation.</strong> I activate every driver myself — usually the same day once you send me your city and vehicle. I take on up to ${FLEET.monthlyCap} new fleet drivers a month; if this month's spots are taken when you join, you're first in line for next month, and your fee stays fully refundable until you're activated.</p>
     <p style="margin:0 0 6px"><a href="${join}" style="display:inline-block;background:#25e07a;color:#04130a;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:999px;margin-top:8px">Join from my account →</a></p>
     <p ${P}>Sign in, and you'll see "Join the fleet" on that page. Want to see real runs first? <a href="${proof}" style="color:#25e07a">Here are loads our drivers ran</a>.</p>
     <p ${P}>Questions? Reply to this email — I read every one.</p>

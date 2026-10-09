@@ -328,7 +328,7 @@ export function earningsBreakdownEmail(v: Vehicle): { subject: string; heading: 
 export function leadFollowupEmail(step: 1 | 2 | 3, v: Vehicle | undefined): { subject: string; heading: string; body: string } {
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
   const notCurri = `<p style="color:#7c8a92;font-size:12px;font-style:italic;line-height:1.5;margin:0 0 14px">FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.</p>`;
-  const refund = `fully refundable until you're activated`;
+  const refund = `and if you don't make it back in your first ${FLEET.guaranteeDays} days on the fleet, we refund it in full`;
   if (step === 1 && v && v.track === "fleet") {
     const name = escapeHtml(v.label.toLowerCase());
     const body = `
@@ -365,7 +365,7 @@ export function leadFollowupEmail(step: 1 | 2 | 3, v: Vehicle | undefined): { su
     <p ${P}>Hi — this is the last email in this series. If you're still deciding, here are your two options:</p>
     <ul style="padding-left:20px;margin:0 0 14px">
       <li ${LI}><strong style="color:#e7ecef">Verified listing — $${listingPrice()} one-time.</strong> Customers book you directly. ${GUARANTEE_DAYS}-day money-back guarantee.</li>
-      <li ${LI}><strong style="color:#e7ecef">Curri fleet — $${FLEET.price} one-time.</strong> Run loads on our carrier account; we bid them; paid weekly minus a ${FLEET.dispatchFeePercent}% dispatching fee. Fully refundable until you're activated.</li>
+      <li ${LI}><strong style="color:#e7ecef">Curri fleet — $${FLEET.price} one-time.</strong> Run loads on our carrier account; we bid them; paid weekly minus a ${FLEET.dispatchFeePercent}% dispatching fee. Make it back in your first ${FLEET.guaranteeDays} days on the fleet, or a full refund.</li>
     </ul>
     <p ${P}>If now's not the time, no worries — the free tools stay free. Reply anytime with questions; a real person reads it.</p>
     <p style="margin:0 0 6px">${button(`${base}/`, "Compare your options")}</p>
@@ -854,20 +854,29 @@ export async function sendCheckoutRecoveryEmail(opts: {
   const price = isFleet ? FLEET.price : listingPrice();
   const pending = !isFleet && listingIncreasePending();
   const what = isFleet ? "joining the Curri fleet" : "your FlowSync driver listing";
-  const body = `
+  // Fleet: the same short offer as the owner's recovery text (lib/recovery.ts) —
+  // one hook, the make-it-back guarantee, one button. Listing: unchanged.
+  const body = isFleet
+    ? `
+    <p ${P}>Hi ${name}, Nas here.</p>
+    <p ${P}>Got a van, box truck or pickup + trailer? Join my Curri fleet: I bid the loads, you run the ones you want, paid every Friday.</p>
+    <p ${P}><strong style="color:#e7ecef">Make your $${price} back in your first ${FLEET.guaranteeDays} days or I refund all of it. No questions asked.</strong></p>
+    <p style="margin:0 0 18px">${button(opts.resumeUrl, `Finish joining — $${price}`)}</p>
+    <p ${P}>Questions? Reply to this email — I read every one.</p>
+    <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>
+    <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px"><a href="${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/refund-policy" style="color:#7c8a92">Guarantee terms</a>. FlowSync and Barham Transport LLC are independent and are not part of Curri. No guarantee of load volume or earnings.</p>`
+    : `
     <p ${P}>Hi ${name} — you started ${what} but didn't finish. No pressure; here's the link to pick up right where you left off.</p>
     ${
       pending
         ? `<p ${P}>One heads-up so you're not surprised later: the listing is <strong style="color:#e7ecef">$${price} until ${LISTING_INCREASE_DATE_LABEL}</strong>, then it goes to $${LISTING_PRICE_AFTER}. Same ${GUARANTEE_DAYS}-day money-back guarantee either way.</p>`
-        : isFleet
-          ? `<p ${P}>It's <strong style="color:#e7ecef">$${price} one-time</strong>. ${FLEET.refundShort}</p>`
-          : `<p ${P}>It's <strong style="color:#e7ecef">$${price} one-time</strong>, with a ${GUARANTEE_DAYS}-day money-back guarantee.</p>`
+        : `<p ${P}>It's <strong style="color:#e7ecef">$${price} one-time</strong>, with a ${GUARANTEE_DAYS}-day money-back guarantee.</p>`
     }
-    <p style="margin:0 0 18px">${button(opts.resumeUrl, isFleet ? `Finish joining — $${price}` : `Finish my listing — $${price}`)}</p>
+    <p style="margin:0 0 18px">${button(opts.resumeUrl, `Finish my listing — $${price}`)}</p>
     <p ${P}>Stuck on something, or just have a question? Reply to this email — a real person reads it.</p>
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
   const subject = isFleet
-    ? "Your fleet spot is still open"
+    ? `Make your $${price} back in ${FLEET.guaranteeDays} days, or I refund it`
     : pending
       ? `Your FlowSync listing is still waiting (it's $${price} until ${LISTING_INCREASE_DATE_LABEL})`
       : "Your FlowSync listing is still waiting";

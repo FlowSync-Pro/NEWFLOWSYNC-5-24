@@ -203,12 +203,20 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   everything in Premium. **No done-for-you setup** (owner struck it from the fleet card).
   "Immediate activation" claims must stay conditional: activation is manual (usually same
   day once details arrive) and load volume depends on the driver's market.
-  **Refund: fully refundable until the driver is activated on the carrier account, then
-  earned and non-refundable; two violations on the carrier account = removal without
-  refund.** Stated on every fleet surface and acknowledged via Stripe's required terms
+  **Refund — the "make it back" guarantee (owner decision 2026-10-09, replaces "earned
+  after activation"): fully refundable before activation; after activation, if the
+  driver's take-home from fleet loads in their first 60 days after activation (after the
+  dispatching fee, from our payout records) is under the joining fee they paid, they ask
+  within 30 days after and get that fee back in full — no questions asked, nothing to
+  prove; a refund ends fleet membership; two violations on the carrier account = removal
+  without refund (the one exception).** Numbers live in `FLEET.guaranteeDays` /
+  `FLEET.guaranteeClaimDays`; wording in `FLEET.refundShort` / `refundWhy` /
+  `refundCheckbox`. Texts to $297 buyers may say "Make your $297 back in your first 60
+  days or I refund all of it. No questions asked." — it promises the refund, never
+  earnings. Stated on every fleet surface and acknowledged via Stripe's required terms
   checkbox at checkout (needs the Terms of Service URL set in Stripe → Settings → Public
   details; the code falls back to a plain checkout and logs if it isn't). Attorney
-  review of this clause is still owed. Membership is `User.fleetJoinedAt` (webhook or
+  review of this clause (and of the guarantee's wording) is still owed. Membership is `User.fleetJoinedAt` (webhook or
   admin toggle); the carrier-account add remains a MANUAL owner step. Stripe Connect
   (Express) onboarding is self-serve at `/account/payouts` (fleet members only; the admin
   driver page has "Send Stripe setup link" + status; `src/lib/stripe-connect.ts`). Paying

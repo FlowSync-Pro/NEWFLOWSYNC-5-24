@@ -92,12 +92,12 @@ export default function RecoveryLists({ groups }: { groups: RecoveryGroup[] }) {
                         {r.link && <a href={r.link.href} className="rounded-full border border-border px-4 py-2 text-xs text-muted hover:text-foreground">{r.link.label}</a>}
                       </div>
                     </div>
-                    <p className="mt-3 rounded-lg border border-border bg-surface-2 p-3 text-xs leading-relaxed text-muted">{r.text}</p>
+                    <p className="mt-3 whitespace-pre-line rounded-lg border border-border bg-surface-2 p-3 text-xs leading-relaxed text-muted">{r.text}</p>
                     {r.followUp && (
                       <details className="mt-2 rounded-lg border border-border">
                         <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted">Follow-up — send 2 days later, only if they haven&apos;t replied</summary>
                         <div className="border-t border-border p-3">
-                          <p className="text-xs leading-relaxed text-muted">{r.followUp}</p>
+                          <p className="whitespace-pre-line text-xs leading-relaxed text-muted">{r.followUp}</p>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
                             {smsFollow && <a href={smsFollow} className="rounded-full border border-accent/40 bg-accent-soft px-4 py-2 text-xs font-medium text-accent">Text follow-up</a>}
                             {mailFollow && <a href={mailFollow} className="rounded-full border border-border px-4 py-2 text-xs text-muted hover:text-foreground">Email follow-up</a>}

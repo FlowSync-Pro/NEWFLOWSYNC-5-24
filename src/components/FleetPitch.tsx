@@ -89,8 +89,10 @@ export function FleetDisclaimer() {
       Operated by Barham Transport LLC. FlowSync and Barham Transport are independent and are not owned by,
       affiliated with, or part of Curri. Fleet drivers are independent contractors, paid through Stripe
       Connect with a 1099 at year end. No guarantee of load volume or earnings. The joining fee is
-      refundable until you&apos;re activated on our carrier account and non-refundable after; two
-      violations on the carrier account means removal from the fleet without a refund.
+      fully refundable until you&apos;re activated on our carrier account; after activation it&apos;s
+      refunded in full if your take-home from fleet loads in your first {FLEET.guaranteeDays} days is under
+      the fee you paid (ask within {FLEET.guaranteeClaimDays} days after); removal from the fleet for two
+      violations on the carrier account means no refund. Full terms: <a href="/refund-policy" className="underline">refund policy</a>.
     </p>
   );
 }
