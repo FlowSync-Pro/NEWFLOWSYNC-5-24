@@ -108,19 +108,34 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
-- **Dates fixed across admin + driver pages** (after the checkpoint below; display only, no
-  migration / env var): moments (joined, member since, activated, Stripe form submitted,
-  inspection, review submitted) show the Pacific day (`ptDay`, `ptTime`); picked calendar
-  dates (license expiry, verified-load date) show exactly as entered (`calendarDay`, UTC) —
-  a license expiring Mar 15 no longer reads "3/14"; the admin "add completed load" form
-  defaults to today in PT. The license expired/valid rule is unchanged (safety rule).
-  **Then (owner-approved 2026-10-09):** the driver trip log and the free P&L tool pre-fill
-  today on the driver's OWN calendar (`useDeviceToday`, `src/lib/use-device-today.ts` —
-  blank during the server render, then the device's date) instead of the UTC date, and
-  trips show as entered (`calendarDay`) on the trip log, the driver's photo list and the
-  admin driver page. Past trips logged on an evening with the old pre-fill now show the
-  date actually saved (a day later than before) — expected, no data changed. The payout
-  form's "Delivered on" defaults to and caps at today in Pacific time.
+## 📍 Checkpoint — 2026-10-09 (overnight): dates right everywhere
+Restore point: commit `0ecbd27` on the default branch (deployed, Ready — owner confirmed;
+it also carries `98f04f4`). No migrations, no env vars, no stored data changed — display
+and form defaults only. `0ecbd27` was an owner-approved RISKY deploy (payout form; driver
+P&L display). Rollback: the deployment before both, `3fb7790`.
+
+Shipped:
+- **Events show the Pacific day** (`98f04f4`): joined, member since, activated on Curri,
+  Stripe form submitted, inspections (admin), review submitted (`ptDay` / `ptTime`).
+- **Picked dates show exactly as entered** (`98f04f4`, `0ecbd27`; `calendarDay`, UTC):
+  license expiry ("Expires Mar 15", not "3/14"), verified-load dates, and trip dates on the
+  trip log, the driver's photo list and the admin driver page. Past trips logged on an
+  evening with the old pre-fill now show the date actually saved — a day later than before,
+  as the owner approved; nothing in the database changed.
+- **No more "tomorrow" pre-fills**: the trip log and the free P&L tool use the driver's own
+  calendar (`useDeviceToday`, `src/lib/use-device-today.ts`); the admin "add completed
+  load" form and the payout form's "Delivered on" (default and max) use today in PT.
+- Unchanged on purpose: the license expired/valid rule (safety: errs a few hours early).
+
+Tested: 15/15 admin/driver date checks (Pacific browser) and 10/10 trip / P&L / payout
+checks at 10:43 PM Central, when the UTC date is already tomorrow.
+
+**Not yet verified live:** in the evening, the trip log and P&L tool date boxes show today;
+a test trip saves and lists with today's date; "Delivered on" shows today (PT).
+
+Still open: the live checks listed in the checkpoints below (driver message email, Stripe
+status on the next driver to finish Stripe, the next fleet purchase's alert wording) and
+everything owner-side.
 
 ## 📍 Checkpoint — 2026-10-09 (late night): driver messages also reach the owner by email
 Restore point: commit `f52e225` on the default branch (deployed, Ready — owner confirmed).
