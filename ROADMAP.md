@@ -108,6 +108,27 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-09 (night): fleet page reads the real Stripe payouts status
+Restore point: commit `031d13a` on the default branch (deployed, Ready — owner confirmed).
+No migrations and no new env vars. Owner-approved RISKY deploy (Stripe code path): for a
+fleet member with a Stripe account whose saved flag says "not ready", `/account/curri-fleet`
+now runs the same `syncConnectStatus` the Payouts page runs — updates the flag, and the
+owner's one-time "finished Stripe payouts setup" alert fires when it flips. Capped at 3 s
+(saved flag used on a timeout or without a Stripe key); drivers already ready, without an
+account, or not in the fleet cost no Stripe call. Reads status only — moves no money.
+Tested against a local Stripe stand-in (8/8).
+
+**Not yet verified live:** the next driver who finishes Stripe and opens the fleet page
+straight away should see "Payouts are set up ✓", and the owner should get the alert email.
+Rollback: the previous deployment, `1efd5ce`.
+
+Known limit (by design): if Stripe later disables a ready driver's payouts, the fleet page
+keeps "set up ✓" until the Payouts page, the admin page or a payout run re-syncs; payouts
+always re-check before sending.
+
+Still open: the first real fleet purchase's alert email (wording from `fcee774`), and
+everything owner-side in the checkpoints below.
+
 ## 📍 Checkpoint — 2026-10-09 (evening): owner alert wording for new fleet members
 Restore point: commit `fcee774` on the default branch (deployed, Ready — owner confirmed).
 No migrations and no new env vars. Owner-approved RISKY-by-file deploy (it lives in the
