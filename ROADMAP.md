@@ -108,8 +108,9 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
-## 📍 Checkpoint — 2026-10-09 (stage 2c): Accept / Pass on the fleet page
-Restore point: commit `4736f4b` on the default branch (deployed, Ready — owner confirmed).
+## 📍 Checkpoint — 2026-10-09 (stage 2c): Accept / Pass on the fleet page — verified live
+Restore point: commit `4736f4b` on the default branch (deployed, Ready, and the Accept
+test verified on the live site by the owner).
 No migrations, no env vars, no new dependency. Changes the live dispatch path, so it went
 out on the owner's "push" after a two-driver test. Rollback: the previous deployment,
 `e60ea51`.
@@ -126,9 +127,9 @@ message keeps its buttons after a page answer (tapping them later says "Already 
 Tested: 24/24 (incl. page-vs-Telegram races, same-driver Accept+Pass, forged / non-member /
 signed-out refusals) and the earlier Telegram suite re-run clean.
 
-**Not yet verified live:** a "TEST — do not run" load offered to a driver → Accept on the
-fleet page → page says "You've got it", owner gets "ACCEPTED (on the website) … CLAIM NOW",
-driver gets the Telegram confirmation. Don't claim it in Curri; cancel it after.
+**Verified live (owner, 2026-10-09):** a test load offered to a driver and accepted on the
+fleet page worked end to end. (Pass on the page wasn't separately exercised live; it was
+covered by the local tests.)
 
 Still open: the live checks in the checkpoints below and everything owner-side.
 
