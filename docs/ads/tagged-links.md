@@ -44,8 +44,8 @@ https://flowsyncdriver.com/tools/earnings?utm_source=meta&utm_medium=paid&utm_ca
 Campaign C — Curri fleet, landing the homepage fleet section (tags go BEFORE the `#`):
 
 ```
-https://flowsyncdriver.com/?utm_source=meta&utm_medium=paid&utm_campaign=fleet&utm_content=c1#fleet
-https://flowsyncdriver.com/?utm_source=meta&utm_medium=paid&utm_campaign=fleet&utm_content=c2#fleet
+https://flowsyncdriver.com/?utm_source=meta&utm_medium=paid&utm_campaign=fleet&utm_content=c1#curri-fleet
+https://flowsyncdriver.com/?utm_source=meta&utm_medium=paid&utm_campaign=fleet&utm_content=c2#curri-fleet
 ```
 
 Campaign R — Retargeting, landing `/pricing`:
@@ -72,7 +72,7 @@ Reels (the spoken URL can't carry tags, so put the tagged link in the caption
 and the bio, and say "link in bio"):
 
 ```
-https://flowsyncdriver.com/?utm_source=ig&utm_medium=reel&utm_campaign=fleet&utm_content=reel1#fleet
+https://flowsyncdriver.com/?utm_source=ig&utm_medium=reel&utm_campaign=fleet&utm_content=reel1#curri-fleet
 https://flowsyncdriver.com/pricing?utm_source=ig&utm_medium=reel&utm_campaign=verified&utm_content=reel2
 https://flowsyncdriver.com/pricing?utm_source=ig&utm_medium=reel&utm_campaign=verified&utm_content=reel3
 https://flowsyncdriver.com/tools/earnings?utm_source=ig&utm_medium=reel&utm_campaign=quiz&utm_content=reel4
@@ -93,7 +93,7 @@ https://flowsyncdriver.com/pricing?utm_source=sms&utm_medium=text&utm_campaign=f
 
 ```
 https://flowsyncdriver.com/pricing?utm_source=telegram&utm_medium=group&utm_campaign=verified
-https://flowsyncdriver.com/?utm_source=telegram&utm_medium=group&utm_campaign=fleet#fleet
+https://flowsyncdriver.com/?utm_source=telegram&utm_medium=group&utm_campaign=fleet#curri-fleet
 ```
 
 ## Emails
