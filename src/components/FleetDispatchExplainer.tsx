@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { FLEET } from "@/lib/pricing";
 
 /**
@@ -180,6 +181,68 @@ export function FleetFaq() {
           <p className="mt-3 text-sm leading-relaxed text-muted">{item.a}</p>
         </details>
       ))}
+    </div>
+  );
+}
+
+// ---- Real proof -------------------------------------------------------------
+// The owner's own screenshots of fleet runs (public/proof/, built by cropping
+// the originals): the driver agreed to be shown by first name; his last name,
+// customer photos and the Curri screen behind the pop-up are blurred. Captions
+// state only what the screenshots show.
+
+const SAMPLE_PAYOUT_CENTS = 10753; // the $107.53 on the delivery record below
+const driverShare = () => SAMPLE_PAYOUT_CENTS - Math.round((SAMPLE_PAYOUT_CENTS * FLEET.dispatchFeePercent) / 100);
+
+const PROOF = () => [
+  {
+    src: "/proof/fleet-proof-assigned.webp",
+    width: 640,
+    height: 732,
+    alt: "Text thread: a fleet driver says \"Good to go\", the Curri assignment notice for a scheduled 10:30 AM pickup in Chippewa Falls, WI, and his reply \"Yessir! Appreciate you\".",
+    title: "The night before",
+    caption: "Curri's assignment for a scheduled 10:30 AM pickup in Chippewa Falls, WI — and Elliot's reply.",
+  },
+  {
+    src: "/proof/fleet-proof-delivered.webp",
+    width: 640,
+    height: 1202,
+    alt: "Curri delivery record: Toyota Prius, driver Elliot, two boxes, Chippewa Falls to Grantsburg, WI, payout $107.53 paid Sep 21.",
+    title: "Delivered and paid",
+    caption: `Chippewa Falls to Grantsburg, WI. Curri paid ${usd(SAMPLE_PAYOUT_CENTS)} for the run — at the standard ${FLEET.dispatchFeePercent}% fee, the driver's share is ${usd(driverShare())}.`,
+  },
+  {
+    src: "/proof/fleet-proof-multistop.webp",
+    width: 640,
+    height: 1202,
+    alt: "Curri delivery record: one pickup in Chippewa Falls, WI and drop-offs in Cameron and Bruce, WI, started 10:12 AM and completed 11:01 AM.",
+    title: "Another run",
+    caption: "One pickup, two drop-offs (Cameron and Bruce, WI) — started 10:12 AM, done by 11:01 AM.",
+  },
+];
+
+/** Real runs from the fleet, shown as screenshots — the antidote to "is this real?". */
+export function FleetRealLoads() {
+  return (
+    <div>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {PROOF().map((p) => (
+          <figure key={p.src} className="card overflow-hidden p-3">
+            <div className="overflow-hidden rounded-xl border border-border bg-surface-2">
+              <Image src={p.src} width={p.width} height={p.height} alt={p.alt} sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 90vw" className="h-auto w-full" />
+            </div>
+            <figcaption className="px-1 pb-1 pt-3">
+              <p className="text-sm font-semibold">{p.title}</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted">{p.caption}</p>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+      <p className="mt-4 text-xs leading-relaxed text-muted">
+        Real runs from a fleet driver, shared with his permission (last name and customer photos hidden). Real loads, not a
+        promise — every load is different and volume depends on your market. FlowSync and Barham Transport are not affiliated
+        with Curri.
+      </p>
     </div>
   );
 }

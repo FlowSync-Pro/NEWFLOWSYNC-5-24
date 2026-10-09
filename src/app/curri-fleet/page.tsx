@@ -13,6 +13,7 @@ import {
   FleetFaq,
   FleetJoinTimeline,
   FleetOfferPreview,
+  FleetRealLoads,
   fleetFaq,
 } from "@/components/FleetDispatchExplainer";
 import JsonLd, { breadcrumbLd, faqLd } from "@/components/JsonLd";
@@ -133,6 +134,17 @@ export default function CurriFleetLandingPage() {
           <div className="mt-6"><FleetOfferPreview /></div>
         </div>
         <div className="lg:pt-10"><FleetControlPoints /></div>
+      </section>
+
+      {/* Proof: the owner's own screenshots of real fleet runs. */}
+      <section className="mt-20">
+        <p className="text-sm font-semibold uppercase tracking-widest text-accent">Real loads from our fleet</p>
+        <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Not a mock-up. Here&apos;s an actual run.</h2>
+        <p className="mt-3 max-w-2xl text-muted">
+          Straight from a fleet driver&apos;s phone: the assignment the night before, the delivery record with what Curri
+          paid, and another multi-stop run.
+        </p>
+        <div className="mt-8"><FleetRealLoads /></div>
       </section>
 
       {/* No surprises after checkout. */}
