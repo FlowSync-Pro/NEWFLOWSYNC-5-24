@@ -108,6 +108,53 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-09 (later): fleet sales pages — trust, real proof, SEO, verified live
+Restore point: commit `702e52b` on the default branch (deployed, Ready, verified on the live
+site by the owner). Copy, images and SEO only — no migrations, no env vars, no checkout,
+payment or auth change since the previous checkpoint.
+
+Shipped and verified:
+- **Fleet pages explain dispatch before signup** (`c12a64a`,
+  `src/components/FleetDispatchExplainer.tsx`): a sample load offer in the real Telegram
+  format (labelled as a sample), the four things drivers control, the five steps from
+  joining to the first Friday payout, nine plain-answer FAQs, and "Nothing to lose before
+  you're activated" next to the real refund rule — on `/curri-fleet`; the homepage fleet
+  section shows the sample offer and links there.
+- **SEO** (`c12a64a`): `/curri-fleet` added to the sitemap (it was missing); Service (with
+  the $297 offer), FAQPage and BreadcrumbList structured data; title "Join the Curri Fleet —
+  Loads Dispatched to Your Phone" and a matching description.
+- **Income figures softened** (`89874c0`): homepage stat "$40+/hr Top category" → "Yours —
+  The rates and the customers"; drivers page "$40–75/hr earning range" → "Your rate — you
+  quote every job, we suggest a starting price for each service". Service cards keep their
+  "Suggested rate" ranges.
+- **Real loads from the fleet** (`702e52b`, images in `public/proof/`): the owner's own
+  screenshots — the Sept 21 Chippewa Falls assignment and the driver's reply, the matching
+  delivery record (Chippewa Falls → Grantsburg, WI; Curri paid $107.53; driver's share at the
+  standard fee computed from `lib/pricing`), and a multi-stop run. Driver Elliot shown by
+  first name with his permission; last name, customer photos and the Curri screen behind
+  the pop-up blurred; image metadata stripped; no Apple Cash payment shown (the site says
+  payouts go through Stripe). "Real loads, not a promise" and the not-affiliated-with-Curri
+  line sit under the images.
+
+Urgency stays honest everywhere: the real monthly activation cap and "first Accept gets the
+load" — no countdown timers, spot counters or invented scarcity (AGENTS.md section E).
+
+Rules for adding more proof (screenshots, videos, quotes): the driver's OK first; first
+name only; blur customer names, addresses, labels and photos; show no payment method other
+than Stripe; captions state only what the screenshot shows; keep "not a promise" beside any
+dollar figure. Re-run `make-proof`-style cropping (sharp is already installed via Next.js).
+
+Known, not done (small, ask first): the new-fleet-member alert email still says "send their
+Stripe setup link" (`src/app/api/stripe/webhook/route.ts` — Stripe webhook file); the fleet
+page reads the cached Stripe "payouts enabled" flag.
+
+Open, owner-side: Search Console "Request indexing" for `/curri-fleet`; optionally Apple
+Pay / Google Pay in Stripe → Settings → Payment methods; more proof media (delivery-detail
+screens with payouts, 10–20 s loading videos, a permitted driver quote); **attorney: real
+payout figures on sales pages are earnings claims — ask whether the fleet counts as a
+"business opportunity" under FTC rules**, alongside the fleet refund clause and contractor
+terms. Plus everything still open from the checkpoint below.
+
 ## 📍 Checkpoint — 2026-10-09: driver view of offers + dispatch fixes, verified live
 Restore point: commit `e6b23ac` on the default branch (deployed, Ready, verified on the live
 site by the owner). No migrations and no new env vars since the 2026-10-08 checkpoints.
@@ -131,13 +178,6 @@ Shipped and verified:
   driver's confirmation.
 - **Fleet page payouts copy**: self-serve "Set up payouts →" (or "Payouts are set up ✓")
   instead of "ask for your Stripe setup link".
-
-- **Fleet sales pages explain dispatch** (after this checkpoint; copy + SEO only): a sample
-  load offer in the real Telegram format, the four things drivers control, the five steps from
-  joining to the first Friday payout, and nine plain-answer FAQs on `/curri-fleet`
-  (`src/components/FleetDispatchExplainer.tsx`); the homepage fleet section shows the sample
-  offer and links there. `/curri-fleet` is now in the sitemap and carries Service + FAQPage +
-  Breadcrumb structured data. Urgency stays honest: real cap, first Accept wins, no timers.
 
 Known, not done (small, ask first):
 - The owner's new-fleet-member alert email still says "send their Stripe setup link"
