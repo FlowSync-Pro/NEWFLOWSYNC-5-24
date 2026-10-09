@@ -108,6 +108,42 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-09: driver view of offers + dispatch fixes, verified live
+Restore point: commit `e6b23ac` on the default branch (deployed, Ready, verified on the live
+site by the owner). No migrations and no new env vars since the 2026-10-08 checkpoints.
+(The branch head also carries `21c0916`, a Cursor-built `/curri-fleet` ad landing page —
+not part of this checkpoint's review or tests.)
+
+Shipped and verified:
+- **Stage 2b** (`bb92981`): `/account/curri-fleet` → "Your offers and loads" — the signed-in
+  driver's open offers (pay, "Open until … PT", "Open Telegram to Accept or Pass"), assigned
+  loads with plain status lines, last 24 h of lost / cancelled / no-longer-yours. Read-only.
+- **Driver ⇄ owner relay** (`f8cfe1d`, hardened in `e6b23ac`): anything a current fleet member
+  sends the bot that isn't a command (text, photo, voice, location…) reaches the owner's
+  private chat with name, phone, current load and admin link; the owner answers by
+  replying to it. Media is always re-sent with the bot's own caption; nothing is stored.
+- **Pacific time everywhere** (`src/lib/pt-time.ts`): admin board, load page, Active box,
+  Telegram messages, fleet page; the new-load form's pickup field is read as PT; the payout
+  pre-fill uses the PT calendar day.
+- **Accept / Pass race closed**: the answer is recorded first, so simultaneous taps can't
+  both count; buttons vanish once answered; a stuck Accept resumes on the next tap; a
+  phone-assigned driver tapping Accept hears "Already yours"; CLAIM NOW is sent before the
+  driver's confirmation.
+- **Fleet page payouts copy**: self-serve "Set up payouts →" (or "Payouts are set up ✓")
+  instead of "ask for your Stripe setup link".
+
+Known, not done (small, ask first):
+- The owner's new-fleet-member alert email still says "send their Stripe setup link"
+  (`src/app/api/stripe/webhook/route.ts`) — Stripe webhook file, so owner approval needed.
+- The fleet page reads the cached Stripe "payouts enabled" flag; it refreshes when the
+  driver opens the Payouts page.
+
+Open, owner-side (unchanged): the first real portal load end to end; each fleet driver —
+"Activated on Curri", home ZIP, Connect Telegram, `/active`; the Stripe $1 test transfer
+before paying any driver; Stripe balance top-up; 1099 setting; Neon password reset; the 8
+drivers who lost documents; one tagged attribution purchase; attorney review (fleet refund
+clause, contractor terms).
+
 ## 📍 Checkpoint — 2026-10-08 (late): automatic offers + portal bot combined
 Restore point: commit `233fd67` on the default branch (site code as of `8959755`). No
 migrations and no new env vars since the previous checkpoint.
