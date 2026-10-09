@@ -136,12 +136,24 @@ Shipped:
 
 **Owner-side, done 2026-10-09:** `CRON_SECRET` confirmed in Vercel (Production); Anthony
 texted the Forgot-password steps; the $97 Sep 30 buyer contacted; the 8 drivers who lost
-documents reached out to; Neon database password reset — live `/api/health` afterwards:
-database, auth, Stripe keys, Resend and Blob all OK.
+documents reached out to; a Neon password reset (which one — account login or database
+role — not confirmed) — live `/api/health` afterwards: database, auth, Stripe keys, Resend
+and Blob all OK.
 
-**Owner-side, still open:** Vercel flags `DISPATCH_INTAKE_KEY` "Needs Attention" (likely: a
-secret not marked Sensitive — re-add it as Sensitive with the SAME value so the Fly portal
-bot keeps working, then redeploy); first real portal load end to end; per-driver fleet
+**Owner-side, still open ("later", 2026-10-09):**
+- **Neon check:** every database env var in Vercel still reads "Added May 24". If the
+  DATABASE role password was reset, Vercel may hold the old one and a cold start could fail:
+  Redeploy, then `/api/health` must show database ok; if not, paste Neon's new pooled string
+  into `DATABASE_URL` and the direct one into `DATABASE_URL_UNPOOLED` (the only two the code
+  reads) and redeploy. If only the Neon LOGIN password was reset, the database password that
+  appeared in an old screenshot is still the live one and still needs rotating.
+- **"Needs Attention" tags** = secrets not marked Sensitive. Re-add `DISPATCH_INTAKE_KEY`
+  (same value — the Fly portal bot uses it) and `BLOB_READ_WRITE_TOKEN` as Sensitive, then
+  redeploy; leave the Neon-integration variables alone.
+- **`OLD_STRIPE_SECRET_KEY`** (unused by the code, like the `TWILIO_*` vars): make sure only
+  the current secret key is active in Stripe → Developers → API keys; delete unused vars
+  whenever convenient.
+- Also: first real portal load end to end; per-driver fleet
 onboarding (Activated on Curri, home ZIP, Connect Telegram, /active); Stripe $1 test
 transfer + balance top-up + 1099 setting; one tagged attribution purchase; attorney review
 (fleet refund clause, contractor terms, earnings claims / FTC business-opportunity question).
