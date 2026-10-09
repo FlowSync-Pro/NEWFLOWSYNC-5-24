@@ -108,6 +108,13 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+- **Recovery page upgrade** (after the checkpoint below; owner "go both" 2026-10-09; copy +
+  one read-only list, no migration / env var): fleet recovery texts link `/curri-fleet` and
+  mention pay over time; every sales row has its one follow-up (fleet: honest room-this-month
+  from real activation counts); new "Fleet drivers — ask for a referral" list. The abandoned-
+  checkout owner alert (Stripe webhook) carries the new fleet text too — deployed on the
+  owner's "push".
+
 ## 📍 Checkpoint — 2026-10-09 (stage 2c): Accept / Pass on the fleet page — verified live
 Restore point: commit `4736f4b` on the default branch (deployed, Ready, and the Accept
 test verified on the live site by the owner).

@@ -259,10 +259,15 @@ lead magnets; the gated ones are the account versions.
 expire after 60 minutes with Stripe recovery on and a phone field (owner-approved
 personal-data field). `checkout.session.expired` → recovery email + owner alert email (to the support inbox + `ADMIN_EMAILS`) with a
 ready-to-send text. `/admin/recovery` lists abandoned checkouts, unpaid signups, paid
-non-fleet drivers, and Verified-not-Premium drivers with copy/SMS/mailto buttons. All
+non-fleet drivers, Verified-not-Premium drivers, and fleet drivers to ask for a referral
+(their existing link + the $50 terms; read-only — no referral codes created there), with
+copy/SMS/mailto buttons; every sales row also carries its one follow-up. All
 message copy lives in `src/lib/recovery.ts`: current price, the real increase date while
-pending, the 30-day guarantee — no discounts, no fake urgency. One text, one follow-up
-two days later, stop on request.
+pending, the 30-day guarantee — no discounts, no fake urgency. Fleet texts link the
+`/curri-fleet` real-runs page and mention pay over time (Klarna/Afterpay/Affirm, "if
+you're eligible"); the fleet follow-up says "still room this month" only when this
+month's activations are under `FLEET.monthlyCap`, otherwise "first in line for next
+month". One text, one follow-up two days later, stop on request.
 
 **ON STANDBY — do NOT pitch, build CTAs for, or surface anywhere:**
 - $197 four-week coaching program (a different product from the $197 fleet invite)
