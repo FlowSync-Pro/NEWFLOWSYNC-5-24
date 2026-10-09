@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { addMyCredential, deleteMyCredential, setTripPhotoPublic } from "@/app/actions/credentials";
 import { LICENSE_KINDS, LICENSE_LABELS, licenseLabel, isExpired } from "@/lib/experience";
 import { fileToScaledDataUrl } from "@/lib/image";
+import { calendarDay } from "@/lib/pt-time";
 
 export interface MyCredential {
   id: string;
@@ -152,7 +153,7 @@ export default function DriverExperienceEditor({
                     <div>
                       <p className="text-sm font-medium">{licenseLabel(c.kind, c.customLabel)}</p>
                       <p className="text-xs text-muted">
-                        {c.expiresAt ? `Expires ${new Date(c.expiresAt).toLocaleDateString()}` : "No expiry date"}
+                        {c.expiresAt ? `Expires ${calendarDay(c.expiresAt)}` : "No expiry date"}
                       </p>
                     </div>
                   </div>

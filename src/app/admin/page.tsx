@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ptDay } from "@/lib/pt-time";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -213,7 +214,7 @@ export default async function AdminPage() {
                 <div className="min-w-0">
                   <p className="font-semibold">{name || <span className="text-muted">(no name yet)</span>}</p>
                   <p className="truncate text-xs text-muted">
-                    {u.email}{p?.phone ? ` · ${p.phone}` : ""}{p?.city ? ` · ${p.city}` : ""} · joined {u.createdAt.toLocaleDateString()}
+                    {u.email}{p?.phone ? ` · ${p.phone}` : ""}{p?.city ? ` · ${p.city}` : ""} · joined {ptDay(u.createdAt)}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">

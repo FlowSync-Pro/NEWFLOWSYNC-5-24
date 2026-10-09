@@ -12,6 +12,7 @@ import {
   publicCredentials,
   MIN_RATINGS_FOR_PUBLIC,
 } from "@/lib/experience";
+import { calendarDay } from "@/lib/pt-time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Driver experience & ratings", robots: { index: false } };
@@ -98,7 +99,7 @@ export default async function AdminExperiencePage() {
                   </div>
                   <p className="text-xs text-muted">
                     {r.city || "—"} · {r.loggedTrips} logged · {r.verifiedLoads} verified
-                    {r.lastLoad ? ` · last ${r.lastLoad.toLocaleDateString()}` : ""}
+                    {r.lastLoad ? ` · last ${calendarDay(r.lastLoad)}` : ""}
                   </p>
                   {r.credentials.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1">

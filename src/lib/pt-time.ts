@@ -53,3 +53,15 @@ export function fromPtWallClock(value: string): Date | null {
   const out = new Date(t);
   return Number.isNaN(out.getTime()) ? null : out;
 }
+
+const DAY: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
+
+/** "Oct 8, 2026" — the day something HAPPENED (a sign-up, an activation), in Pacific time. */
+export const ptDay = (d: Date | string) => new Date(d).toLocaleDateString("en-US", { ...DAY, timeZone: PT_ZONE });
+
+/**
+ * "Oct 8, 2026" — a date someone PICKED in a date field (a license expiry, a
+ * load date). Those are saved as midnight UTC, so they're shown in UTC: exactly
+ * the date that was entered, whatever zone the viewer is in.
+ */
+export const calendarDay = (d: Date | string) => new Date(d).toLocaleDateString("en-US", { ...DAY, timeZone: "UTC" });

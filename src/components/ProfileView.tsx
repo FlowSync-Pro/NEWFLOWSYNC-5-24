@@ -3,6 +3,7 @@ import { isVerified, type DriverProfile } from "@/lib/profile";
 import { isPremiumTier } from "@/lib/pricing";
 import { getService } from "@/lib/services";
 import ServiceIcon from "@/components/ServiceIcon";
+import { calendarDay } from "@/lib/pt-time";
 
 export interface ProfileServiceItem {
   id: string;
@@ -263,7 +264,7 @@ export default function ProfileView({
                       <div className="min-w-0">
                         <p className="text-sm font-medium">{l.pickupCity} → {l.dropoffCity}</p>
                         <p className="text-xs text-muted">
-                          {new Date(l.date).toLocaleDateString()}
+                          {calendarDay(l.date)}
                           {l.loadType ? ` · ${l.loadType}` : ""}
                         </p>
                         {l.publicNote && <p className="mt-1 text-sm text-muted">“{l.publicNote}”</p>}

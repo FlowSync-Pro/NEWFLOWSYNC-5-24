@@ -17,6 +17,7 @@ import {
   MIN_RATINGS_FOR_PUBLIC,
 } from "@/lib/experience";
 import { fileToScaledDataUrl } from "@/lib/image";
+import { calendarDay, ptDate } from "@/lib/pt-time";
 
 export interface LoadRow {
   id: string;
@@ -82,7 +83,7 @@ export default function AdminDriverExperience({
   const [showForm, setShowForm] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [form, setForm] = useState({
-    date: new Date().toISOString().slice(0, 10),
+    date: ptDate(new Date()),
     pickupCity: "",
     dropoffCity: "",
     loadType: "",
@@ -121,7 +122,7 @@ export default function AdminDriverExperience({
         return;
       }
       setForm({
-        date: new Date().toISOString().slice(0, 10),
+        date: ptDate(new Date()),
         pickupCity: "",
         dropoffCity: "",
         loadType: "",
@@ -246,7 +247,7 @@ export default function AdminDriverExperience({
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{l.pickupCity} → {l.dropoffCity}</p>
                   <p className="text-xs text-muted">
-                    {new Date(l.date).toLocaleDateString()}
+                    {calendarDay(l.date)}
                     {l.loadType ? ` · ${l.loadType}` : ""}
                   </p>
                   {l.publicNote && <p className="mt-1 text-xs text-muted">“{l.publicNote}”</p>}
@@ -311,7 +312,7 @@ export default function AdminDriverExperience({
                   <div>
                     <p className="text-sm font-medium">{licenseLabel(c.kind, c.customLabel)}</p>
                     <p className="text-xs text-muted">
-                      {c.expiresAt ? `Expires ${new Date(c.expiresAt).toLocaleDateString()}` : "No expiry recorded"}
+                      {c.expiresAt ? `Expires ${calendarDay(c.expiresAt)}` : "No expiry recorded"}
                       {expired && <span className="ml-1 font-semibold text-red-400">· EXPIRED</span>}
                     </p>
                   </div>

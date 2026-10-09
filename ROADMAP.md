@@ -108,6 +108,16 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+- **Dates fixed across admin + driver pages** (after the checkpoint below; display only, no
+  migration / env var): moments (joined, member since, activated, Stripe form submitted,
+  inspection, review submitted) show the Pacific day (`ptDay`, `ptTime`); picked calendar
+  dates (license expiry, verified-load date) show exactly as entered (`calendarDay`, UTC) —
+  a license expiring Mar 15 no longer reads "3/14"; the admin "add completed load" form
+  defaults to today in PT. The license expired/valid rule is unchanged (safety rule).
+  **Open, needs owner approval:** the driver trip log (P&L) date pre-fill/display mismatch
+  (fixing the display alone would shift past evening entries a day), and the payout form's
+  "Delivered on" default (UTC "tomorrow" in the evening; payments area).
+
 ## 📍 Checkpoint — 2026-10-09 (late night): driver messages also reach the owner by email
 Restore point: commit `f52e225` on the default branch (deployed, Ready — owner confirmed).
 No migrations and no new env vars (uses the existing Resend setup). SAFE deploy.

@@ -15,7 +15,7 @@ import { DUTY_DEFAULTS, vehicleClassFromType, vehicleClassLabel } from "@/lib/di
 import { telegramBotUsername } from "@/lib/telegram";
 import { feePercentFor, splitLoad } from "@/lib/payouts";
 import { syncConnectStatus } from "@/lib/stripe-connect";
-import { ptClock, ptTime } from "@/lib/pt-time";
+import { ptClock, ptDay, ptTime } from "@/lib/pt-time";
 import type { DispatchLane, DispatchStatus, PayPlan, VehicleClass } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -241,7 +241,7 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
               {justJoined ? "You're in. Welcome to the fleet." : "You're a fleet member."}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-foreground/90">
-              Member since {user!.fleetJoinedAt!.toLocaleDateString()}. Next step is on you: send Nasser the
+              Member since {ptDay(user!.fleetJoinedAt!)}. Next step is on you: send Nasser the
               details below so we can add you on the carrier account. Usually same day once we have them.
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground/90">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { approveReview, rejectReview } from "@/app/actions/reviews";
+import { ptTime } from "@/lib/pt-time";
 
 export interface AdminReviewRow {
   id: string;
@@ -46,7 +47,7 @@ function ReviewCard({ row }: { row: AdminReviewRow }) {
   };
 
   const badge = STATUS_BADGE[row.status];
-  const submitted = new Date(row.createdAt).toLocaleString();
+  const submitted = ptTime(row.createdAt);
 
   return (
     <div className="card p-5">

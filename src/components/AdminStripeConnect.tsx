@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { refreshStripeConnectStatus, sendStripeSetupLink } from "@/app/actions/admin";
 import type { ConnectStatus } from "@/lib/stripe-connect";
+import { ptDay } from "@/lib/pt-time";
 
 const LABEL: Record<ConnectStatus, string> = {
   "not-started": "Not started",
@@ -60,7 +61,7 @@ export default function AdminStripeConnect({
         <div>
           <p className="font-semibold">Stripe payouts</p>
           <p className={`mt-1 text-sm ${status === "ready" ? "text-accent" : "text-muted"}`}>{LABEL[status]}</p>
-          {accountId && <p className="mt-1 font-mono text-xs text-muted">{accountId}{onboardedAt ? ` · form submitted ${new Date(onboardedAt).toLocaleDateString()}` : ""}</p>}
+          {accountId && <p className="mt-1 font-mono text-xs text-muted">{accountId}{onboardedAt ? ` · form submitted ${ptDay(onboardedAt)}` : ""}</p>}
           {requirementsDue.length > 0 && (
             <p className="mt-1 text-xs text-muted">Stripe is waiting on: {requirementsDue.join(", ")}</p>
           )}

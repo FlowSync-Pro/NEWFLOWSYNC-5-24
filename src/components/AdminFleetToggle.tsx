@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { setFleetJoined } from "@/app/actions/admin";
+import { ptDay } from "@/lib/pt-time";
 
 /** Admin-only: shows a driver's Curri fleet status and lets the owner mark
  * drivers who paid the joining fee outside Stripe. */
@@ -28,7 +29,7 @@ export default function AdminFleetToggle({ driverProfileId, fleetJoinedAt }: { d
       <div>
         <p className="font-semibold">Curri fleet</p>
         <p className="mt-1 text-sm text-muted">
-          {joined ? `Member since ${new Date(fleetJoinedAt!).toLocaleDateString()}` : "Not a fleet member"}
+          {joined ? `Member since ${ptDay(fleetJoinedAt!)}` : "Not a fleet member"}
         </p>
         {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
       </div>

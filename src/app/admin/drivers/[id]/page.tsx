@@ -15,6 +15,7 @@ import AdminStripeConnect from "@/components/AdminStripeConnect";
 import AdminPayouts from "@/components/AdminPayouts";
 import AdminCurriActivation from "@/components/AdminCurriActivation";
 import { connectStatus, syncConnectStatus } from "@/lib/stripe-connect";
+import { ptDay } from "@/lib/pt-time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Driver operations", robots: { index: false } };
@@ -178,7 +179,7 @@ export default async function AdminDriverOps({ params, searchParams }: PageProps
           <div className="mt-3 space-y-2">
             {driver.inspections.map((i) => (
               <div key={i.id} className="card flex items-center justify-between p-4 text-sm">
-                <span>{fmt(i.date)}{i.odometer ? ` · ${i.odometer.toLocaleString()} mi` : ""}{i.notes ? ` · ${i.notes}` : ""}</span>
+                <span>{ptDay(i.date)}{i.odometer ? ` · ${i.odometer.toLocaleString()} mi` : ""}{i.notes ? ` · ${i.notes}` : ""}</span>
                 <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${i.passed ? "bg-accent text-[#04130a]" : "bg-red-500/20 text-red-300"}`}>{i.passed ? "Passed" : "Issues"}</span>
               </div>
             ))}
