@@ -108,6 +108,12 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+- **Stage 2c — Accept / Pass on the fleet page** (built after the checkpoint below; no
+  migration / env var): each open offer on `/account/curri-fleet` has ✅ Accept (asks first)
+  and Pass, running the same first-tap-wins path as Telegram; the owner's line says "(on the
+  website)"; a page Accept is confirmed on Telegram; drivers not on Telegram can answer too.
+  Details: `docs/DISPATCH-FLOW.md` → Stage 2c.
+
 ## 📍 Checkpoint — 2026-10-09 (overnight): dates right everywhere
 Restore point: commit `0ecbd27` on the default branch (deployed, Ready — owner confirmed;
 it also carries `98f04f4`). No migrations, no env vars, no stored data changed — display

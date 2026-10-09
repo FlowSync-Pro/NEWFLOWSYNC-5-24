@@ -231,7 +231,8 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   `src/lib/telegram-dispatch.ts`, linked via "Connect Telegram", `User.telegramChatId`;
   admins mark "Activated on Curri" on the driver page. The fleet page also lists each
   driver's own open offers, assigned loads and last-24h lost/cancelled loads, read-only
-  ("Your offers and loads", a backup for Telegram; Accept/Pass stays in Telegram). Anything a
+  ("Your offers and loads"), with Accept / Pass buttons there too (stage 2c: same
+  first-tap-wins path as Telegram via `announceOfferAnswer`; Accept asks first). Anything a
   linked driver sends the bot that isn't a command is relayed to the owner's private chat;
   the owner answers by replying to it (nothing stored), and gets an email copy at the
   alert inboxes (`emailOwnerDriverMessage` in `src/lib/alerts.ts`; words kept out of logs). Dispatch times show in PT

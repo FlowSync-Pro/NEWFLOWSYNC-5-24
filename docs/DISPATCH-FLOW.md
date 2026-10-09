@@ -584,6 +584,15 @@ with a load marked "TEST — do not run", then cancel it.
 
 ## Stage 2c scope (2026-10-09) — Accept / Pass buttons on the fleet page
 
+**BUILT 2026-10-09** with all four owner answers "yes": confirm before Accept; drivers not on
+Telegram can answer on the page; a page Accept is confirmed on Telegram too; the owner's
+line is tagged "(on the website)". Code: `answerMyOffer` (`src/app/actions/duty.ts`),
+`OfferAnswerButtons`, `src/lib/offer-answer.ts` (the result notices, shown via
+`?answer=<fixed code>`), and `announceOfferAnswer` in `src/lib/telegram-dispatch.ts`, which
+the Telegram button handler now calls too. Tested: 24/24 page checks (incl. 4/4 page-vs-
+Telegram races, 4/4 same-driver Accept+Pass, forged / non-member / signed-out refusals) and
+the earlier Telegram race + relay suite re-run clean.
+
 Today `/account/curri-fleet` lists a driver's open offers read-only, with "Open Telegram to
 Accept or Pass". This adds the two buttons to each open offer on the page itself.
 

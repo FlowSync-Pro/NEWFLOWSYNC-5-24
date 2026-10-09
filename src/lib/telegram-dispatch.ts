@@ -8,11 +8,11 @@ import { ptTime } from "./pt-time";
 import { emailOwnerDriverMessage } from "./alerts";
 
 /** What the owner's phone says when a driver accepts: CLAIM NOW (claim lane) or the bid to place (bid lane). */
-async function ownerAcceptedLine(load: LoadForRanking & { lane: string; listedCents: number | null; pickupZip: string; dropoffZip: string }, profileId: string, name: string): Promise<string> {
+async function ownerAcceptedLine(load: LoadForRanking & { lane: string; listedCents: number | null; pickupZip: string; dropoffZip: string }, profileId: string, name: string, tag = ""): Promise<string> {
   const link = `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/admin/dispatch/${load.id}`;
   const c = (await rankCandidates(load)).find((x) => x.profileId === profileId);
   const miles = c?.milesToPickup ?? null;
-  const where = `${load.pickupZip} → ${load.dropoffZip}`;
+  const where = `${tag}${load.pickupZip} → ${load.dropoffZip}`;
   if (load.lane !== "BID") return `✅ ${name} ACCEPTED ${where} (${miles ?? "?"} mi away) — CLAIM NOW in Curri, then tap "Claimed in Curri":\n${link}`;
   if (miles === null || load.tripMiles === null) return `✅ ${name} ACCEPTED ${where} — place the bid in Curri:\n${link}`;
   const cpm = await driverCostPerMile(profileId);
@@ -219,27 +219,8 @@ async function handleCallback(q: NonNullable<DispatchTelegramUpdate["callback_qu
   const r = await respondOffer(offerId, action === "accept" ? "ACCEPTED" : "PASSED", u.id);
   const name = `${offer.driverProfile.firstName} ${offer.driverProfile.lastName}`.trim();
   if (r.ok) {
-    const load = await prisma.dispatchLoad.findUnique({ where: { id: offer.loadId } });
-    const claim = load?.lane !== "BID";
     await answerTelegramCallback(q.id, action === "accept" ? "You've got it ✅" : "Passed.");
-    // The owner's line goes first — a hiccup on the driver's copy must never lose CLAIM NOW.
-    if (action === "accept" && load) {
-      let line: string;
-      try {
-        line = await ownerAcceptedLine(load, offer.driverProfileId, name);
-      } catch (e) {
-        console.error("[dispatch] owner accepted line failed:", e instanceof Error ? e.message : e);
-        line = `✅ ${name} ACCEPTED ${load.pickupZip} → ${load.dropoffZip} — open the board:\n${siteBase()}/admin/dispatch/${load.id}`;
-      }
-      await notifyOwner(line);
-    } else if (action === "pass") {
-      await notifyOwner(`${name} passed on ${load ? `${load.pickupZip} → ${load.dropoffZip}` : offer.loadId}.`);
-    }
-    await sendQuietly(chatId, action === "accept"
-      ? claim
-        ? "✅ You've got it. We're claiming it in Curri now — you'll get CONFIRMED here in a moment."
-        : "✅ You've got it. We're placing the bid in Curri now — you'll hear back here when it's awarded."
-      : "Passed. No problem.");
+    await announceOfferAnswer({ loadId: offer.loadId, driverProfileId: offer.driverProfileId, driverName: name, driverChatId: chatId, action: action as OfferAction, via: "telegram" });
   } else {
     const why = /Taken|assigned/i.test(r.error) ? "Taken — someone was faster." : /expired/i.test(r.error) ? "This offer expired." : r.error;
     await answerTelegramCallback(q.id, why);
@@ -249,6 +230,45 @@ async function handleCallback(q: NonNullable<DispatchTelegramUpdate["callback_qu
   // (A failed safety check leaves the offer open, so its buttons stay.)
   if (q.message && (r.ok || /Taken|assigned|expired|Already/i.test(r.error))) await clearTelegramButtons(String(q.message.chat.id), q.message.message_id);
   return true;
+}
+
+// ---- After a driver answers an offer (Telegram button or the fleet page) ----
+
+export type OfferAction = "accept" | "pass";
+
+/**
+ * Everything that follows a SUCCESSFUL answer, wherever the driver tapped, so
+ * Telegram and the fleet page can never drift apart: the owner's CLAIM NOW /
+ * place-bid / "passed" line FIRST (a hiccup on the driver's copy must never
+ * lose it), then the driver's confirmation on Telegram. A page answer is
+ * tagged "(on the website)" for the owner; a page Pass sends the driver
+ * nothing on Telegram (they saw it on the page).
+ */
+export async function announceOfferAnswer(o: {
+  loadId: string; driverProfileId: string; driverName: string; driverChatId: string | null; action: OfferAction; via: "telegram" | "website";
+}): Promise<void> {
+  const load = await prisma.dispatchLoad.findUnique({ where: { id: o.loadId } });
+  const web = o.via === "website";
+  if (o.action === "accept" && load) {
+    let line: string;
+    try {
+      line = await ownerAcceptedLine(load, o.driverProfileId, o.driverName, web ? "(on the website) " : "");
+    } catch (e) {
+      console.error("[dispatch] owner accepted line failed:", e instanceof Error ? e.message : e);
+      line = `✅ ${o.driverName} ACCEPTED ${web ? "(on the website) " : ""}${load.pickupZip} → ${load.dropoffZip} — open the board:\n${siteBase()}/admin/dispatch/${load.id}`;
+    }
+    await notifyOwner(line);
+  } else if (o.action === "pass") {
+    await notifyOwner(`${o.driverName} passed on ${load ? `${load.pickupZip} → ${load.dropoffZip}` : o.loadId}${web ? " (on the website)" : ""}.`);
+  }
+  if (!o.driverChatId || (web && o.action === "pass")) return;
+  const claim = load?.lane !== "BID";
+  const where = load ? ` ${load.pickupZip} → ${load.dropoffZip}.` : "";
+  await sendQuietly(o.driverChatId, o.action === "accept"
+    ? `${web ? `✅ You accepted on the website:${where}` : "✅ You've got it."} ${claim
+      ? "We're claiming it in Curri now — you'll get CONFIRMED here in a moment."
+      : "We're placing the bid in Curri now — you'll hear back here when it's awarded."}`
+    : "Passed. No problem.");
 }
 
 // ---- Driver ⇄ owner relay ---------------------------------------------------

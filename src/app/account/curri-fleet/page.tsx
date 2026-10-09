@@ -11,6 +11,8 @@ import TrackEvent from "@/components/TrackEvent";
 import { FleetBiddingStory, FleetCapNote, FleetDisclaimer, FleetPayLaterNote, FleetTerms } from "@/components/FleetPitch";
 import DutyToggle from "@/components/DutyToggle";
 import TelegramConnect from "@/components/TelegramConnect";
+import OfferAnswerButtons from "@/components/OfferAnswerButtons";
+import { ANSWER_NOTICE, isAnswerCode } from "@/lib/offer-answer";
 import { DUTY_DEFAULTS, vehicleClassFromType, vehicleClassLabel } from "@/lib/dispatch";
 import { telegramBotUsername } from "@/lib/telegram";
 import { feePercentFor, splitLoad } from "@/lib/payouts";
@@ -38,7 +40,7 @@ const STEPS = [
   },
   {
     title: "Go Active for nearby loads",
-    body: "After you're activated, connect Telegram on this page and set yourself Active. While you're Active, loads that fit your vehicle, radius, and trip length are offered to you on Telegram with Accept and Pass. The first driver to accept gets the load; we claim or bid it in the Curri portal, then Telegram confirms it's yours. Go Inactive when you don't want offers — you also switch off automatically after the hours you set. Missed a Telegram message? Your open offers and your loads are also listed on this page.",
+    body: "After you're activated, connect Telegram on this page and set yourself Active. While you're Active, loads that fit your vehicle, radius, and trip length are offered to you on Telegram with Accept and Pass. The first driver to accept gets the load; we claim or bid it in the Curri portal, then Telegram confirms it's yours. Go Inactive when you don't want offers — you also switch off automatically after the hours you set. Missed a Telegram message? Your open offers and your loads are also listed on this page, where you can Accept or Pass too.",
   },
   {
     title: "Complete the delivery",
@@ -209,6 +211,8 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
   // fleet purchase. That purchase already fired its pixel on the sign-in page,
   // so only the welcome copy applies — no second Purchase event.
   const welcome = sp.welcome === "1";
+  // Set by the page's own Accept / Pass buttons: one of a fixed set of words, never personal data.
+  const answered = isAnswerCode(sp.answer) ? ANSWER_NOTICE[sp.answer] : null;
   const justJoined = joined && (paidHere || welcome);
   const purchaseSessionId = typeof sp.session_id === "string" ? sp.session_id : undefined;
 
@@ -336,13 +340,13 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
         )}
 
         {showDispatch && mine && (
-          <section className="card mt-6 p-6">
+          <section id="your-offers" className="card mt-6 scroll-mt-24 p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold tracking-tight">Your offers and loads</h2>
                 <p className="mt-1 text-sm text-muted">
-                  A backup for your Telegram messages. Offers stay open only 2–3 minutes and the first driver to
-                  accept gets the load. This list doesn&apos;t update by itself — tap Refresh.
+                  Answer offers here or on Telegram — the first driver to accept gets the load. Offers stay open
+                  only 2–3 minutes. This list doesn&apos;t update by itself — tap Refresh.
                 </p>
                 {profile.curriActivatedAt && !user?.telegramChatId && telegramReady && (
                   <p className="mt-1 text-sm text-amber-300">Automatic offers only go to drivers connected on Telegram — connect above.</p>
@@ -351,6 +355,11 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
               {/* A full page reload so the list is rebuilt on the server. */}
               <a href="/account/curri-fleet" className="btn-ghost rounded-full px-5 py-2 text-sm">Refresh</a>
             </div>
+            {answered && (
+              <p role="status" className={`mt-4 rounded-xl border px-4 py-3 text-sm ${answered.ok ? "border-accent/40 bg-accent-soft text-foreground" : "border-amber-400/30 bg-amber-400/[0.06] text-amber-200"}`}>
+                {answered.text}
+              </p>
+            )}
 
             <h3 className="mt-5 text-sm font-semibold uppercase tracking-widest text-accent">Open offers</h3>
             {mine.offers.length === 0 ? (
@@ -366,15 +375,11 @@ export default async function CurriFleetPage({ searchParams }: PageProps<"/accou
                       <LoadDetails load={o.load} />
                       {pay && <p className="mt-2 text-sm font-semibold text-foreground">{pay}</p>}
                       <p className="mt-1 text-xs text-muted">Open until {ptClock(o.expiresAt)}</p>
-                      {user?.telegramChatId && botUsername ? (
-                        <>
-                          <a href={`https://t.me/${botUsername}`} target="_blank" rel="noreferrer" className="btn-primary mt-3 inline-flex rounded-full px-5 py-2 text-sm">
-                            Open Telegram to Accept or Pass →
-                          </a>
-                          <p className="mt-2 text-xs text-muted">No message in Telegram? DM Nasser on Telegram to take it.</p>
-                        </>
-                      ) : (
-                        <p className="mt-2 text-xs text-muted">Reply to Nasser&apos;s text, or DM him on Telegram, to take it.</p>
+                      <OfferAnswerButtons offerId={o.id} />
+                      {user?.telegramChatId && botUsername && (
+                        <a href={`https://t.me/${botUsername}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-xs font-medium text-accent underline-offset-4 hover:underline">
+                          Or answer in Telegram →
+                        </a>
                       )}
                     </li>
                   );
