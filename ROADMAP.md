@@ -108,6 +108,24 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-09 (fleet push day): one-time Curri fleet invite email
+Not deployed yet; waits for the owner's merge. No migrations, no env vars, no new dependency,
+no Stripe / auth / pricing change. SAFE by the deploy rules, but it emails real drivers, so
+nothing goes out until the owner reads the preview and clicks Send.
+
+- `/admin/fleet-invite` (link on `/admin`): one email ("Want loads sent to your phone? (Curri
+  fleet)") to every paid, non-refunded driver who isn't in the fleet, 40 per click — the same
+  pattern as `/admin/add-city`. Goes through `sendMarketing()` (unsubscribed, refunded, admin
+  and fleet members skipped; once per driver, EmailLog kind `fleet-invite-2026-10`; 48h gap).
+  Bike / scooter drivers are left out (can't run Curri loads). Drivers inside the 48h gap are
+  left out of the count until it passes, so they never block a batch.
+- Copy: every price and term from `lib/pricing.ts` — $297, 15% / 20%, refundable until
+  activated, two-violations rule, monthly cap, pay-over-time "if you're eligible", the
+  $100.45 / $145 / $300 example with "one load, not a promise", not-affiliated-with-Curri
+  line. CTA → `/account/curri-fleet` (sign in → Join the fleet). No offer-page prices.
+- **Verify after deploy:** open `/admin/fleet-invite`, read the preview, send ONE batch, check
+  one arrives (support inbox or a test driver), then send the rest.
+
 ## 📍 Checkpoint — 2026-10-09 (afternoon): recovery page + "Paid, can't get in" — verified live
 Restore point: commit `1fd110f` on the default branch (merge of PR #57; deployed and
 verified on the live site by the owner). No migrations, no env vars, no new dependency;
