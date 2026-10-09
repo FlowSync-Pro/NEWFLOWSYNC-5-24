@@ -108,6 +108,29 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-09 (late night): driver messages also reach the owner by email
+Restore point: commit `f52e225` on the default branch (deployed, Ready — owner confirmed).
+No migrations and no new env vars (uses the existing Resend setup). SAFE deploy.
+
+Shipped (owner decision 2026-10-09): every message a current fleet driver sends the
+FlowSync bot that isn't a command is still relayed to the owner's Telegram AND emailed to
+the support inbox + ADMIN_EMAILS (`emailOwnerDriverMessage`, `src/lib/alerts.ts`).
+Subject "[FlowSync] 💬 Message from <name> (fleet driver)" — name only; the body has the
+words (or what media was sent and its note), current load, phone, admin link and how to
+answer (reply to the bot's copy in Telegram, or call/text). Replying to the email doesn't
+reach the driver. If Telegram to the owner fails but the email goes, the driver hears
+"✓ Sent to Nasser by email. If it's urgent, call or text him too." The message is never
+written to the server log. Other owner alerts keep their exact wording. Tested locally
+with Telegram and email stand-ins (13/13).
+
+**Not yet verified live:** a driver (or a second Telegram account linked to a test driver)
+sends the bot "test message" → it shows in the owner's Telegram AND an email
+"[FlowSync] 💬 Message from …" lands in the support inbox (check spam the first time).
+Rollback: the previous deployment, `dc0d05e`.
+
+Still open: the Stripe-status check on the next driver who finishes Stripe (`031d13a`), the
+next real fleet purchase's alert wording (`fcee774`), and everything owner-side below.
+
 ## 📍 Checkpoint — 2026-10-09 (night): fleet page reads the real Stripe payouts status
 Restore point: commit `031d13a` on the default branch (deployed, Ready — owner confirmed).
 No migrations and no new env vars. Owner-approved RISKY deploy (Stripe code path): for a
@@ -129,9 +152,6 @@ always re-check before sending.
 Still open: the first real fleet purchase's alert email (wording from `fcee774`), and
 everything owner-side in the checkpoints below.
 
-- **Driver messages also by email** (after this checkpoint; no migration / env var): every
-  message a fleet driver sends the bot is emailed to the alert inboxes as well as relayed on
-  Telegram; if Telegram is down the email still goes. Owner decision 2026-10-09.
 
 ## 📍 Checkpoint — 2026-10-09 (evening): owner alert wording for new fleet members
 Restore point: commit `fcee774` on the default branch (deployed, Ready — owner confirmed).
