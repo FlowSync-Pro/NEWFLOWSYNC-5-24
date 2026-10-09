@@ -29,7 +29,7 @@ const hasHeroImage = existsSync(join(process.cwd(), "public", "hero-driver.jpg")
 
 const STATS = [
   { value: "8", label: "Service types" },
-  { value: "$40+/hr", label: "Top category" },
+  { value: "Yours", label: "The rates and the customers" },
   { value: "$0", label: "Monthly fees" },
   { value: "24/7", label: "Work on your terms" },
 ];

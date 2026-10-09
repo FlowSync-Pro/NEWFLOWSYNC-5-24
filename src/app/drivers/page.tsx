@@ -88,7 +88,7 @@ export default function DriversPage() {
         <div className="grid gap-5 sm:grid-cols-3">
           {[
             { v: "$0", l: "monthly fees — one-time listing only" },
-            { v: "$40–75/hr", l: "earning range in moving & hauling" },
+            { v: "Your rate", l: "you quote every job — we suggest a starting price for each service" },
             { v: "Up front", l: "see what every job pays before you accept" },
           ].map((x, i) => (
             <Reveal key={x.v} delay={i * 80}>
