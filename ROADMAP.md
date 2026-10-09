@@ -134,10 +134,17 @@ Shipped:
   merging. It was merged minutes later, so main matches live again. Next time: merge first
   (merging deploys); promoting an unmerged preview means the next push to main would undo it.
 
-**Owner-side, open:** confirm `CRON_SECRET` is set in Vercel (without it the daily safety
-email and the daily follow-up emails don't run); text Anthony (paid $47 Oct 8, still on the
-temporary password, no profile) the Forgot-password steps; text/email the $97 buyer from
-Sep 30 who never finished setup. Plus everything owner-side in the checkpoints below.
+**Owner-side, done 2026-10-09:** `CRON_SECRET` confirmed in Vercel (Production); Anthony
+texted the Forgot-password steps; the $97 Sep 30 buyer contacted; the 8 drivers who lost
+documents reached out to; Neon database password reset — live `/api/health` afterwards:
+database, auth, Stripe keys, Resend and Blob all OK.
+
+**Owner-side, still open:** Vercel flags `DISPATCH_INTAKE_KEY` "Needs Attention" (likely: a
+secret not marked Sensitive — re-add it as Sensitive with the SAME value so the Fly portal
+bot keeps working, then redeploy); first real portal load end to end; per-driver fleet
+onboarding (Activated on Curri, home ZIP, Connect Telegram, /active); Stripe $1 test
+transfer + balance top-up + 1099 setting; one tagged attribution purchase; attorney review
+(fleet refund clause, contractor terms, earnings claims / FTC business-opportunity question).
 
 ## 📍 Checkpoint — 2026-10-09 (stage 2c): Accept / Pass on the fleet page — verified live
 Restore point: commit `4736f4b` on the default branch (deployed, Ready, and the Accept
