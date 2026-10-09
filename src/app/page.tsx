@@ -10,6 +10,7 @@ import ReviewStrip from "@/components/ReviewStrip";
 import FleetCheckout from "@/components/FleetCheckout";
 import RefCapture from "@/components/RefCapture";
 import { FleetBiddingStory, FleetCapNote, FleetDisclaimer, FleetPayLaterNote, FleetTerms } from "@/components/FleetPitch";
+import { FleetOfferPreview } from "@/components/FleetDispatchExplainer";
 import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice } from "@/lib/pricing";
 
 // The homepage is the paid-ad landing page, so it must stay fast. Rather than
@@ -314,6 +315,11 @@ export default function Home() {
                 contractor.
               </p>
               <div className="mt-6"><FleetBiddingStory /></div>
+              <p className="mt-8 text-sm font-semibold text-foreground">What an offer looks like on your phone:</p>
+              <div className="mt-3"><FleetOfferPreview /></div>
+              <Link href="/curri-fleet" className="mt-5 inline-flex text-sm font-medium text-accent underline-offset-4 hover:underline">
+                See how dispatch and pay work, step by step →
+              </Link>
             </Reveal>
             <Reveal delay={120}>
               <div className="card p-7">

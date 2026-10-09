@@ -132,6 +132,13 @@ Shipped and verified:
 - **Fleet page payouts copy**: self-serve "Set up payouts →" (or "Payouts are set up ✓")
   instead of "ask for your Stripe setup link".
 
+- **Fleet sales pages explain dispatch** (after this checkpoint; copy + SEO only): a sample
+  load offer in the real Telegram format, the four things drivers control, the five steps from
+  joining to the first Friday payout, and nine plain-answer FAQs on `/curri-fleet`
+  (`src/components/FleetDispatchExplainer.tsx`); the homepage fleet section shows the sample
+  offer and links there. `/curri-fleet` is now in the sitemap and carries Service + FAQPage +
+  Breadcrumb structured data. Urgency stays honest: real cap, first Accept wins, no timers.
+
 Known, not done (small, ask first):
 - The owner's new-fleet-member alert email still says "send their Stripe setup link"
   (`src/app/api/stripe/webhook/route.ts`) — Stripe webhook file, so owner approval needed.
