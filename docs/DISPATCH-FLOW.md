@@ -581,3 +581,40 @@ with a load marked "TEST — do not run", then cancel it.
    driver's copy can't lose it; relayed media always carries OUR caption (driver captions
    clipped to fit, names/phones clipped), location-type media is sent under its header; and
    only current fleet members can message the owner through the bot.
+
+## Stage 2c scope (2026-10-09) — Accept / Pass buttons on the fleet page
+
+Today `/account/curri-fleet` lists a driver's open offers read-only, with "Open Telegram to
+Accept or Pass". This adds the two buttons to each open offer on the page itself.
+
+### What the driver sees
+- Under each open offer: **✅ Accept** and **Pass**, plus the existing "or answer in
+  Telegram" link. Accept asks first (owner Q1): "Accept this load? We claim it for you in
+  Curri right away — only accept loads you'll run."
+- The answer shows right there and the list refreshes: "✅ You've got it — we're claiming it
+  in Curri now" (claim lane) / "…placing the bid" (bid lane), "Passed", "Taken — someone
+  was faster", "This offer expired" (the same words as Telegram).
+- No live countdown and no auto-refresh (unchanged): "Open until 2:41 PM PT" + Refresh.
+
+### How it works (no new rules — the same path as a Telegram tap)
+- New driver action `answerMyOffer(offerId, accept|pass)`: signed in → fleet member → the
+  offer belongs to this driver's profile (never trusts the page) → `respondOffer` — the
+  same first-tap-wins, answer-recorded-first logic as Telegram (race-hardened `e6b23ac`).
+- The "after an answer" steps move out of the Telegram button handler into one shared
+  function both paths call: the owner's CLAIM NOW / place-bid / "passed" line FIRST, then
+  the driver's confirmation on Telegram (owner Q3), so Telegram and the page can never
+  drift apart. Owner line tagged "(on the website)" (owner Q4).
+- Drivers not linked to Telegram can answer on the page too (owner Q2) — e.g. an offer
+  the owner sent by hand and texted them about.
+- Limit: the original Telegram offer message keeps its buttons after a page answer (we
+  don't store Telegram message ids; that would be a schema change). Tapping them later
+  replies "Already accepted." / "Already passed." and removes them.
+
+### Files / deploy
+`src/app/actions/duty.ts` (the action), `src/components/OfferAnswerButtons.tsx` (new),
+`src/app/account/curri-fleet/page.tsx`, `src/lib/telegram-dispatch.ts` (shared after-answer
+step). No migration, no env var, no new dependency, no Stripe / auth change → SAFE by the
+rules, but it's the live dispatch path, so the owner says "push" after a two-driver test:
+page Accept vs Telegram Accept from another driver at the same moment, page Accept +
+Telegram Pass from the same driver, expired / taken / someone else's offer / non-member /
+signed-out refusals, and a re-run of the Telegram race tests.
