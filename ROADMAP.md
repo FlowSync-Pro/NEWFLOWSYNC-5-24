@@ -108,10 +108,33 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
-## 🚧 Pending — 2026-10-09 (fleet push day): one-time Curri fleet invite email
-Not deployed yet; waits for the owner's merge. No migrations, no env vars, no new dependency,
-no Stripe / auth / pricing change. SAFE by the deploy rules, but it emails real drivers, so
-nothing goes out until the owner reads the preview and clicks Send.
+## 🚧 Pending — 2026-10-09 (fleet push day): the "make it back" fleet guarantee
+Waits for the owner's merge. RISKY deploy (owner-approved 2026-10-09): changes the fleet
+refund terms and the Stripe checkout terms-checkbox text. No migrations, no env vars, no new
+dependency, no price change.
+
+- **Guarantee** (owner answers 2026-10-09: 60 days, keep the two-violations exception,
+  update everything): fully refundable before activation; after activation, take-home from
+  fleet loads in the first 60 days under the fee paid → ask within 30 days after → full
+  refund, no questions asked; a refund ends membership. `FLEET.guaranteeDays` /
+  `guaranteeClaimDays` / `refundShort` / `refundWhy` / `refundCheckbox` in `lib/pricing.ts`;
+  `/refund-policy`, `/terms`, fleet pages, checkout checkbox, fleet invite email, quiz lead
+  emails and the abandoned-checkout email all read from them.
+- **Fleet texts** (`lib/recovery.ts`, owner-picked): "Hey {name}, Nas from FlowSync. Got a
+  van, box truck or pickup + trailer? Join my Curri fleet: I bid the loads, you run the ones
+  you want, paid every Friday. / Make your $297 back in your first 60 days or I refund all of
+  it. No questions asked. / link". Follow-up: "…If the fleet doesn't pay for itself in your
+  first 60 days, I refund the $297. You can't lose." (+ "spots are full, you'd start next
+  month" only when true). Recovery page shows the line breaks.
+- Applies to purchases after the deploy; earlier fleet buyers agreed to the old terms (the
+  owner may extend it to them). Attorney review of the guarantee wording still owed.
+- **Verify after deploy:** `/refund-policy` shows the guarantee; a fleet checkout's terms
+  checkbox shows the new sentence (start one and abandon it); `/admin/recovery` fleet rows
+  show the new text with line breaks.
+
+## ✅ Deployed — 2026-10-09 (fleet push day): one-time Curri fleet invite email
+Merged as PR #58 and live (`/admin/fleet-invite` redirects to sign-in when signed out). No
+migrations, no env vars, no new dependency. Not yet verified: the owner's first batch.
 
 - `/admin/fleet-invite` (link on `/admin`): one email ("Want loads sent to your phone? (Curri
   fleet)") to every paid, non-refunded driver who isn't in the fleet, 40 per click — the same

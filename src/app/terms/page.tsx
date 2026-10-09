@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import LegalPage from "@/components/LegalPage";
 import { SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
+import { FLEET } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   title: "Terms of service — FlowSync",
@@ -40,8 +41,10 @@ export default function TermsPage() {
       </p>
       <p>
         The Curri fleet joining fee is separate: it is fully refundable until you are activated on our
-        carrier account and non-refundable after activation, and a second violation on the carrier
-        account results in removal from the fleet without a refund. Full terms are in the{" "}
+        carrier account, and after activation it is refunded in full if your take-home from fleet loads
+        in your first {FLEET.guaranteeDays} days is less than the fee (you ask within {FLEET.guaranteeClaimDays} days
+        after). A second violation on the carrier account results in removal from the fleet without a
+        refund. Full terms are in the{" "}
         <a href="/refund-policy">refund policy</a>. You agree to these terms when you pay the joining fee.
       </p>
 

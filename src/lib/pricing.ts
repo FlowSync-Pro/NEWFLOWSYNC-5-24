@@ -190,25 +190,34 @@ export function fleetOfferSavings(hasPremium: boolean): number {
  *    their full account and listing) or a signed-in driver joining from the
  *    fleet guide after the window.
  *
- * Refund: fully refundable until the driver is activated on the carrier account;
- * after activation the fee is earned and non-refundable. Two violations on the
- * carrier account means removal from the fleet with no refund. Stated on every
- * fleet surface and acknowledged on the Stripe checkout page.
+ * Refund (owner decision 2026-10-09, the "make it back" guarantee): fully
+ * refundable before activation; after activation, if the driver's take-home
+ * from fleet loads in their first `guaranteeDays` days after activation (after
+ * the dispatching fee, from our payout records) is under the joining fee they
+ * paid ($297, or the offer-page price), they ask within `guaranteeClaimDays`
+ * days after that and get that fee back in full — no questions asked, nothing
+ * to prove. A refund ends fleet membership. The one
+ * exception: removal for two violations on the carrier account means no refund.
+ * Stated on every fleet surface and acknowledged on the Stripe checkout page.
  *
  * Fees are on loads only: 15% dispatching, paid every Friday; 20% for a payout
  * in 1–2 business days. No monthly fee, no insurance charge.
  */
+const FLEET_PRICE = 297;
+const FLEET_GUARANTEE_DAYS = 60;
+const FLEET_GUARANTEE_CLAIM_DAYS = 30;
+
 export const FLEET = {
   id: "curri-fleet",
   name: "Curri fleet invite",
-  price: 297,
+  price: FLEET_PRICE,
   addOnPrice: 150,
   addOnPriceWithoutPremium: 200,
   dispatchFeePercent: 15,
   fastPayoutFeePercent: 20,
   // The owner personally activates every fleet driver, so the site states a
   // monthly cap. It limits ACTIVATIONS, not sales: a buyer after the cap is
-  // first in line for next month (and refundable until activated). Only true
+  // first in line for next month (and fully refundable until activated). Only true
   // while the owner activates no more than this many new drivers a month.
   monthlyCap: 10,
   // Fleet referral bonus (owner decision, 2026-10-01): $50 to the referrer once
@@ -218,9 +227,19 @@ export const FLEET = {
   // or after referralBonusStartsAt. Stacks with the 3-referrals Premium reward.
   referralBonus: 50,
   referralBonusStartsAt: new Date("2026-10-01T21:34:00Z"), // the moment it went live on flowsyncdriver.com
-  refundShort: "Fully refundable until you're activated on our carrier account. After activation the fee is earned and non-refundable.",
+  /** Days after activation a driver has to make the fee back before the guarantee refunds it. */
+  guaranteeDays: FLEET_GUARANTEE_DAYS,
+  /** Days after the guarantee period ends to ask for that refund. */
+  guaranteeClaimDays: FLEET_GUARANTEE_CLAIM_DAYS,
+  // Says "joining fee", not $297: offer page B sells the fleet for less, and
+  // the guarantee is the fee the buyer actually paid. Texts to $297 buyers may
+  // say $297 (lib/recovery.ts).
+  refundShort: `Make your joining fee back in your first ${FLEET_GUARANTEE_DAYS} days on the fleet, or we refund it in full — no questions asked. Before you're activated, it's fully refundable anytime.`,
   refundWhy:
-    "Activation is real work on our side and on Curri's — we add you to the carrier account, set up your vehicle and paperwork, and vouch for you. Once that's done it can't be undone, so the fee isn't refundable after activation. Two violations on the carrier account means removal from the fleet, without a refund, because violations put every driver on the account at risk.",
+    `Before you're activated, the joining fee is fully refundable anytime. After activation it's covered by the guarantee: if your take-home from fleet loads you run in your first ${FLEET_GUARANTEE_DAYS} days after activation (after the dispatching fee, from our payout records) adds up to less than the joining fee you paid, email us (or text Nasser) within ${FLEET_GUARANTEE_CLAIM_DAYS} days after those ${FLEET_GUARANTEE_DAYS} days end and we refund that fee in full — no questions asked, nothing to prove. A refund ends your fleet membership. Otherwise the fee is earned. The one exception: removal from the fleet for two violations on the carrier account means no refund, because violations put every driver on the account at risk.`,
+  /** The required terms checkbox on the Stripe checkout page (Stripe allows 1,200 characters). */
+  refundCheckbox:
+    `I agree to the fleet refund terms: fully refundable before activation; after activation, a full refund if my take-home from fleet loads in my first ${FLEET_GUARANTEE_DAYS} days after activation is under the fee I paid (I ask within ${FLEET_GUARANTEE_CLAIM_DAYS} days after); no refund after removal for two violations on the carrier account.`,
   includes: [
     "Added to our Curri carrier account — loads dispatched to you, no waiting on your own approval",
     "We bid the loads, you run the ones you want; paid every Friday",

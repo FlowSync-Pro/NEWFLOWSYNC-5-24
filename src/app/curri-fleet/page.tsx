@@ -157,7 +157,7 @@ export default function CurriFleetLandingPage() {
         <div className="card p-6 sm:p-7 lg:mt-14">
           <FleetCapNote />
           <p className="mt-4 text-sm leading-relaxed text-muted">
-            <strong className="font-semibold text-foreground">Nothing to lose before you&apos;re activated.</strong>{" "}
+            <strong className="font-semibold text-foreground">Make it back or get it back.</strong>{" "}
             {FLEET.refundShort}
           </p>
           <a href="#join" className="btn-primary mt-5 flex w-full justify-center rounded-full px-6 py-3 text-base">

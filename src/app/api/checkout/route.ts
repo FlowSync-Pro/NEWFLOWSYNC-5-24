@@ -41,7 +41,8 @@ const fleetLineItem = (unitAmount: number) => ({
   quantity: 1,
 });
 
-// The fleet fee is refundable until activation and non-refundable after. That
+// The fleet fee is refundable before activation and, after it, only under the
+// make-it-back guarantee (FLEET.refundWhy). That
 // only holds up in a dispute if the buyer agreed to it on the checkout page,
 // so Stripe shows a required terms checkbox (it links to the Terms of Service
 // URL set in the Stripe Dashboard → Settings → Public details). If that URL
@@ -73,7 +74,7 @@ const CONSENT_EXTRA: Extra = {
     consent_collection: { terms_of_service: "required" },
     custom_text: {
       terms_of_service_acceptance: {
-        message: `I understand the fleet joining fee is ${FLEET.refundShort.replace("Fully refundable", "fully refundable").replace(/\.$/, "")}.`,
+        message: FLEET.refundCheckbox,
       },
     },
   },

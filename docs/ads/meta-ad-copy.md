@@ -37,7 +37,11 @@ rules once; then copy from the sections below.
   asked**.
 - Fleet: **$297 one-time**, **15% dispatching fee on loads, paid every Friday**
   (20% for a payout in 1–2 business days), no monthly fee, no insurance charge,
-  **fully refundable until you're activated on our carrier account**.
+  **fully refundable until you're activated on our carrier account**, and since
+  2026-10-09 the guarantee: **"Make your $297 back in your first 60 days or we refund
+  it in full. No questions asked."** (full terms on `/refund-policy`; it promises the
+  refund, never earnings). Older ad lines that only say "refundable until you're
+  activated" are still true.
 - Driver count: check `/find-a-driver` before using a number. It was 230+ on
   2026-10-03. "230+" is safe for a few weeks; "hundreds of" never goes stale.
 
