@@ -99,8 +99,13 @@ export function unpaidFollowUpText(firstName?: string | null): string {
 }
 
 /** Follow-up for a Verified driver who hasn't upgraded. */
+/** Follow-up for a Verified driver who hasn't upgraded — direct style (owner decision 2026-10-10). */
 export function premiumFollowUpText(firstName?: string | null, premiumPrice = premiumUpgradePrice()): string {
-  return lastOne(firstName) + `Premium is $${premiumPrice} one-time with a ${GUARANTEE_DAYS}-day money-back: the bidding calculator, the P&L tracker, the ads guide and my Curri course. Upgrade from Edit profile: ${base()}/account/edit. If now's not the time, no worries.`;
+  return (
+    `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
+    `Premium is the business side of your listing: the bidding calculator (your floor and your bid on every load), the P&L tracker, and my Curri course. ` +
+    `$${premiumPrice} one-time, ${GUARANTEE_DAYS}-day money-back, no questions asked. ${base()}/account/edit`
+  );
 }
 
 // ---- Referrals --------------------------------------------------------------
