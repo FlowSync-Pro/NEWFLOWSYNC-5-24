@@ -761,6 +761,7 @@ export async function sendPremiumUpgradeEmail(opts: {
       <li ${LI}>What's the one thing slowing you down or making this harder than it should be right now?</li>
     </ol>
     <p ${P}><strong style="color:#e7ecef">Reply to this email with those three</strong> and I'll come back with a plan built specifically around where you actually are.</p>
+    ${refundTermsLine()}
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>
     ${ps}`;
   return send(opts.to, "You're in — FlowSync Premium (3 quick questions)", shell("Welcome to Premium", body), { campaign: "premium-welcome" });
