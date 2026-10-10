@@ -34,10 +34,12 @@ export function recoveryText(product: RecoveryProduct, firstName?: string | null
   if (product === "fleet") {
     return `${hi}Nas from FlowSync. ${FLEET_HOOK}\n\n${FLEET_GUARANTEE}\n\n${base()}/curri-fleet`;
   }
+  // Listing — direct style (owner decision 2026-10-10), same shape as the fleet text.
   return (
-    `${hi}it's Nas from FlowSync. You started your driver listing but didn't finish. ` +
-    `Here's the link to pick it back up: ${base()}/pricing — ${listingPriceLine()} ` +
-    `${GUARANTEE_DAYS}-day money-back either way. Reply here if you have questions.`
+    `${hi}Nas from FlowSync. You were one step from getting listed. ` +
+    `Finish and customers can find you and book you directly, at the prices you set.\n\n` +
+    `$${listingPrice()} one-time. ${GUARANTEE_DAYS}-day money-back, no questions asked.\n\n` +
+    `${base()}/pricing`
   );
 }
 
