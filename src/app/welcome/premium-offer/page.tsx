@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getStripe } from "@/lib/stripe";
-import { listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, TIERS } from "@/lib/pricing";
+import { listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, REFUND_LINE, REFUND_WINDOW_DAYS, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import TrackEvent from "@/components/TrackEvent";
 import PremiumOfferButtons from "@/components/PremiumOfferButtons";
@@ -148,6 +148,12 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
           <p className="mt-4 text-center text-xs text-muted">
             Open for {OFFER_WINDOW_HOURS} hours after your purchase. After that, Premium is ${later} from your account.{" "}
             Secure Stripe checkout with your email pre-filled.
+          </p>
+          {/* Refund terms stated before payment (and ticked again at Stripe Checkout) — the
+              disclosure a dispute reviewer looks for. Plain, not a sales hook. */}
+          <p className="mt-2 text-center text-xs text-muted">
+            {REFUND_LINE} After {REFUND_WINDOW_DAYS} days the fee is non-refundable.{" "}
+            <a href="/refund-policy" className="text-accent hover:underline">Refund policy</a>
           </p>
         </div>
       </div>

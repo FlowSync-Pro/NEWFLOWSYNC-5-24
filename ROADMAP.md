@@ -124,7 +124,12 @@ who asked me to stop." No schema change — everything reuses what exists.
   their unsubscribe link sets) → every send button hidden, red marker on every tab, skipped by
   every marketing email from then on. Confirm dialog; not undone from the UI (the driver's
   own unsubscribe is the same field, so an undo button would be a CAN-SPAM foot-gun).
-- `docs/STRIPE-DISPUTE-RESPONSE.md`: the dispute playbook + fill-in response template.
+- `docs/STRIPE-DISPUTE-RESPONSE.md`: the dispute playbook + fill-in response template,
+  checked claim by claim against the code (what is really recorded, and when the 7-day
+  wording / checkbox actually shipped vs. the Oct 11 cutover in `refundWindowDaysFor`).
+- Two gaps that check found, closed: the Premium welcome email now ends with the same
+  `refundTermsLine()` as the listing emails, and `/welcome/premium-offer` states the
+  7-day terms under the buy buttons (it had no refund wording at all after PR #67).
 Deploy: SAFE (no migration, no env, no Stripe/auth code).
 
 ## 🚧 Pending — 2026-10-09: vehicle filter on the directory + accessories + extra vehicles
