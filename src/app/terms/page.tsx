@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import LegalPage from "@/components/LegalPage";
 import { SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
-import { FLEET } from "@/lib/pricing";
+import { FLEET, REFUND_WINDOW_DAYS } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   title: "Terms of service — FlowSync",
@@ -37,7 +37,9 @@ export default function TermsPage() {
       <p>
         Listing fees are processed securely by Stripe. When a customer pays for a job through FlowSync,
         a small platform fee is deducted and the remainder goes to the driver. Listing fees and the
-        Premium upgrade are covered by our <a href="/refund-policy">30-day money-back guarantee</a>.
+        Premium upgrade are refundable if you request a refund within {REFUND_WINDOW_DAYS} days of purchase,
+        and non-refundable after that (see the <a href="/refund-policy">refund policy</a>). You agree to these
+        terms on the checkout page before paying.
       </p>
       <p>
         The Curri fleet joining fee is separate: it is fully refundable until you are activated on our

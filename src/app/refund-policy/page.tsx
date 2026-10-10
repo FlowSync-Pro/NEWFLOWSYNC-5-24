@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import LegalPage from "@/components/LegalPage";
 import { SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
-import { FLEET } from "@/lib/pricing";
+import { FLEET, PRIOR_REFUND_WINDOW_DAYS, REFUND_WINDOW_CHANGED_LABEL, REFUND_WINDOW_DAYS } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   title: "Refund policy — FlowSync",
-  description: "FlowSync's 30-day money-back guarantee on driver listings and how to request a refund.",
+  description: "How refunds work for FlowSync driver listings, Premium and the Curri fleet, and how to request one.",
   alternates: { canonical: `${SITE_URL}/refund-policy` },
 };
 
@@ -13,28 +13,31 @@ export default function RefundPolicyPage() {
   return (
     <LegalPage title="Refund policy" updated="October 2026">
       <p>
-        We want every driver to feel good about getting listed on FlowSync. That&apos;s why every
-        driver listing comes with a <strong>30-day money-back guarantee</strong>.
+        Everything you get with a FlowSync listing or Premium is described on the page before you pay,
+        and you get access the moment your payment goes through. Please read it before you buy.
       </p>
 
-      <h2>The 30-day guarantee</h2>
+      <h2>Verified listing and Premium: {REFUND_WINDOW_DAYS} days</h2>
       <p>
-        If you&apos;re not satisfied with your FlowSync listing for any reason within 30 days of your
-        purchase, email us and we&apos;ll issue a full refund of your listing fee — no questions asked.
+        If you change your mind, you can get a <strong>full refund if you ask within {REFUND_WINDOW_DAYS} days
+        of your purchase</strong>. After {REFUND_WINDOW_DAYS} days the fee is non-refundable. This covers the
+        one-time Verified listing fee and the Premium upgrade. You agree to these terms on the checkout page
+        before paying.
+      </p>
+      <p>
+        Bought before {REFUND_WINDOW_CHANGED_LABEL}? You keep the {PRIOR_REFUND_WINDOW_DAYS}-day window you
+        agreed to at checkout.
       </p>
 
       <h2>How to request a refund</h2>
       <p>
-        Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> from the address on your account
-        within 30 days of your purchase and let us know you&apos;d like a refund. Refunds are returned
-        to your original payment method, typically within 5–10 business days depending on your bank.
+        Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> from the address on your account within
+        the window and let us know you&apos;d like a refund. Refunds go back to your original payment method,
+        typically within 5–10 business days depending on your bank.
       </p>
-
-      <h2>What&apos;s covered</h2>
       <p>
-        The one-time driver listing fee (Verified) and the Premium upgrade are covered by this
-        guarantee. Optional add-ons and any third-party fees are also refundable within the same
-        30-day window.
+        Have a problem with your account or a charge? Email us first — we answer every message and can
+        usually sort it out the same day.
       </p>
 
       <h2>The Curri fleet joining fee</h2>

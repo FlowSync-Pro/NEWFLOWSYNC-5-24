@@ -1,5 +1,10 @@
 # Meta ad copy library — FlowSync Drivers
 
+> ⚠️ **2026-10-10 — the 30-day money-back guarantee is retired.** The listing and Premium
+> are refundable only if requested within 7 days, and the owner does **not** want refunds
+> pitched in ads. **Delete every "30-day money-back" line below before using any ad**, and
+> don't replace it with "7-day". Rule and reasons: AGENTS.md §D "Refund policy".
+
 Paste-ready copy for Meta (Facebook + Instagram) ads. Every price, feature and
 claim below matches the live site on 2026-10-03 (`src/lib/pricing.ts`). If a
 price or feature changes on the site, update this file the same day — an ad that
@@ -33,8 +38,8 @@ rules once; then copy from the sections below.
   **"one load, not a promise"** next to it every time.
 - Quiz numbers are **bids we placed**, before expenses, not what any driver was
   paid. "A snapshot, not a promise."
-- Verified listing: **$47 one-time**, **30-day money-back guarantee, no questions
-  asked**.
+- Verified listing: **$47 one-time**. Do **not** mention refunds or a guarantee in ads
+  (owner decision 2026-10-10; the terms are stated at checkout).
 - Fleet: **$297 one-time**, **15% dispatching fee on loads, paid every Friday**
   (20% for a payout in 1–2 business days), no monthly fee, no insurance charge,
   **fully refundable until you're activated on our carrier account**, and since

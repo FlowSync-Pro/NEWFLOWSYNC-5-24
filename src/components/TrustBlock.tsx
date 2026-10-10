@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SUPPORT_EMAIL } from "@/lib/site";
-import { GUARANTEE_DAYS, listingPrice } from "@/lib/pricing";
+import { listingPrice, REFUND_WINDOW_DAYS } from "@/lib/pricing";
 
 /** Dense, specific trust signals shown above the order summary on /pricing.
  * Every claim is concrete and verifiable on this same site — no badges, no
@@ -51,7 +51,7 @@ export default function TrustBlock() {
           </p>
         </div>
 
-        {/* Real money-back guarantee */}
+        {/* Refund terms — stated plainly, not as a sales hook (owner decision 2026-10-10) */}
         <div className="card p-5">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-soft text-accent">
@@ -60,11 +60,11 @@ export default function TrustBlock() {
                 <path d="M21 3v6h-6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <p className="font-semibold">{GUARANTEE_DAYS}-day money-back guarantee</p>
+            <p className="font-semibold">Clear refund terms</p>
           </div>
           <p className="mt-2 text-sm text-muted">
-            Not happy in {GUARANTEE_DAYS} days? Email us, we refund the full ${price}{" "}
-            — no questions, no hoops. Refunded to your original card within 5–10 days.{" "}
+            Changed your mind? Email us within {REFUND_WINDOW_DAYS} days of purchase and we refund the ${price}{" "}
+            to your original card. After {REFUND_WINDOW_DAYS} days it&apos;s non-refundable.{" "}
             <Link href="/refund-policy" className="text-accent hover:underline">
               See the policy
             </Link>

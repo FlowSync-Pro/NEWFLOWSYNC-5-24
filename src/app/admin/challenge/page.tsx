@@ -56,7 +56,7 @@ export default async function AdminChallengePage() {
         <Link href="/admin" className="text-sm text-muted hover:text-foreground">← Admin dashboard</Link>
         <h1 className="mt-3 text-3xl font-bold tracking-tight">{`The ${challengeName()}`}</h1>
         <p className="mt-1 text-muted">
-          {`New buyers since ${fmt(CHALLENGE_STARTS_AT)}. ${rows.length} in total, ${rows.filter((r) => r.madeIt).length} say they made it back. It has nothing to do with refunds — those follow the 30-day guarantee as always.`}
+          {`New buyers since ${fmt(CHALLENGE_STARTS_AT)}. ${rows.length} in total, ${rows.filter((r) => r.madeIt).length} say they made it back. It has nothing to do with refunds — those follow the refund policy as always.`}
         </p>
 
         {rows.length === 0 ? (

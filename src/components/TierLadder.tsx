@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FLEET, GUARANTEE_DAYS, PLATFORM_FEE_PERCENT } from "@/lib/pricing";
+import { FLEET, PLATFORM_FEE_PERCENT, REFUND_WINDOW_DAYS } from "@/lib/pricing";
 import { SUPPORT_EMAIL } from "@/lib/site";
 
 function Check() {
@@ -47,7 +47,7 @@ export default function TierLadder() {
           <ul className="mt-4 space-y-2.5 text-sm text-muted">
             <li className="flex gap-2"><Check /><span>FlowSync is not a job and not an app that hands you work. It&apos;s your listing, your tools, and the setup to run as a real carrier. Bookings and earnings depend on you and your market.</span></li>
             <li className="flex gap-2"><Check /><span>Every price is one-time. No subscription, no auto-renewal, nothing charged later without you buying it.</span></li>
-            <li className="flex gap-2"><Check /><span>The listing and Premium carry a {GUARANTEE_DAYS}-day money-back guarantee, no questions asked. The fleet fee has its own guarantee: make your ${FLEET.price} back in your first {FLEET.guaranteeDays} days on the fleet, or a full refund. <Link href="/refund-policy" className="text-accent hover:underline">Refund policy →</Link></span></li>
+            <li className="flex gap-2"><Check /><span>The listing and Premium are refundable if you ask within {REFUND_WINDOW_DAYS} days of purchase. The fleet fee has its own guarantee: make your ${FLEET.price} back in your first {FLEET.guaranteeDays} days on the fleet, or a full refund. <Link href="/refund-policy" className="text-accent hover:underline">Refund policy →</Link></span></li>
             <li className="flex gap-2"><Check /><span>The fleet runs under one shared carrier account with a {FLEET.dispatchFeePercent}% dispatching fee on loads. Two violations means removal, without a refund — that protects every driver on it.</span></li>
             <li className="flex gap-2"><Check /><span>A real person answers <a href={`mailto:${SUPPORT_EMAIL}`} className="text-accent hover:underline">{SUPPORT_EMAIL}</a> within one business day, before or after you pay.</span></li>
           </ul>

@@ -1,10 +1,12 @@
-import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, GUARANTEE_DAYS, premiumUpgradePrice } from "./pricing";
+import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, premiumUpgradePrice } from "./pricing";
 import { SITE_URL } from "./site";
 
 // Ready-to-send follow-up messages. One source so the admin recovery page, the
 // abandoned-checkout owner alert, and the recovery email all say the same
 // true things: the current price, the REAL increase date while it's pending,
-// and the 30-day guarantee. Short, personal, one link, no fake urgency.
+// Short, personal, one link, no fake urgency. The listing/Premium refund window
+// is stated at checkout and on the refund policy — not pitched in texts
+// (owner decision 2026-10-10).
 
 export type RecoveryProduct = "listing" | "fleet";
 
@@ -20,7 +22,7 @@ export function listingPriceLine(): string {
 // Fleet texts (owner decision 2026-10-09): short and direct, one hook, one
 // guarantee, one link — nothing to think over. The guarantee is the fleet's own
 // (FLEET.refundShort; full terms on /refund-policy and at checkout), not the
-// listing's 30-day one. Never an income promise: it promises the REFUND.
+// listing/Premium 7-day refund window. Never an income promise: it promises the REFUND.
 const FLEET_HOOK =
   "Got a van, box truck or pickup + trailer? Join my Curri fleet: I bid the loads, you run the ones you want, paid every Friday.";
 const FLEET_GUARANTEE = `Make your $${FLEET.price} back in your first ${FLEET.guaranteeDays} days or I refund all of it. No questions asked.`;
@@ -38,7 +40,7 @@ export function recoveryText(product: RecoveryProduct, firstName?: string | null
   return (
     `${hi}Nas from FlowSync. You were one step from getting listed. ` +
     `Finish and customers can find you and book you directly, at the prices you set.\n\n` +
-    `$${listingPrice()} one-time. ${GUARANTEE_DAYS}-day money-back, no questions asked.\n\n` +
+    `$${listingPrice()} one-time.\n\n` +
     `${base()}/pricing`
   );
 }
@@ -49,7 +51,7 @@ export function unpaidSignupText(firstName?: string | null): string {
   return (
     `${hi}Nas from FlowSync. You made an account, but customers can't find you yet. ` +
     `Get listed and they book you directly, at the prices you set.\n\n` +
-    `$${listingPrice()} one-time. ${GUARANTEE_DAYS}-day money-back, no questions asked.\n\n` +
+    `$${listingPrice()} one-time.\n\n` +
     `${base()}/pricing`
   );
 }
@@ -66,7 +68,7 @@ export function premiumPitchText(firstName?: string | null, premiumPrice = premi
   return (
     `${hi}Nas from FlowSync. Want to know what a load is worth before you take it? ` +
     `Premium gives you the bidding calculator (your floor and your bid on every load), the P&L tracker with your cost per mile, and my Curri course.\n\n` +
-    `$${premiumPrice} one-time. ${GUARANTEE_DAYS}-day money-back, no questions asked.\n\n` +
+    `$${premiumPrice} one-time.\n\n` +
     `${base()}/account/edit`
   );
 }
@@ -95,7 +97,7 @@ export function fleetFollowUpText(firstName: string | null | undefined, roomThis
 export function listingFollowUpText(firstName?: string | null): string {
   return (
     `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
-    `Your listing is one step away. Not for you? Ask within ${GUARANTEE_DAYS} days and the $${listingPrice()} comes back, no questions asked. ${base()}/pricing`
+    `Your listing is one step away, $${listingPrice()} one-time: ${base()}/pricing`
   );
 }
 
@@ -103,7 +105,7 @@ export function listingFollowUpText(firstName?: string | null): string {
 export function unpaidFollowUpText(firstName?: string | null): string {
   return (
     `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
-    `Your account's done. Getting listed is the last step so customers can find you. Not for you? Ask within ${GUARANTEE_DAYS} days and the $${listingPrice()} comes back, no questions asked. ${base()}/pricing`
+    `Your account's done. Getting listed is the last step so customers can find you, $${listingPrice()} one-time: ${base()}/pricing`
   );
 }
 
@@ -113,7 +115,7 @@ export function premiumFollowUpText(firstName?: string | null, premiumPrice = pr
   return (
     `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
     `Premium is the business side of your listing: the bidding calculator (your floor and your bid on every load), the P&L tracker, and my Curri course. ` +
-    `$${premiumPrice} one-time, ${GUARANTEE_DAYS}-day money-back, no questions asked. ${base()}/account/edit`
+    `$${premiumPrice} one-time: ${base()}/account/edit`
   );
 }
 

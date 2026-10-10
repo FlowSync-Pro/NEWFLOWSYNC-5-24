@@ -279,5 +279,28 @@ export const VALUE_STACK: { label: string; value: number }[] = [
 
 export const VALUE_STACK_TOTAL = VALUE_STACK.reduce((s, i) => s + i.value, 0);
 
-/** Days a driver can request a full refund — surfaced as the money-back guarantee. */
-export const GUARANTEE_DAYS = 30;
+/**
+ * Refunds on the Verified listing and Premium (owner decision 2026-10-10,
+ * replacing the 30-day money-back guarantee): a full refund if requested within
+ * REFUND_WINDOW_DAYS of purchase, none after. State it plainly where it belongs
+ * (refund policy, terms, the checkout checkbox, the receipt) — never as a sales
+ * hook. Purchases made before REFUND_WINDOW_CHANGED_AT keep the
+ * PRIOR_REFUND_WINDOW_DAYS they agreed to at checkout (a late cutover only
+ * means a few more buyers keep 30 days; an early one would take it away).
+ * The fleet has its own terms (FLEET.refundWhy).
+ */
+export const REFUND_WINDOW_DAYS = 7;
+export const PRIOR_REFUND_WINDOW_DAYS = 30;
+export const REFUND_WINDOW_CHANGED_AT = new Date("2026-10-11T07:00:00Z"); // midnight Pacific, Oct 11
+export const REFUND_WINDOW_CHANGED_LABEL = "October 11, 2026";
+
+/** The refund window a purchase made at `purchasedAt` agreed to. */
+export function refundWindowDaysFor(purchasedAt: Date): number {
+  return purchasedAt < REFUND_WINDOW_CHANGED_AT ? PRIOR_REFUND_WINDOW_DAYS : REFUND_WINDOW_DAYS;
+}
+
+/** The required terms checkbox on the listing and Premium Stripe checkouts (Stripe allows 1,200 characters). */
+export const REFUND_CHECKBOX = `I agree that refunds are only available if I request them within ${REFUND_WINDOW_DAYS} days of purchase, by emailing support. After ${REFUND_WINDOW_DAYS} days the fee is non-refundable.`;
+
+/** One plain line for checkout and pages. */
+export const REFUND_LINE = `Refunds are available if requested within ${REFUND_WINDOW_DAYS} days of purchase.`;

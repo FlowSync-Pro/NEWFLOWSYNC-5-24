@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getStripe } from "@/lib/stripe";
-import { GUARANTEE_DAYS, listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, TIERS } from "@/lib/pricing";
+import { listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, TIERS } from "@/lib/pricing";
 import { SITE_URL } from "@/lib/site";
 import TrackEvent from "@/components/TrackEvent";
 import PremiumOfferButtons from "@/components/PremiumOfferButtons";
@@ -102,8 +102,7 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-muted">
             Premium&apos;s ${TIERS.premium.price} price includes the listing you just bought, so right now it&apos;s the
-            ${offer} difference. From your account later it&apos;s the full ${later}. Same {GUARANTEE_DAYS}-day
-            money-back guarantee either way.
+            ${offer} difference. From your account later it&apos;s the full ${later}.
           </p>
         </div>
 
@@ -148,7 +147,7 @@ export default async function PremiumOfferPage({ searchParams }: PageProps<"/wel
           </div>
           <p className="mt-4 text-center text-xs text-muted">
             Open for {OFFER_WINDOW_HOURS} hours after your purchase. After that, Premium is ${later} from your account.{" "}
-            {GUARANTEE_DAYS}-day money-back guarantee. Secure Stripe checkout with your email pre-filled.
+            Secure Stripe checkout with your email pre-filled.
           </p>
         </div>
       </div>
