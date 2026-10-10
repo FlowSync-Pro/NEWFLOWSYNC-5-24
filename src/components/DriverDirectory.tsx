@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { SERVICES, getService, type ServiceId } from "@/lib/services";
+import { DIRECTORY_VEHICLE_TYPES, accessoriesFor, matchesVehicleFilter, vehicleToShow, type DirectoryVehicle } from "@/lib/vehicles";
 import ServiceIcon from "./ServiceIcon";
 
 export interface DirectoryCard {
@@ -22,10 +23,23 @@ export interface DirectoryCard {
   rating?: number | null;
   /** Verified, unexpired credential labels (TWIC, Hazmat…). */
   credentials?: string[];
+  /** The driver's vehicles, main one first: the type they picked and its
+   * accessories. Empty when they haven't set a vehicle type. */
+  vehicles?: DirectoryVehicle[];
 }
 
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+}
+
+function TruckIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z" strokeLinejoin="round" />
+      <circle cx="7" cy="18" r="1.5" />
+      <circle cx="17" cy="18" r="1.5" />
+    </svg>
+  );
 }
 
 function PinIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
@@ -41,6 +55,14 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ServiceId | "all">("all");
   const [city, setCity] = useState<string>("all");
+  // Vehicle filter: "all" by default; a type, then optionally that type's
+  // accessories. Picking a different vehicle clears the accessories.
+  const [vehicle, setVehicleState] = useState<string>("all");
+  const [accessories, setAccessories] = useState<string[]>([]);
+  const setVehicle = (v: string) => { setVehicleState(v); setAccessories([]); };
+  const toggleAccessory = (a: string) => setAccessories((cur) => (cur.includes(a) ? cur.filter((x) => x !== a) : [...cur, a]));
+  const accessoryOptions = accessoriesFor(vehicle);
+  const clearAll = () => { setFilter("all"); setCity("all"); setQuery(""); setVehicle("all"); };
 
   // Every city that actually has a listed driver, so the dropdown can never
   // offer a location that returns nothing.
@@ -49,23 +71,27 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [drivers]);
 
-  const results = useMemo(() => {
+  // Recomputed on each render — a few hundred cards, so it's cheap. (A manual
+  // useMemo here trips the react-hooks memoization lint rule once the vehicle
+  // filter is added.)
+  const results = (() => {
     const q = query.trim().toLowerCase();
     return drivers.filter((d) => {
       const matchService = filter === "all" || d.service === filter;
       const matchCity = city === "all" || d.city.trim() === city;
+      const matchVehicle = matchesVehicleFilter(d.vehicles, vehicle, accessories);
       const matchQuery =
         !q ||
         d.name.toLowerCase().includes(q) ||
         d.city.toLowerCase().includes(q) ||
         d.headline.toLowerCase().includes(q);
-      return matchService && matchCity && matchQuery;
+      return matchService && matchCity && matchVehicle && matchQuery;
     });
-  }, [drivers, query, filter, city]);
+  })();
 
   const featured = results.filter((d) => (d.tier ?? "").toUpperCase() === "PREMIUM");
   const standard = results.filter((d) => (d.tier ?? "").toUpperCase() !== "PREMIUM");
-  const filtersActive = filter !== "all" || city !== "all" || query.trim() !== "";
+  const filtersActive = filter !== "all" || city !== "all" || vehicle !== "all" || query.trim() !== "";
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-12">
@@ -148,17 +174,70 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
             </button>
           ))}
         </div>
+
+        {/* Vehicle filter — matches the type the driver picked on their profile,
+            on any of their vehicles. Never guessed from make/model text. */}
+        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1" aria-label="Filter by vehicle">
+          <button
+            type="button"
+            onClick={() => setVehicle("all")}
+            className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors ${
+              vehicle === "all" ? "border-accent bg-accent-soft text-foreground" : "border-border text-muted hover:border-accent/50"
+            }`}
+          >
+            <TruckIcon className="h-4 w-4" />
+            All vehicles
+          </button>
+          {DIRECTORY_VEHICLE_TYPES.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setVehicle(t)}
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm transition-colors ${
+                vehicle === t ? "border-accent bg-accent-soft text-foreground" : "border-border text-muted hover:border-accent/50"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {/* Accessories — only the bigger vehicles have a list. Pick any number;
+            a driver must have every one picked. */}
+        {accessoryOptions.length > 0 && (
+          <div className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1" aria-label={`${vehicle} accessories`}>
+            <span className="shrink-0 text-xs uppercase tracking-widest text-muted">With</span>
+            {accessoryOptions.map((a) => {
+              const on = accessories.includes(a);
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggleAccessory(a)}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                    on ? "border-accent bg-accent-soft text-foreground" : "border-border text-muted hover:border-accent/50"
+                  }`}
+                >
+                  {on ? "✓ " : ""}{a}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <p className="text-sm text-muted">
           {results.length} driver{results.length === 1 ? "" : "s"}
+          {vehicle !== "all" && <> with a <span className="text-foreground">{vehicle.toLowerCase()}</span></>}
+          {accessories.length > 0 && <> and <span className="text-foreground">{accessories.join(", ")}</span></>}
           {city !== "all" && <> in <span className="text-foreground">{city}</span></>}
         </p>
         {filtersActive && (
           <button
             type="button"
-            onClick={() => { setFilter("all"); setCity("all"); setQuery(""); }}
+            onClick={clearAll}
             className="text-xs text-accent hover:underline"
           >
             Show all drivers
@@ -175,7 +254,7 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
             <p className="text-xs text-muted">Premium drivers · listed first</p>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((d) => <DriverCardItem key={d.id} d={d} featured />)}
+            {featured.map((d) => <DriverCardItem key={d.id} d={d} vehicleFilter={vehicle} featured />)}
           </div>
         </div>
       )}
@@ -186,7 +265,7 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
             <p className="mb-3 text-xs uppercase tracking-widest text-muted">More drivers</p>
           )}
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {standard.map((d) => <DriverCardItem key={d.id} d={d} />)}
+            {standard.map((d) => <DriverCardItem key={d.id} d={d} vehicleFilter={vehicle} />)}
           </div>
         </div>
       )}
@@ -196,7 +275,7 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
           <p className="text-muted">No drivers match that search yet.</p>
           <button
             type="button"
-            onClick={() => { setFilter("all"); setCity("all"); setQuery(""); }}
+            onClick={clearAll}
             className="btn-ghost mt-4 inline-flex rounded-full px-6 py-2.5 text-sm"
           >
             Show all drivers
@@ -207,12 +286,15 @@ export default function DriverDirectory({ drivers }: { drivers: DirectoryCard[] 
   );
 }
 
-function DriverCardItem({ d, featured = false }: { d: DirectoryCard; featured?: boolean }) {
+function DriverCardItem({ d, vehicleFilter = "all", featured = false }: { d: DirectoryCard; vehicleFilter?: string; featured?: boolean }) {
   const svc = getService(d.service);
   const cardCls = featured
     ? "card card-hover flex flex-col p-6 border-amber-400/40 bg-gradient-to-b from-amber-400/[0.04] to-transparent hover:border-amber-400/60"
     : "card card-hover flex flex-col p-6";
   const creds = d.credentials ?? [];
+  // The vehicle a customer is filtering by, when the driver has it; else the main one.
+  const vehicles = d.vehicles ?? [];
+  const veh = vehicleToShow(vehicles, vehicleFilter);
   return (
     <Link href={`/d/${d.id}`} className={cardCls}>
       <div className="flex items-start justify-between">
@@ -249,6 +331,27 @@ function DriverCardItem({ d, featured = false }: { d: DirectoryCard; featured?: 
       </div>
 
       <p className="mt-3 flex-1 text-sm text-muted">{d.headline || svc?.profileHeadline}</p>
+
+      {/* The vehicle (and its accessories) the customer can expect. */}
+      {veh && (
+        <div className="mt-3">
+          <p className="flex items-center gap-1.5 text-xs text-foreground">
+            <TruckIcon className="h-3.5 w-3.5 shrink-0 text-muted" />
+            {veh.type}
+            {vehicles.length > 1 && <span className="text-muted">{` · +${vehicles.length - 1} more`}</span>}
+          </p>
+          {veh.accessories.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {veh.accessories.slice(0, 3).map((a) => (
+                <span key={a} className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted">{a}</span>
+              ))}
+              {veh.accessories.length > 3 && (
+                <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted">+{veh.accessories.length - 3}</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Verified credentials — the fastest way for a shipper to tell whether a
           driver can legally take their load. Capped so the card stays scannable. */}

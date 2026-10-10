@@ -1,9 +1,17 @@
-import type { DriverProfile as DbProfile, Document } from "@prisma/client";
+import type { DriverProfile as DbProfile, DriverVehicle, Document } from "@prisma/client";
 import { serviceFromEnum, docKeyFromKind } from "./enums";
 import type { DriverProfile, DocKey } from "./profile";
 
-/** Convert a Prisma DriverProfile (+documents) into the app-shaped DriverProfile. */
-export function dbToAppProfile(db: DbProfile & { documents: Document[] }): DriverProfile {
+/** The extra-vehicle columns a public page may load — never `vin`. */
+export type PublicVehicle = Pick<DriverVehicle, "id" | "type" | "makeModel" | "year" | "accessories">;
+
+/**
+ * Convert a Prisma DriverProfile (+documents, optionally +vehicles) into the
+ * app-shaped DriverProfile. Pass `vehicles` selected WITHOUT `vin` on public
+ * pages (PublicVehicle) and the VIN comes through blank; the account editor
+ * includes the full rows so the driver can see and fix their own VINs.
+ */
+export function dbToAppProfile(db: DbProfile & { documents: Document[]; vehicles?: (PublicVehicle & { vin?: string | null })[] }): DriverProfile {
   const documents: Partial<Record<DocKey, string>> = {};
   for (const d of db.documents) documents[docKeyFromKind(d.kind)] = d.blobUrl;
 
@@ -20,6 +28,15 @@ export function dbToAppProfile(db: DbProfile & { documents: Document[] }): Drive
     vehicleType: db.vehicleType ?? "",
     vehicleMakeModel: db.vehicleMakeModel ?? "",
     vehicleYear: db.vehicleYear ?? "",
+    vehicleAccessories: db.vehicleAccessories ?? [],
+    vehicles: (db.vehicles ?? []).map((v) => ({
+      id: v.id,
+      type: v.type,
+      makeModel: v.makeModel ?? "",
+      year: v.year ?? "",
+      vin: v.vin ?? "",
+      accessories: v.accessories ?? [],
+    })),
     baseZip: db.baseZip ?? "",
     headline: db.headline ?? "",
     bio: db.bio ?? "",

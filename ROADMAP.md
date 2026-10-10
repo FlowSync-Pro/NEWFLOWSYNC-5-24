@@ -108,6 +108,47 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-09: vehicle filter on the directory + accessories + extra vehicles
+Waits for the owner's merge. **RISKY deploy: one new migration**
+(`20261009200000_vehicle_accessories`, ADDITIVE: one empty array column on DriverProfile,
+one new empty table `DriverVehicle`; nothing dropped, renamed or rewritten — the main
+vehicle stays in `vehicleType` / `vehicleMakeModel` / `vehicleYear`, so dispatch, Curri
+matching, emails and the fleet page are unchanged). No env vars, no new dependency.
+**Backup first** (owner, before merging): `node --env-file=.env.local
+scripts/backup-driver-data.mjs` + a Neon snapshot. The backup script now includes the
+new table.
+
+Owner answers (2026-10-09): build it; VIN required only for a 2nd+ vehicle; the directory
+filter matches ANY of a driver's vehicles while the card and dispatch use vehicle #1;
+"Bike / scooter" stays on the profile with no directory button (those drivers show under
+All only).
+
+- `src/lib/vehicles.ts` — the single source: `VEHICLE_TYPES` (profile options),
+  `DIRECTORY_VEHICLE_TYPES` (the 7 buttons, owner's order), `ACCESSORIES_BY_TYPE` (exact
+  lists; Sedan / Minivan / SUV have none), `pruneAccessories` (switching vehicle drops what
+  isn't on the new list), `isValidVin`, `matchesVehicleFilter`, `vehicleToShow`. Tests:
+  `npm run test:vehicles` (6/6).
+- **Profile editor** (`/account/edit`): accessories checklist under the main vehicle when
+  its type has one; "More vehicles" section — type, make/model, year, VIN (required, "kept
+  private"), accessories, Remove, "+ Add a vehicle". Saved by `saveDriverProfile`
+  (`vehicleAccessories`, `vehicles` as the whole list; ids scoped to the driver's own
+  profile; invalid VIN → the Save button shows the reason).
+- **Public profile** (`/d/[id]`, and the driver's own `/profile` preview): accessories as
+  chips under the main vehicle; extra vehicles listed below (type, make/model, year,
+  accessories). The VIN is never selected on those pages.
+- **Directory** (`/find-a-driver`, and the `/delivery/[service]/[city]` pages, which reuse
+  the component without vehicle data): "All vehicles" + the 7 types; picking Cargo van /
+  Pickup truck / Sprinter van / Box truck shows a "With" row of that vehicle's accessories
+  (pick any number; a driver must have every one). Filters on the type the driver picked,
+  never on make/model text. Cards show the vehicle matching the filter (else the main one),
+  "+N more", and up to 3 accessory chips.
+- **Verify after deploy:** `/api/health` ok; a driver with a Cargo van sees the accessories
+  checklist, ticks two, saves, and they show on `/d/[id]`; add a 2nd vehicle with a VIN,
+  save, and the VIN is absent from the public page's HTML (view source); on
+  `/find-a-driver` pick Cargo van → the "With" row appears and the driver stays listed;
+  pick an accessory they didn't tick → they drop out; "All vehicles" brings everyone back,
+  including drivers with no vehicle type.
+
 ## 🚧 Pending — 2026-10-09 (fleet push day): the "make it back" fleet guarantee
 Waits for the owner's merge. RISKY deploy (owner-approved 2026-10-09): changes the fleet
 refund terms and the Stripe checkout terms-checkbox text. No migrations, no env vars, no new

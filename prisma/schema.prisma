@@ -263,6 +263,12 @@ model DriverProfile {
   vehicleType      String?
   vehicleMakeModel String?
   vehicleYear      String?
+  /// Accessories on the main vehicle above (lib/vehicles.ts lists what each
+  /// vehicle type may carry). ADDITIVE: empty for everyone until they tick some.
+  vehicleAccessories String[] @default([])
+  /// Extra vehicles beyond the main one (ADDITIVE; the main vehicle stays in
+  /// the three columns above so dispatch and emails are unchanged).
+  vehicles DriverVehicle[]
 
   // Service-specific answers keyed by field id (matches ProfileField.key in the app).
   serviceDetails Json @default("{}")
@@ -297,6 +303,27 @@ model DriverProfile {
 
   @@index([primaryService])
   @@index([city])
+}
+
+/// An additional vehicle a driver owns (the main one lives on DriverProfile).
+/// The VIN is for the owner's records only — never rendered on a public page.
+model DriverVehicle {
+  id        String        @id @default(cuid())
+  profileId String
+  profile   DriverProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  /// One of VEHICLE_TYPES in lib/vehicles.ts ("Cargo van", "Box truck", …).
+  type        String
+  makeModel   String?
+  year        String?
+  vin         String?
+  accessories String[] @default([])
+  sortOrder   Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
 }
 
 // A completed route/trip with operating numbers for day-to-day P&L tracking.

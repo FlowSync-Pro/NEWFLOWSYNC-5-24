@@ -36,6 +36,7 @@ const prisma = new PrismaClient();
 const MODELS = [
   "user",
   "driverProfile",
+  "driverVehicle",
   "trip",
   "inspection",
   "driverService",

@@ -173,3 +173,46 @@ export function TagInput({
     </div>
   );
 }
+
+/** Pick any number of options (accessories). Same look as ChipSelect. */
+export function ChipMulti({
+  label,
+  hint,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  options: string[];
+  value: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const toggle = (opt: string) => onChange(value.includes(opt) ? value.filter((x) => x !== opt) : [...value, opt]);
+  return (
+    <div>
+      <span className="text-sm font-medium">{label}</span>
+      {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
+      <div className="mt-2 flex flex-wrap gap-2">
+        {options.map((opt) => {
+          const active = value.includes(opt);
+          return (
+            <button
+              key={opt}
+              type="button"
+              aria-pressed={active}
+              onClick={() => toggle(opt)}
+              className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                active
+                  ? "border-accent bg-accent-soft text-foreground"
+                  : "border-border text-muted hover:border-accent/50"
+              }`}
+            >
+              {active ? "✓ " : ""}{opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

@@ -349,7 +349,7 @@ export default function ProfileView({
                 <img src={profile.documents.vehiclePhoto} alt="Vehicle" className="h-36 w-full object-cover" />
               )}
               <div className="p-6">
-                <h3 className="text-sm font-semibold">Vehicle</h3>
+                <h3 className="text-sm font-semibold">{profile.vehicles.length > 0 ? "Vehicles" : "Vehicle"}</h3>
                 <div className="mt-3 flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
                     <ServiceIcon id={primary.id} className="h-5 w-5" />
@@ -361,6 +361,19 @@ export default function ProfileView({
                     </p>
                   </div>
                 </div>
+                <AccessoryChips items={profile.vehicleAccessories} />
+                {/* Extra vehicles — type, make/model, year and accessories. Never the VIN. */}
+                {profile.vehicles.length > 0 && (
+                  <ul className="mt-4 space-y-3 border-t border-border pt-4">
+                    {profile.vehicles.map((v) => (
+                      <li key={v.id}>
+                        <p className="font-medium">{v.type}</p>
+                        <p className="text-sm text-muted">{[v.makeModel, v.year].filter(Boolean).join(" · ") || "Vehicle on file"}</p>
+                        <AccessoryChips items={v.accessories} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </section>
 
@@ -401,6 +414,18 @@ export default function ProfileView({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** The accessories a driver ticked for one vehicle, as small chips. */
+function AccessoryChips({ items }: { items: string[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {items.map((a) => (
+        <span key={a} className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted">{a}</span>
+      ))}
     </div>
   );
 }
