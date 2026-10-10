@@ -56,13 +56,14 @@ export function fleetPitchText(firstName?: string | null): string {
   return `${hi}Nas from FlowSync. ${FLEET_HOOK}\n\n${FLEET_GUARANTEE}\n\nJoin from your account: ${base()}/account/curri-fleet`;
 }
 
-/** Text for a Verified driver who hasn't upgraded to Premium. */
+/** Text for a Verified driver who hasn't upgraded to Premium — direct style (owner decision 2026-10-10). */
 export function premiumPitchText(firstName?: string | null, premiumPrice = premiumUpgradePrice()): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
   return (
-    `${hi}it's Nas from FlowSync. Quick one: Premium is now the business side of your listing — the bidding calculator (your floor and your bid on every load), ` +
-    `the P&L tracker with cost per mile, the ads guide, and my Curri mastermind course, plus the badge and top placement in the directory. ` +
-    `$${premiumPrice} one-time to upgrade, ${GUARANTEE_DAYS}-day money-back. Sign in, go to Edit profile, tap Upgrade to Premium: ${base()}/account/edit — or reply "premium" and I'll send the link.`
+    `${hi}Nas from FlowSync. Want to know what a load is worth before you take it? ` +
+    `Premium gives you the bidding calculator (your floor and your bid on every load), the P&L tracker with your cost per mile, and my Curri course.\n\n` +
+    `$${premiumPrice} one-time. ${GUARANTEE_DAYS}-day money-back, no questions asked.\n\n` +
+    `${base()}/account/edit`
   );
 }
 
