@@ -280,7 +280,9 @@ copy/SMS/mailto buttons; every sales row also carries its one follow-up. The
 paid-non-fleet tab has **Send all** (the fleet invite email, `src/lib/fleet-invite-email.ts`,
 once per driver ever via `EmailLog`; rows show **Emailed <day>**), and every account-backed
 sales row has **Asked to stop** → `markAskedToStop` sets `User.marketingOptOutAt` (same as
-their unsubscribe link, never undone from the UI) and marks them on every tab. No new columns. All
+their unsubscribe link, never undone from the UI) and marks them on every tab. No new columns.
+Stripe disputes: `docs/STRIPE-DISPUTE-RESPONSE.md` + the read-only **Dispute evidence** page
+(`/admin/dispute`, `src/lib/dispute-evidence.ts`) — only facts the system records. All
 message copy lives in `src/lib/recovery.ts`: current price, the real increase date while
 pending — no refund pitch (owner decision 2026-10-10), no discounts, no fake urgency. Fleet texts link the
 `/curri-fleet` real-runs page and mention pay over time (Klarna/Afterpay/Affirm, "if

@@ -77,7 +77,10 @@ export default async function AdminDriverOps({ params, searchParams }: PageProps
           {driver.tier === "PREMIUM" && <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs font-bold text-amber-300">★ Premium</span>}
           {driver.user.fleetJoinedAt && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-bold text-accent">🚚 Fleet</span>}
         </div>
-        <p className="mt-1 text-sm text-muted">{driver.user.email}{driver.city ? ` · ${driver.city}` : ""}</p>
+        <p className="mt-1 text-sm text-muted">
+          {driver.user.email}{driver.city ? ` · ${driver.city}` : ""}
+          {" · "}<Link href={`/admin/dispute/${driver.userId}`} className="text-accent hover:underline">Dispute evidence</Link>
+        </p>
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Stat label="Trips" value={String(trips.length)} />
