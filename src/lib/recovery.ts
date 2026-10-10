@@ -75,8 +75,6 @@ export function premiumPitchText(firstName?: string | null, premiumPrice = premi
 // Sent once, two days after the first text, only if they didn't reply — then
 // stop (AGENTS.md section D). No discounts, no invented urgency.
 
-const lastOne = (firstName?: string | null) => `${firstName ? `Hey ${firstName}, ` : "Hey, "}Nas again from FlowSync — last one from me on this. `;
-
 /**
  * Fleet follow-up. `roomThisMonth` must come from real numbers — the admin
  * page compares this month's activations with FLEET.monthlyCap. It claims no
@@ -93,14 +91,20 @@ export function fleetFollowUpText(firstName: string | null | undefined, roomThis
   );
 }
 
-/** Follow-up for an abandoned listing checkout. */
+/** Follow-up for an abandoned listing checkout — direct style (owner decision 2026-10-10). */
 export function listingFollowUpText(firstName?: string | null): string {
-  return lastOne(firstName) + `Your driver listing is still waiting: ${base()}/pricing — ${listingPriceLine()} ${GUARANTEE_DAYS}-day money-back. If now's not the time, no worries.`;
+  return (
+    `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
+    `Your listing is one step away. Not for you? Ask within ${GUARANTEE_DAYS} days and the $${listingPrice()} comes back, no questions asked. ${base()}/pricing`
+  );
 }
 
-/** Follow-up for a free signup who never got listed. */
+/** Follow-up for a free signup who never got listed — direct style (owner decision 2026-10-10). */
 export function unpaidFollowUpText(firstName?: string | null): string {
-  return lastOne(firstName) + `Your account's set up — getting listed is the last step so customers can find you: ${base()}/pricing — ${listingPriceLine()} ${GUARANTEE_DAYS}-day money-back. If now's not the time, no worries.`;
+  return (
+    `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
+    `Your account's done. Getting listed is the last step so customers can find you. Not for you? Ask within ${GUARANTEE_DAYS} days and the $${listingPrice()} comes back, no questions asked. ${base()}/pricing`
+  );
 }
 
 /** Follow-up for a Verified driver who hasn't upgraded. */
