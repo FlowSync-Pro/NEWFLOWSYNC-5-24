@@ -159,6 +159,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
               )}
             </Link>
             <Link href="/admin/recovery" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Recovery</Link>
+            <Link href="/admin/dispute" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Dispute evidence</Link>
             <Link href="/admin/referrals" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Fleet referrals</Link>
             <Link href="/admin/payouts" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Fleet payouts</Link>
             <Link href="/admin/dispatch" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Dispatch</Link>

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import { generateTempPassword, hashPassword } from "@/lib/password";
@@ -146,6 +147,17 @@ export async function sendFleetInviteEmails(): Promise<{ ok: true; result: Fleet
     console.error("[fleet-invite] batch failed:", e);
     return { ok: false, error: "The batch stopped partway. Reload the page to see how many are still waiting, then try again." };
   }
+}
+
+/**
+ * Dispute evidence lookup: find a buyer by email (from the Stripe dispute) and open
+ * their evidence page. A form action, so the email stays out of the URL.
+ */
+export async function openDisputeEvidence(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const user = email ? await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } }, select: { id: true } }) : null;
+  redirect(user ? `/admin/dispute/${user.id}` : "/admin/dispute?notfound=1");
 }
 
 /**

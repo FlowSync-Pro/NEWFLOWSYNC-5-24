@@ -108,6 +108,16 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-10: "Copy dispute evidence" page
+`/admin/dispute` (linked from the Admin header and each driver's ops page): look a buyer up
+by email (form action — the email never goes in a URL) → `/admin/dispute/<userId>` shows one
+copyable text block from `src/lib/dispute-evidence.ts`: each listing/Premium/fleet payment
+with its refund window (`refundWindowDaysFor`) and whether today is inside it, the wording
+they were shown (by the Oct 10 deploy times), whether Stripe recorded the checkbox
+(`consent.terms_of_service`, read-only session retrieve), checkout name/email/phone, the dated
+profile / document / trip / roadmap facts, status now, and what is NOT recorded. Read-only:
+no writes, no schema, no env. Deploy: SAFE.
+
 ## 🚧 Pending — 2026-10-10: Recovery page remembers who was emailed / who said stop
 Owner ask: "paid drivers, not in the fleet should have a send-all button and mark the
 ones that have been sent to … the site does not remember who you already emailed or

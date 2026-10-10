@@ -104,8 +104,8 @@ payment is confirmed. The **directory listing goes live only after** the driver 
 their profile, uploads license + insurance, and you approve them — the welcome email tells
 them so. Say the same in the response, or the attached email contradicts you.
 
-Dates the system records (most live only in the database — ask for the "Copy dispute
-evidence" button, below, if you'd like them on the driver's page):
+Dates the system records (most live only in the database — the Dispute evidence page
+below collects them for you):
 - Payment — `Payment.createdAt` (also on the Stripe payment page)
 - Account created — `User.createdAt` ("joined <date>" in Admin → Newest signups while they
   are among the 12 newest)
@@ -129,8 +129,12 @@ Refunds you issue in Stripe are mirrored on the site (`charge.refunded` → the 
 becomes REFUNDED + an owner alert) — the evidence for a "credit not processed" dispute —
 but only if that event is enabled on the webhook endpoint in Stripe.
 
-Want this gathered for you? A "Copy dispute evidence" button on the driver's admin page
-that assembles these dates and facts is a small, safe follow-up task — say the word.
+**Shortcut: Admin → Dispute evidence** (`/admin/dispute`). Enter the customer's email from
+the Stripe dispute and you get all of the above for that buyer in one block — every
+payment with its refund window (and whether they're still inside it), the wording they
+were shown, whether Stripe recorded the checkbox, the dated profile/upload/trip/roadmap
+facts, and what isn't recorded — with a **Copy dispute evidence** button. Also linked as
+"Dispute evidence" next to the email on each driver's ops page. Read-only.
 
 ---
 
