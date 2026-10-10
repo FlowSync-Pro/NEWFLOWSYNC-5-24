@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { EARNINGS_CONSENT_TEXT, EARNINGS_SOURCE, VEHICLES, type Vehicle, type VehicleId } from "@/lib/earnings";
 import { emailEarningsBreakdown } from "@/app/actions/leads";
-import { FLEET, GUARANTEE_DAYS, listingPrice } from "@/lib/pricing";
+import { FLEET, listingPrice } from "@/lib/pricing";
 
 // Owner-approved copy (2026-10-02). Numbers are BIDS we placed, never earnings —
 // keep every sentence that says so, and the disclaimer, on every result.
@@ -49,7 +49,7 @@ function ListingResult() {
       <p className="text-lg">
         {`Curri loads are for pickups, vans and trucks, so we don't have car numbers to show. With a car, your strongest ` +
           `path is your own direct customers. A Verified listing puts you in our directory, where customers book you ` +
-          `directly: ${usd(listingPrice())} one-time, with a ${GUARANTEE_DAYS}-day money-back guarantee.`}
+          `directly: ${usd(listingPrice())} one-time.`}
       </p>
       <Link href="/pricing" className="btn-primary mt-5 inline-block rounded-full px-6 py-3 text-sm font-semibold">
         Get listed →

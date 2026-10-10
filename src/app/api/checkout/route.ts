@@ -5,7 +5,7 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { attributionMetadata } from "@/lib/attribution";
-import { FLEET, fleetOfferPrice, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, TIERS, type TierId } from "@/lib/pricing";
+import { FLEET, fleetOfferPrice, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, REFUND_CHECKBOX, TIERS, type TierId } from "@/lib/pricing";
 
 /** Post-checkout offers are open for OFFER_WINDOW_HOURS after the purchase they follow. */
 const offerOpen = (s: Stripe.Checkout.Session) => !offerExpired(s.created);
@@ -98,7 +98,19 @@ async function createSession(stripe: Stripe, base: SessionParams, extras: Extra[
   throw new Error("unreachable");
 }
 
-const createListingSession = (stripe: Stripe, base: SessionParams) => createSession(stripe, base, [RECOVERY_EXTRA()]);
+// Listing and Premium: the buyer ticks the 7-day refund terms (owner decision
+// 2026-10-10) — the evidence Stripe weighs most in a "didn't agree" dispute.
+// Same fallback as the fleet's box: without a Terms of Service URL in Stripe
+// the option is dropped and logged, never blocking the sale.
+const REFUND_CONSENT_EXTRA: Extra = {
+  name: "listing/Premium refund-terms checkbox (needs the Terms of Service URL in Stripe → Settings → Public details)",
+  params: {
+    consent_collection: { terms_of_service: "required" },
+    custom_text: { terms_of_service_acceptance: { message: REFUND_CHECKBOX } },
+  },
+};
+
+const createListingSession = (stripe: Stripe, base: SessionParams) => createSession(stripe, base, [RECOVERY_EXTRA(), REFUND_CONSENT_EXTRA]);
 const createFleetSession = (stripe: Stripe, base: SessionParams, opts: { recovery?: boolean } = {}) =>
   createSession(stripe, base, opts.recovery ? [RECOVERY_EXTRA(), CONSENT_EXTRA] : [CONSENT_EXTRA]);
 
@@ -243,7 +255,7 @@ async function handleCheckout(req: Request) {
     if (!profile) return NextResponse.json({ error: "Complete your profile first." }, { status: 400 });
     if (isPremiumTier(profile.tier)) return NextResponse.json({ error: "You're already on Premium." }, { status: 400 });
 
-    const upgrade = await stripe.checkout.sessions.create({
+    const upgrade = await createSession(stripe, {
       mode: "payment",
       line_items: [
         {
@@ -256,7 +268,7 @@ async function handleCheckout(req: Request) {
       // A Premium purchase is followed by the fleet offer (page B).
       success_url: `${base}/welcome/fleet-offer?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/account/services`,
-    });
+    }, [REFUND_CONSENT_EXTRA]);
     return NextResponse.json({ url: upgrade.url });
   }
 
@@ -290,7 +302,7 @@ async function handleCheckout(req: Request) {
       return NextResponse.json({ error: "You're already on Premium." }, { status: 400 });
     }
 
-    const oto = await stripe.checkout.sessions.create({
+    const oto = await createSession(stripe, {
       mode: "payment",
       line_items: [
         {
@@ -307,7 +319,7 @@ async function handleCheckout(req: Request) {
       // Purchase fired on offer page A with the listing session's id.
       success_url: `${base}/welcome/fleet-offer?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/welcome/premium-offer?session_id=${encodeURIComponent(original.id)}`,
-    });
+    }, [REFUND_CONSENT_EXTRA]);
     return NextResponse.json({ url: oto.url });
   }
 

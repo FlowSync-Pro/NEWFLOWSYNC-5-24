@@ -149,6 +149,34 @@ All only).
   pick an accessory they didn't tick → they drop out; "All vehicles" brings everyone back,
   including drivers with no vehicle type.
 
+## 🚧 Pending — 2026-10-10: 7-day refund window replaces the 30-day guarantee
+Waits for the owner's merge. RISKY deploy (owner-approved 2026-10-10): changes the refund
+terms for the Verified listing and Premium, and the Stripe checkout for both (a required
+"I agree to the refund terms" checkbox). No migrations, no env vars, no new dependency, no
+price change. Reason: buyers waited ~3 weeks then asked for refunds under the 30-day promise;
+the dispute rate rose three months running.
+
+- **Rule** (`src/lib/pricing.ts`): `REFUND_WINDOW_DAYS` = 7, none after. Purchases before
+  `REFUND_WINDOW_CHANGED_AT` (Oct 11, 2026, midnight PT) keep `PRIOR_REFUND_WINDOW_DAYS` = 30
+  (`refundWindowDaysFor()`); `/refund-policy` says so. The fleet's "make it back" terms are
+  unchanged. Owner answers: Premium also 7 days; fleet unchanged; honor past buyers' 30 days;
+  add the checkbox.
+- **Checkout**: `REFUND_CHECKBOX` on the listing session and both Premium sessions (account
+  upgrade + offer page A) via the same consent/fallback path the fleet uses (needs the Terms
+  of Service URL in Stripe → Settings → Public details; otherwise dropped and logged).
+- **Receipts**: `refundTermsLine()` on the welcome email (listing buyers only) and the
+  purchase-confirmation email — the terms in writing for a dispute.
+- **No more pitching**: every "30-day money-back" line removed from the pricing page
+  (TrustBlock, OfferCheckout), offer page A, Premium gate, tier ladder, challenge card,
+  recovery texts, marketing emails, quiz copy and the Telegram FAQ. `GUARANTEE_DAYS` is gone.
+  `AGENTS.md` §D rewritten; ad docs carry a banner to strip the lines before use.
+- **Verify after deploy:** `/refund-policy` and `/terms` show 7 days; `/pricing` shows "Clear
+  refund terms" with no "30-day"; start a $47 checkout → Stripe shows the "I agree that
+  refunds…" checkbox (abandon it); a test purchase's welcome email ends with the refund line.
+- **Owner-side:** Stripe → Settings → Public details → Terms of Service URL must be set
+  (`https://flowsyncdriver.com/terms`) or the checkbox is silently dropped; attorney review of
+  the new window (§E); Meta ads that still say "30-day money-back" must be edited.
+
 ## 🚧 Pending — 2026-10-09 (fleet push day): the "make it back" fleet guarantee
 Waits for the owner's merge. RISKY deploy (owner-approved 2026-10-09): changes the fleet
 refund terms and the Stripe checkout terms-checkbox text. No migrations, no env vars, no new

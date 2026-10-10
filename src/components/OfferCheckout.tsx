@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { CHALLENGE_DAYS, challengeName } from "@/lib/challenge";
 import {
   BUMPS,
-  GUARANTEE_DAYS,
   LISTING_INCREASE_DATE_LABEL,
   LISTING_PRICE_AFTER,
   listingIncreasePending,
@@ -12,6 +11,7 @@ import {
   PLATFORM_FEE_PERCENT,
   premiumOfferPrice,
   premiumUpgradePrice,
+  REFUND_WINDOW_DAYS,
   TIERS,
   VALUE_STACK,
 } from "@/lib/pricing";
@@ -159,7 +159,7 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
           <p className="text-sm font-semibold text-accent">
             The listing goes from ${price} to ${LISTING_PRICE_AFTER} on {LISTING_INCREASE_DATE_LABEL}.
           </p>
-          <p className="mt-1 text-xs text-muted">Get listed before then and you pay ${price}. Same {GUARANTEE_DAYS}-day money-back guarantee either way.</p>
+          <p className="mt-1 text-xs text-muted">Get listed before then and you pay ${price}.</p>
         </div>
       )}
 
@@ -254,23 +254,21 @@ export default function OfferCheckout({ proof, referralCode = "" }: { proof: Soc
             </button>
             <p className="mt-2 text-center text-xs text-muted">You&apos;ll set up your name and service right after payment.</p>
 
-            {/* Risk reversal — money-back if not happy. Phrased honestly so we
-                aren't implicitly promising bookings (driver outcomes aren't
-                ours to guarantee). */}
-            <div className="mt-5 rounded-xl border border-accent/40 bg-accent-soft p-4 text-center">
-              <p className="text-sm font-bold text-accent">{GUARANTEE_DAYS}-Day Money-Back Guarantee</p>
-              <p className="mt-1 text-xs text-muted">
-                Try FlowSync risk-free. If you&apos;re not happy with your listing in {GUARANTEE_DAYS} days, email{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-accent hover:underline">{SUPPORT_EMAIL}</a>{" "}
-                for a full refund — no questions, no hard feelings.
-              </p>
-            </div>
+            {/* Refund terms, stated plainly before payment and ticked again on
+                Stripe's checkout (owner decision 2026-10-10: 7 days, not pushed
+                as a guarantee). */}
+            <p className="mt-5 text-center text-xs text-muted">
+              Refunds are available if you email{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-accent hover:underline">{SUPPORT_EMAIL}</a>{" "}
+              within {REFUND_WINDOW_DAYS} days of purchase; after that the fee is non-refundable.{" "}
+              <a href="/refund-policy" className="text-accent hover:underline">Refund policy</a>
+            </p>
 
             {/* First-$47 Challenge (owner-approved 2026-10-02). A goal, not a promise —
-                and it leaves the guarantee above exactly as it is. */}
+                and it has nothing to do with refunds. */}
             <p className="mt-4 text-center text-xs text-muted">
               <strong className="text-foreground">{`The ${challengeName()}:`}</strong>
-              {` a ${CHALLENGE_DAYS}-day, step-by-step plan aimed at landing the job that pays your listing back. Not for you? The ${GUARANTEE_DAYS}-day money-back guarantee still applies — no questions asked.`}
+              {` a ${CHALLENGE_DAYS}-day, step-by-step plan aimed at landing the job that pays your listing back. It's a goal, not a promise.`}
             </p>
 
             <div className="mt-5 space-y-2 text-xs text-muted">

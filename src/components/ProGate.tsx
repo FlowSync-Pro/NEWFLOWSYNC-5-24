@@ -26,7 +26,7 @@ export default function ProGate({ title, blurb }: { title: string; blurb: string
         </ul>
         <div className="mt-6 flex flex-col items-center gap-3">
           <UpgradeButton label={`Upgrade to Premium — $${premiumUpgradePrice()} one-time`} />
-          <p className="text-xs text-muted">30-day money-back guarantee. Same secure Stripe checkout.</p>
+          <p className="text-xs text-muted">Secure Stripe checkout. Refunds within 7 days of purchase.</p>
         </div>
         <Link href="/account" className="mt-5 inline-block text-sm text-muted hover:text-foreground">
           ← Back to your account

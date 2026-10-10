@@ -35,7 +35,7 @@ export const TELEGRAM_BASELINE_FAQS: KnowledgeCandidate[] = [
     // restating terms here, so the bot can never contradict what the buyer was
     // actually promised on the payment page.
     answer:
-      "The one-time listing is backed by a 30-day money-back guarantee — the terms shown at checkout are the ones that apply to your purchase. Refunds are never tied to income outcomes. For a specific purchase, contact FlowSync support and Nas will review it with you.",
+      "The terms you agreed to at checkout are the ones that apply to your purchase. For the listing and Premium bought from October 11, 2026, that's a refund if you ask within 7 days of purchase (earlier purchases keep the 30 days they agreed to). Refunds are never tied to income outcomes. For a specific purchase, contact FlowSync support and Nas will review it with you.",
   },
   {
     id: "baseline-dot-ein-llc",

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toggleTask } from "@/app/actions/roadmap";
 import { CHALLENGE_DAYS, CHALLENGE_MADE_IT_ID, CHALLENGE_STEPS, challengeName, shareMessage } from "@/lib/challenge";
-import { GUARANTEE_DAYS, listingPrice } from "@/lib/pricing";
+import { listingPrice } from "@/lib/pricing";
 
 // The First-$47 Challenge on the driver's dashboard (owner-approved copy,
 // 2026-10-02). A goal, not a promise; refunds are untouched. Ticks are saved
@@ -74,7 +74,7 @@ export default function ChallengeCard({
           <span className="shrink-0 text-sm font-semibold text-accent">{`${done}/${CHALLENGE_STEPS.length}`}</span>
         </div>
         <p className="mt-2 text-sm text-muted">
-          {`The goal: one job that covers your $${listingPrice()} listing. It's a goal, not a promise — your market and your effort decide the rest. Your ${GUARANTEE_DAYS}-day money-back guarantee applies either way.`}
+          {`The goal: one job that covers your $${listingPrice()} listing. It's a goal, not a promise — your market and your effort decide the rest.`}
         </p>
         {today && !tasks.has(today.id) && <p className="mt-3 text-sm font-medium text-accent">{`Today: ${today.label}.`}</p>}
 

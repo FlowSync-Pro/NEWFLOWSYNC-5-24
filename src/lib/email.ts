@@ -4,7 +4,7 @@ import { tagEmailLinks } from "./attribution";
 import { fleetTelegramInviteUrl } from "./telegram-invite";
 import { CHALLENGE_DAYS, challengeName } from "./challenge";
 import { EARNINGS_SOURCE, type Vehicle } from "./earnings";
-import { FLEET, GUARANTEE_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, OFFER_WINDOW_HOURS, premiumOfferPrice, premiumUpgradePrice } from "./pricing";
+import { FLEET, REFUND_WINDOW_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, OFFER_WINDOW_HOURS, premiumOfferPrice, premiumUpgradePrice } from "./pricing";
 
 // Lazy + graceful: when RESEND_API_KEY isn't set, email sends are skipped (logged)
 // so the rest of the flow still works. Swap nothing to go live — just set the keys.
@@ -104,6 +104,14 @@ const escapeHtml = (t: string) =>
  * unsubscribe headers Gmail and Yahoo require of bulk senders. Don't call this
  * directly: go through lib/marketing.ts, which checks who may receive it.
  */
+/**
+ * The refund terms the buyer agreed to at checkout, in writing on their receipt
+ * (owner decision 2026-10-10). A receipt that repeats the terms is part of the
+ * evidence Stripe weighs when a buyer disputes a charge.
+ */
+const refundTermsLine = () =>
+  `<p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">Refund terms you agreed to at checkout: a full refund if you email ${SUPPORT_EMAIL} within ${REFUND_WINDOW_DAYS} days of purchase; after that the fee is non-refundable. <a href="${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/refund-policy" style="color:#7c8a92">Refund policy</a>.</p>`;
+
 export async function sendMarketingEmail(opts: {
   to: string;
   subject: string;
@@ -153,7 +161,7 @@ export function offerClosingEmail(opts: {
     <p ${P}>Hi ${escapeHtml(opts.firstName)} — quick heads-up so it doesn't sneak past you. The two offers from your purchase close in about ${opts.hoursLeft} hours. After that they're gone for good. Skipping them changes nothing about your listing; it's yours either way.</p>
 
     <h2 ${H2}>Premium — $${premium} more</h2>
-    <p ${P}>(Instead of $${premiumUpgradePrice()} from your account later.) The bidding calculator, the business P&amp;L tracker with cost and rate per mile, the Curri mastermind course, every guide, and the Premium badge with priority placement. Same ${GUARANTEE_DAYS}-day money-back guarantee.</p>
+    <p ${P}>(Instead of $${premiumUpgradePrice()} from your account later.) The bidding calculator, the business P&amp;L tracker with cost and rate per mile, the Curri mastermind course, every guide, and the Premium badge with priority placement.</p>
     <p style="margin:0 0 6px">${button(opts.premiumUrl, `Add Premium — $${premium}`)}</p>
 
     <h2 ${H2}>Curri fleet — $${fleet} more</h2>
@@ -242,7 +250,7 @@ export function firstWeekEmail(opts: {
   url: string;
 }): { subject: string; heading: string; body: string } {
   const premium = opts.showPremium
-    ? `<p ${P}>When you're ready to run it like a business, Premium adds the bidding calculator, the P&amp;L tracker and the Curri mastermind course — $${premiumUpgradePrice()} one-time from your account, with the same ${GUARANTEE_DAYS}-day guarantee.</p>`
+    ? `<p ${P}>When you're ready to run it like a business, Premium adds the bidding calculator, the P&amp;L tracker and the Curri mastermind course — $${premiumUpgradePrice()} one-time from your account.</p>`
     : "";
   const body = `
     <p ${P}>Hi ${escapeHtml(opts.firstName)} — one week in. Wherever you are, these three moves matter most this week:</p>
@@ -294,7 +302,7 @@ export function earningsBreakdownEmail(v: Vehicle): { subject: string; heading: 
   if (v.track === "listing") {
     result =
       `<p ${P}>Curri loads are for pickups, vans and trucks, so we don't have car numbers to show. With a car, your strongest path is your own direct customers. ` +
-      `A Verified listing puts you in our directory, where customers book you directly: ${usd(listingPrice())} one-time, with a ${GUARANTEE_DAYS}-day money-back guarantee.</p>`;
+      `A Verified listing puts you in our directory, where customers book you directly: ${usd(listingPrice())} one-time.</p>`;
     cta = button(`${base}/pricing`, "Get listed");
   } else if (r) {
     result =
@@ -344,7 +352,7 @@ export function leadFollowupEmail(step: 1 | 2 | 3, v: Vehicle | undefined): { su
     const body = `
     <p ${P}>Hi — Curri loads aren't built for cars, but your own customers are. A Verified listing puts you in our directory, where local customers book you directly at the prices you set.</p>
     <p ${P}>The drivers who land a first job fastest do two things: send their profile link to people they know, and post in local groups like Nextdoor. Your dashboard walks you through it step by step.</p>
-    <p ${P}>$${listingPrice()} one-time, with a ${GUARANTEE_DAYS}-day money-back guarantee — no questions asked.</p>
+    <p ${P}>$${listingPrice()} one-time.</p>
     <p style="margin:0 0 6px">${button(`${base}/pricing`, "Get listed")}</p>
     ${signoff()}`;
     return { subject: "How car drivers find their own customers", heading: "Your own customers", body };
@@ -364,7 +372,7 @@ export function leadFollowupEmail(step: 1 | 2 | 3, v: Vehicle | undefined): { su
   const body = `
     <p ${P}>Hi — this is the last email in this series. If you're still deciding, here are your two options:</p>
     <ul style="padding-left:20px;margin:0 0 14px">
-      <li ${LI}><strong style="color:#e7ecef">Verified listing — $${listingPrice()} one-time.</strong> Customers book you directly. ${GUARANTEE_DAYS}-day money-back guarantee.</li>
+      <li ${LI}><strong style="color:#e7ecef">Verified listing — $${listingPrice()} one-time.</strong> Customers book you directly.</li>
       <li ${LI}><strong style="color:#e7ecef">Curri fleet — $${FLEET.price} one-time.</strong> Run loads on our carrier account; we bid them; paid weekly minus a ${FLEET.dispatchFeePercent}% dispatching fee. Make it back in your first ${FLEET.guaranteeDays} days on the fleet, or a full refund.</li>
     </ul>
     <p ${P}>If now's not the time, no worries — the free tools stay free. Reply anytime with questions; a real person reads it.</p>
@@ -538,7 +546,7 @@ export async function sendDriverWelcomeEmail(opts: {
     ? `
     <h2 ${H2}>Want to run it like a business? Add Premium.</h2>
     <p ${P}>The listing gets you found. Premium is the business behind it: <strong style="color:#e7ecef">the bidding calculator</strong> (your floor and your bid on every load), <strong style="color:#e7ecef">the business P&amp;L tracker</strong> (cost per mile, rate per mile, net income by week, month, quarter), the guide on running an ad for your delivery business, and <strong style="color:#e7ecef">the Curri mastermind course</strong> — the exact playbook below, lesson by lesson. Plus the Premium badge, priority placement above other drivers, and your own website link.</p>
-    <p ${P}>For <strong style="color:#e7ecef">${OFFER_WINDOW_HOURS} hours after your purchase</strong> it's <strong style="color:#e7ecef">$${premium} more, one-time</strong> (Premium's price includes the listing you already bought). After that it's $${premiumUpgradePrice()} from your account. No subscription, same 30-day money-back guarantee.</p>
+    <p ${P}>For <strong style="color:#e7ecef">${OFFER_WINDOW_HOURS} hours after your purchase</strong> it's <strong style="color:#e7ecef">$${premium} more, one-time</strong> (Premium's price includes the listing you already bought). After that it's $${premiumUpgradePrice()} from your account. No subscription.</p>
     <p style="margin:0 0 6px">${button(opts.upgradeUrl, `Add Premium — $${premium} more`)}</p>
     ${fleetOffer}`
     : "";
@@ -560,7 +568,7 @@ export async function sendDriverWelcomeEmail(opts: {
       opts.challenge === false
         ? ""
         : `<h2 ${H2}>The ${challengeName()}</h2>
-    <p ${P}>Your dashboard has a ${CHALLENGE_DAYS}-day, step-by-step plan aimed at landing the job that pays your listing back — one small step a day. It's a goal, not a promise, and your ${GUARANTEE_DAYS}-day money-back guarantee applies either way.</p>`
+    <p ${P}>Your dashboard has a ${CHALLENGE_DAYS}-day, step-by-step plan aimed at landing the job that pays your listing back — one small step a day. It's a goal, not a promise.</p>`
     }
 
     ${premiumSection}
@@ -578,6 +586,11 @@ export async function sendDriverWelcomeEmail(opts: {
     <p style="color:#7c8a92;font-size:12px;line-height:1.5;margin:0 0 14px">FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri or any other delivery platform. We're a carrier that uses their app, same as any driver can.</p>
 
     <p ${P}>Got a question? Just reply — a real person reads it.</p>
+    ${
+      // Only a listing purchase carries the offer links; admin-added drivers
+      // (no purchase) and fleet buyers (their own terms) get no 7-day line.
+      opts.upgradeUrl ? refundTermsLine() : ""
+    }
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
 
   return send(
@@ -618,7 +631,7 @@ export function purchaseConfirmationEmail(opts: PurchaseConfirmationOpts): { sub
   const offers = opts.upgradeUrl
     ? `
     <h2 ${H2}>Two offers, open for ${OFFER_WINDOW_HOURS} hours</h2>
-    <p ${P}>For ${OFFER_WINDOW_HOURS} hours after your purchase, Premium is <strong style="color:#e7ecef">$${premium} more, one-time</strong> instead of $${premiumUpgradePrice()} from your account later. Premium's price includes the listing you just bought. It adds the bidding calculator, the business P&amp;L tracker, the Curri mastermind course, every guide, and the Premium badge with priority placement. Same ${GUARANTEE_DAYS}-day money-back guarantee.</p>
+    <p ${P}>For ${OFFER_WINDOW_HOURS} hours after your purchase, Premium is <strong style="color:#e7ecef">$${premium} more, one-time</strong> instead of $${premiumUpgradePrice()} from your account later. Premium's price includes the listing you just bought. It adds the bidding calculator, the business P&amp;L tracker, the Curri mastermind course, every guide, and the Premium badge with priority placement.</p>
     <p style="margin:0 0 6px">${button(opts.upgradeUrl, `Add Premium — $${premium} more`)}</p>
     ${
       opts.fleetOfferUrl
@@ -634,6 +647,7 @@ export function purchaseConfirmationEmail(opts: PurchaseConfirmationOpts): { sub
     <p ${P}>To go live in the directory: finish your profile, upload your driver's license and insurance, and we'll review you. You'll get an email the moment you're approved.</p>
     ${offers}
     <p ${P}>Got a question? Just reply — a real person reads it.</p>
+    ${refundTermsLine()}
     <p ${P}>— Nas Barham<br><span style="color:#7c8a92">Barham Transport / FlowSync Drivers</span></p>`;
   return {
     subject: "Payment received — your FlowSync listing is paid for",
@@ -869,8 +883,8 @@ export async function sendCheckoutRecoveryEmail(opts: {
     <p ${P}>Hi ${name} — you started ${what} but didn't finish. No pressure; here's the link to pick up right where you left off.</p>
     ${
       pending
-        ? `<p ${P}>One heads-up so you're not surprised later: the listing is <strong style="color:#e7ecef">$${price} until ${LISTING_INCREASE_DATE_LABEL}</strong>, then it goes to $${LISTING_PRICE_AFTER}. Same ${GUARANTEE_DAYS}-day money-back guarantee either way.</p>`
-        : `<p ${P}>It's <strong style="color:#e7ecef">$${price} one-time</strong>, with a ${GUARANTEE_DAYS}-day money-back guarantee.</p>`
+        ? `<p ${P}>One heads-up so you're not surprised later: the listing is <strong style="color:#e7ecef">$${price} until ${LISTING_INCREASE_DATE_LABEL}</strong>, then it goes to $${LISTING_PRICE_AFTER}.</p>`
+        : `<p ${P}>It's <strong style="color:#e7ecef">$${price} one-time</strong>.</p>`
     }
     <p style="margin:0 0 18px">${button(opts.resumeUrl, `Finish my listing — $${price}`)}</p>
     <p ${P}>Stuck on something, or just have a question? Reply to this email — a real person reads it.</p>

@@ -173,7 +173,7 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   menu with custom pricing); the four setup guides — USDOT free, EIN free, LLC filing,
   medical courier requirements & licenses, and signing up with Curri & Dispatch as a
   carrier not a gig driver; the Driver Roadmap; Telegram community. Covered by the
-  30-day guarantee below.
+  7-day refund window below.
 - **`/pricing` sells the Verified listing ONLY** (owner decision, 2026-09-30). Premium
   and the fleet are described there without prices and are bought on the offer pages or
   from the account. The homepage keeps its $297 fleet section.
@@ -187,7 +187,7 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   every other guide including "How to run an ad for your delivery business"; the Curri
   mastermind course (`/account/course`, content from the owner in `src/lib/course.ts`);
   Premium badge, priority placement, external website link. Offered on the post-checkout
-  page and any time from the account. Covered by the 30-day guarantee.
+  page and any time from the account. Covered by the 7-day refund window.
 - **Tier 3 — Curri fleet invite: $297 one-time.** **Offer page B** (`/welcome/fleet-offer`,
   shown once after the funnel's previous step, open 24h) is the ONLY place with offer
   prices: `FLEET.addOnPrice` = **$150 more** for a buyer who has Premium (took offer A, or
@@ -278,7 +278,7 @@ unpaid signups, paid non-fleet drivers, Verified-not-Premium drivers, and fleet 
 (their existing link + the $50 terms; read-only — no referral codes created there), with
 copy/SMS/mailto buttons; every sales row also carries its one follow-up. All
 message copy lives in `src/lib/recovery.ts`: current price, the real increase date while
-pending, the 30-day guarantee — no discounts, no fake urgency. Fleet texts link the
+pending — no refund pitch (owner decision 2026-10-10), no discounts, no fake urgency. Fleet texts link the
 `/curri-fleet` real-runs page and mention pay over time (Klarna/Afterpay/Affirm, "if
 you're eligible"); the fleet follow-up says "still room this month" only when this
 month's activations are under `FLEET.monthlyCap`, otherwise "first in line for next
@@ -288,13 +288,18 @@ month". One text, one follow-up two days later, stop on request.
 - $197 four-week coaching program (a different product from the $197 fleet invite)
 - $49/month subscription
 
-**Refund policy (state exactly):** the one-time driver listing fee carries a
-**30-day money-back guarantee — full refund, no questions asked**, requested by emailing
-support within 30 days of purchase. It is tied to the driver's satisfaction, **not** to
-income outcomes, and never requires proof of anything. This is what the live
-`/refund-policy` page and the checkout guarantee box have promised every buyer since
-May 2026 — do **not** reintroduce a proof/checklist requirement or a non-refundable
-portion without the owner's explicit approval (and, per Section E, an attorney's review).
+**Refund policy (state exactly — owner decision 2026-10-10, replaces the 30-day
+money-back guarantee):** the Verified listing and Premium are **refundable in full if the
+buyer emails support within 7 days of purchase; after 7 days they are non-refundable.**
+Purchases made before **October 11, 2026** keep the **30 days** they agreed to at checkout
+(`REFUND_WINDOW_CHANGED_AT`, `refundWindowDaysFor()` in `src/lib/pricing.ts`). The window is
+never tied to income outcomes and never requires proof. **Do not pitch it as a guarantee**
+in ads, texts, emails or sales pages; state it plainly where it belongs: `/refund-policy`,
+`/terms`, the required Stripe checkout checkbox (`REFUND_CHECKBOX`, listing + both Premium
+checkouts) and the purchase emails (`refundTermsLine`). Reason: buyers waited ~3 weeks,
+then asked for refunds, and the dispute rate rose 3 months running. Changing it again needs
+the owner's explicit approval (and, per Section E, an attorney's review — still owed for
+this change). The fleet keeps its own "make it back" terms (FLEET).
 
 ## E. Legal-safety guardrails
 

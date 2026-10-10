@@ -1,3 +1,8 @@
+> ⚠️ **2026-10-10 — the 30-day money-back guarantee is retired.** The listing and Premium
+> are refundable only if requested within 7 days, and the owner does **not** want refunds
+> pitched in ads. **Delete every "30-day money-back" line below before using any ad**, and
+> don't replace it with "7-day". Rule and reasons: AGENTS.md §D "Refund policy".
+
 # Reels / TikTok script pack — FlowSync Drivers
 
 Five short videos, you on camera, phone only. Each one is also an ad creative

@@ -2,8 +2,8 @@ import { listingPrice } from "@/lib/pricing";
 
 // The First-$47 Challenge (owner-approved 2026-10-02): a 7-day, step-by-step
 // plan aimed at landing the job that pays the listing back. A GOAL, not a
-// promise (AGENTS.md §E) — and it has NOTHING to do with refunds: the 30-day,
-// no-questions money-back guarantee applies either way (§D). Progress lives in
+// promise (AGENTS.md §E) — and it has NOTHING to do with refunds, which
+// follow the refund policy (§D). Progress lives in
 // the driver's existing Roadmap record (User.roadmapData.tasks) — no schema.
 //
 // Client-safe: no server imports.
