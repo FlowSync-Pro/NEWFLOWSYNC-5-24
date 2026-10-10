@@ -41,12 +41,14 @@ export function recoveryText(product: RecoveryProduct, firstName?: string | null
   );
 }
 
-/** Text for a driver who signed up free but never paid for the listing. */
+/** Text for a driver who signed up free but never paid for the listing — direct style (owner decision 2026-10-10). */
 export function unpaidSignupText(firstName?: string | null): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
   return (
-    `${hi}it's Nas from FlowSync. You made an account but never got listed, so customers can't find you yet. ` +
-    `${listingPriceLine()} Get listed here: ${base()}/pricing — ${GUARANTEE_DAYS}-day money-back. Reply if you're stuck on anything.`
+    `${hi}Nas from FlowSync. You made an account, but customers can't find you yet. ` +
+    `Get listed and they book you directly, at the prices you set.\n\n` +
+    `$${listingPrice()} one-time. ${GUARANTEE_DAYS}-day money-back, no questions asked.\n\n` +
+    `${base()}/pricing`
   );
 }
 
