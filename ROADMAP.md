@@ -108,6 +108,25 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-10: Recovery page remembers who was emailed / who said stop
+Owner ask: "paid drivers, not in the fleet should have a send-all button and mark the
+ones that have been sent to … the site does not remember who you already emailed or
+who asked me to stop." No schema change — everything reuses what exists.
+- **Send all** on the "Paid drivers, not in the fleet" tab: the fleet invite email
+  (`src/lib/fleet-invite-email.ts`), round after round of 40 until nobody is left, with a
+  progress line. Who got it lives in `EmailLog` (kind `fleet-invite-2026-10`), so neither
+  this button nor `/admin/fleet-invite` can ever send it twice; a round that sends nothing
+  stops the loop. `maxDuration = 60` on the recovery page so a round fits.
+- Each paid-non-fleet row shows **Emailed Oct 9, 2026** in place of the Email button once
+  it has gone out.
+- **Asked to stop** on every account-backed sales row (unpaid, paid-non-fleet, Verified-not-
+  Premium): `markAskedToStop` → `optOutOfMarketing` (`User.marketingOptOutAt`, the same flag
+  their unsubscribe link sets) → every send button hidden, red marker on every tab, skipped by
+  every marketing email from then on. Confirm dialog; not undone from the UI (the driver's
+  own unsubscribe is the same field, so an undo button would be a CAN-SPAM foot-gun).
+- `docs/STRIPE-DISPUTE-RESPONSE.md`: the dispute playbook + fill-in response template.
+Deploy: SAFE (no migration, no env, no Stripe/auth code).
+
 ## 🚧 Pending — 2026-10-09: vehicle filter on the directory + accessories + extra vehicles
 Waits for the owner's merge. **RISKY deploy: one new migration**
 (`20261009200000_vehicle_accessories`, ADDITIVE: one empty array column on DriverProfile,

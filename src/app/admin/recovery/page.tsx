@@ -23,9 +23,13 @@ import {
 } from "@/lib/recovery";
 import { fromPtWallClock, ptDate, ptDay, ptTime } from "@/lib/pt-time";
 import { checkoutContacts, paidButUnrecorded, productLabel } from "@/lib/paid-unrecorded";
+import { FLEET_INVITE_BATCH, FLEET_INVITE_KIND, fleetInviteAudience, fleetInviteSentCount } from "@/lib/fleet-invite-email";
+import { marketingEnabled } from "@/lib/marketing";
 import RecoveryLists, { type RecoveryGroup, type RecoveryRow } from "@/components/RecoveryLists";
 
 export const dynamic = "force-dynamic";
+// "Send all" runs the fleet invite in rounds of FLEET_INVITE_BATCH; one round (~25–30s) must fit.
+export const maxDuration = 60;
 export const metadata: Metadata = { title: "Recovery — Admin", robots: { index: false } };
 
 const LOOKBACK_DAYS = 60;
@@ -107,7 +111,7 @@ export default async function AdminRecoveryPage() {
 
   const since = daysAgo(90);
   const spots = await fleetSpotsThisMonth();
-  const [unrecorded, noPassword, unfinished, abandoned, unpaid, paidNotFleet, fleetMembers] = await Promise.all([
+  const [unrecorded, noPassword, unfinished, abandoned, unpaid, paidNotFleet, fleetMembers, inviteReady, inviteSent] = await Promise.all([
     // Paid in Stripe, but the site never recorded it (no account / upgrade made).
     paidButUnrecorded(30),
     // Paid over an hour ago, account made, but still on the temporary password.
@@ -143,13 +147,18 @@ export default async function AdminRecoveryPage() {
     abandonedCheckouts(spots.room),
     prisma.user.findMany({
       where: { role: "DRIVER", createdAt: { gte: since }, payments: { none: { status: "PAID" } } },
-      select: { id: true, email: true, name: true, createdAt: true, driverProfile: { select: { firstName: true, phone: true, city: true } } },
+      select: { id: true, email: true, name: true, createdAt: true, marketingOptOutAt: true, driverProfile: { select: { firstName: true, phone: true, city: true } } },
       orderBy: { createdAt: "desc" },
       take: 300,
     }),
     prisma.user.findMany({
       where: { role: "DRIVER", fleetJoinedAt: null, payments: { some: { status: "PAID" } } },
-      select: { id: true, email: true, name: true, driverProfile: { select: { firstName: true, phone: true, city: true, tier: true, listedAt: true } } },
+      select: {
+        id: true, email: true, name: true, marketingOptOutAt: true,
+        driverProfile: { select: { firstName: true, phone: true, city: true, tier: true, listedAt: true } },
+        // Whether the fleet invite email ("Send all") has gone to them — the marker on their row.
+        emailLogs: { where: { kind: FLEET_INVITE_KIND, cancelledAt: null }, select: { sentAt: true }, take: 1 },
+      },
       orderBy: { createdAt: "desc" },
       take: 500,
     }),
@@ -160,9 +169,14 @@ export default async function AdminRecoveryPage() {
       orderBy: { fleetJoinedAt: "desc" },
       take: 300,
     }),
+    // "Send all" (fleet invite email): who is ready for it now, and how many already got it.
+    fleetInviteAudience(),
+    fleetInviteSentCount(),
   ]);
 
   const nameOf = (u: { name: string | null; driverProfile: { firstName: string } | null }) => u.driverProfile?.firstName || u.name?.split(" ")[0] || "";
+  // "Asked to stop" = User.marketingOptOutAt (their unsubscribe link or the owner's button): shown on every tab.
+  const stoppedOn = (u: { marketingOptOutAt: Date | null }) => (u.marketingOptOutAt ? ptDay(u.marketingOptOutAt) : undefined);
   // Buyers with no profile yet: the name and phone they typed at checkout (read from Stripe).
   const contacts = await checkoutContacts(
     [...noPassword.filter((u) => !u.driverProfile?.phone), ...unfinished].map((u) => u.payments[0]?.stripeSessionId).filter((x): x is string => !!x),
@@ -244,12 +258,23 @@ export default async function AdminRecoveryPage() {
         text: unpaidSignupText(nameOf(u)),
         followUp: unpaidFollowUpText(nameOf(u)),
         mailSubject: "Your FlowSync profile isn't listed yet",
+        userId: u.id,
+        stoppedOn: stoppedOn(u),
       })),
     },
     {
       key: "fleet",
       title: "Paid drivers, not in the fleet",
-      blurb: `Your warmest list for the $${FLEET.price} fleet invite. They already paid you once.`,
+      blurb:
+        `Your warmest list for the $${FLEET.price} fleet invite. They already paid you once. ` +
+        `"Send all" emails the fleet invite to everyone here who hasn't had it; the site remembers who got it (Emailed) and who asked you to stop.`,
+      sendAll: {
+        what: "the fleet invite email",
+        ready: inviteReady.length,
+        sentSoFar: inviteSent,
+        batch: FLEET_INVITE_BATCH,
+        ...(marketingEnabled() ? {} : { disabledReason: "Marketing email is switched off (no postal address set), so nothing can be sent." }),
+      },
       rows: paidNotFleet.map((u) => ({
         id: u.id,
         name: u.driverProfile ? `${u.driverProfile.firstName}` : u.name ?? "",
@@ -259,6 +284,9 @@ export default async function AdminRecoveryPage() {
         text: fleetPitchText(nameOf(u)),
         followUp: fleetFollowUpText(nameOf(u), spots.room, "account"),
         mailSubject: "Loads dispatched to you — the Curri fleet",
+        userId: u.id,
+        emailedOn: u.emailLogs[0] ? ptDay(u.emailLogs[0].sentAt) : undefined,
+        stoppedOn: stoppedOn(u),
       })),
     },
     {
@@ -276,6 +304,8 @@ export default async function AdminRecoveryPage() {
           text: premiumPitchText(u.driverProfile!.firstName, premiumUpgradePrice()),
           followUp: premiumFollowUpText(u.driverProfile!.firstName, premiumUpgradePrice()),
           mailSubject: "Want me to build your FlowSync profile for you?",
+          userId: u.id,
+          stoppedOn: stoppedOn(u),
         })),
     },
     {
@@ -312,6 +342,8 @@ export default async function AdminRecoveryPage() {
           {total} people to follow up with. Every row has the exact message; <strong className="text-foreground">Text</strong> opens
           your SMS app with it filled in (on your phone), <strong className="text-foreground">Email</strong> does the same for mail.
           Under each message is the one follow-up — send it two days later, only if they haven&apos;t replied.
+          When someone asks you to stop, tap <strong className="text-foreground">Asked to stop</strong> on their row: the site never emails them again and
+          marks them on every tab so you don&apos;t either.
         </p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -332,7 +364,7 @@ export default async function AdminRecoveryPage() {
           </div>
           <div className="card p-4">
             <p className="text-xs text-muted">Rules of thumb</p>
-            <p className="mt-1 text-sm">One text, one follow-up two days later. Stop if they say stop.</p>
+            <p className="mt-1 text-sm">One text, one follow-up two days later. Stop if they say stop — and mark it with &quot;Asked to stop&quot;.</p>
           </div>
         </div>
 

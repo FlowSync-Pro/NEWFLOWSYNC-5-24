@@ -13,6 +13,7 @@ import { createReviewInviteToken, REVIEW_INVITE_DAYS } from "@/lib/review-invite
 import { alertIfEmailFailed } from "@/lib/alerts";
 import { sendAddCityBatch, type AddCityBatchResult } from "@/lib/add-city-email";
 import { sendFleetInviteBatch, type FleetInviteBatchResult } from "@/lib/fleet-invite-email";
+import { optOutOfMarketing } from "@/lib/marketing";
 import { ensureConnectAccount, syncConnectStatus, type ConnectSync } from "@/lib/stripe-connect";
 import { cancelPayout as cancelPayoutRow, logDelivery, parseDollars, payAllPending as payAllPendingRows, payPayout, type PayAllSummary, type PayResult } from "@/lib/payouts";
 import { linkPayout } from "@/lib/dispatch";
@@ -139,11 +140,29 @@ export async function sendFleetInviteEmails(): Promise<{ ok: true; result: Fleet
   try {
     const result = await sendFleetInviteBatch();
     revalidatePath("/admin/fleet-invite");
+    revalidatePath("/admin/recovery");
     return { ok: true, result };
   } catch (e) {
     console.error("[fleet-invite] batch failed:", e);
     return { ok: false, error: "The batch stopped partway. Reload the page to see how many are still waiting, then try again." };
   }
+}
+
+/**
+ * A driver asked the owner to stop messaging them (by text, reply, phone…).
+ * Records it the same way their own unsubscribe link would — User.marketingOptOutAt
+ * — so every marketing email (sendMarketing) skips them from now on, and the
+ * Recovery page marks them "Asked to stop" on every tab. Nothing is deleted and
+ * transactional email (receipts, sign-in) is unaffected. Not undone from here.
+ */
+export async function markAskedToStop(userId: string): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) return { ok: false, error: "Driver not found." };
+  await optOutOfMarketing(userId);
+  revalidatePath("/admin/recovery");
+  revalidatePath("/admin/fleet-invite");
+  return { ok: true };
 }
 
 /**
