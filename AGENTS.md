@@ -172,7 +172,8 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   Includes: the directory listing with direct customer bookings; My Services (own service
   menu with custom pricing); the four setup guides — USDOT free, EIN free, LLC filing,
   medical courier requirements & licenses, and signing up with Curri & Dispatch as a
-  carrier not a gig driver; the Driver Roadmap; Telegram community. Covered by the
+  carrier not a gig driver; the Driver Roadmap. **No Telegram community** — the Telegram
+  group is for fleet members only (owner confirmed 2026-10-12). Covered by the
   7-day refund window below.
 - **`/pricing` sells the Verified listing ONLY** (owner decision, 2026-09-30). Premium
   and the fleet are described there without prices and are bought on the offer pages or
