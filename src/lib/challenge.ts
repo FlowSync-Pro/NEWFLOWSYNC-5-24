@@ -38,7 +38,7 @@ export const CHALLENGE_STEPS: ChallengeStep[] = [
   { id: "c47-4", day: 4, label: "Post your service in 2 local groups", detail: "Nextdoor and a local Facebook group are good starts. A copy-ready post is below.", share: "group" },
   { id: "c47-5", day: 5, label: "Start your carrier setup", detail: "USDOT and EIN (both free to apply for), or sign up as a carrier on Curri and Dispatch — your guides walk you through it.", href: "/grow/sign-up-as-a-carrier-curri-dispatch" },
   { id: "c47-6", day: 6, label: "Follow up", detail: "Message everyone who replied and offer a time slot for a first job." },
-  { id: "c47-7", day: 7, label: "Ask your first customer for a review", detail: "No job yet? Ask in the Telegram group what's working in your area." },
+  { id: "c47-7", day: 7, label: "Ask your first customer for a review", detail: "No job yet? Repeat days 3 and 4 with new people and new local groups." },
 ];
 
 /** Optional self-report button — shown to the owner in /admin/challenge. */

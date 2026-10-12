@@ -74,6 +74,6 @@ headline "Get booked directly. No middleman.", "$47 one-time" pill). The sample 
    applies to bookings paid through FlowSync. "No monthly fee" is true.
 4. **Setup facts.** USDOT and EIN are free to apply for; an LLC has a state filing fee —
    never "free LLC".
-5. **Telegram community** is left out until confirmed: AGENTS.md §D lists it for the $47,
-   but the site only gives the Telegram group to fleet members.
+5. **No Telegram community.** The $47 listing does not include it; the Telegram group is
+   for fleet members only (owner confirmed 2026-10-12). Never list it in $47 ads.
 6. **Price changes** come from `TIERS.standard.price` / `listingPrice()`; update this file to match.
