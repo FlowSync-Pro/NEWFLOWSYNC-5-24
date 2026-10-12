@@ -5,7 +5,7 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { attributionMetadata } from "@/lib/attribution";
-import { FLEET, fleetOfferPrice, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, REFUND_CHECKBOX, TIERS, type TierId } from "@/lib/pricing";
+import { FLEET, FLEET_SMALL, fleetOfferPrice, isSmallFleetVehicle, getBump, isPremiumTier, listingPrice, OFFER_WINDOW_HOURS, offerExpired, premiumOfferPrice, premiumUpgradePrice, REFUND_CHECKBOX, TIERS, type TierId } from "@/lib/pricing";
 
 /** Post-checkout offers are open for OFFER_WINDOW_HOURS after the purchase they follow. */
 const offerOpen = (s: Stripe.Checkout.Session) => !offerExpired(s.created);
@@ -176,6 +176,14 @@ async function handleCheckout(req: Request) {
     if (!firstName) return NextResponse.json({ error: "Enter your first name." }, { status: 400 });
     // The owner onboards fleet drivers by text, so a phone number is required here.
     if (phone.replace(/\D/g, "").length < 7) return NextResponse.json({ error: "Enter a phone number we can text." }, { status: 400 });
+    // The $197 ad page (FLEET_SMALL, owner decision 2026-10-12): same fleet, only
+    // for the listed vehicles. The vehicle rides in the metadata; the owner
+    // confirms it at activation.
+    const small = body.variant === "small";
+    const vehicle = typeof body.vehicle === "string" ? body.vehicle.trim() : "";
+    if (small && !isSmallFleetVehicle(vehicle)) {
+      return NextResponse.json({ error: `Pick your vehicle. This price is for: ${FLEET_SMALL.vehicles.join(", ")}.` }, { status: 400 });
+    }
 
     const existing = await prisma.user.findUnique({ where: { email }, select: { fleetJoinedAt: true } });
     if (existing?.fleetJoinedAt) {
@@ -184,13 +192,13 @@ async function handleCheckout(req: Request) {
 
     const fleet = await createFleetSession(stripe, {
       mode: "payment",
-      line_items: [fleetLineItem(FLEET.price * 100)],
+      line_items: [fleetLineItem((small ? FLEET_SMALL.price : FLEET.price) * 100)],
       customer_email: email,
-      metadata: meta({ type: "fleet", standalone: "1", firstName, lastName, email, phone, ref }),
+      metadata: meta({ type: "fleet", standalone: "1", firstName, lastName, email, phone, ref, ...(small ? { variant: "small", vehicle } : {}) }),
       // Same post-payment landing as the listing: on-screen activation if the
       // account is brand new, plus the Purchase pixel with this session's id.
       success_url: `${base}/signin?checkout=success&session_id={CHECKOUT_SESSION_ID}&fleet=1`,
-      cancel_url: `${base}/#curri-fleet`,
+      cancel_url: small ? `${base}${FLEET_SMALL.path}#join` : `${base}/#curri-fleet`,
     }, { recovery: true });
     return NextResponse.json({ url: fleet.url });
   }

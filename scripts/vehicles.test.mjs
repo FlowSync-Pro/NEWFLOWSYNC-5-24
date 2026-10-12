@@ -85,3 +85,10 @@ test("the card shows the matching vehicle, else the main one", () => {
   assert.equal(vehicleToShow(vanThenBox, "SUV")?.type, "Cargo van");
   assert.equal(vehicleToShow([], "all"), undefined);
 });
+
+test("the $197 small-vehicle fleet list uses real profile vehicle labels", async () => {
+  const { FLEET_SMALL, isSmallFleetVehicle } = await import("../src/lib/pricing.ts");
+  for (const v of FLEET_SMALL.vehicles) assert.ok(VEHICLE_TYPES.includes(v), v);
+  assert.deepEqual([...FLEET_SMALL.vehicles], ["Sedan", "SUV", "Minivan", "Cargo van", "Pickup truck"]);
+  for (const big of ["Box truck", "Sprinter van", "Bike / scooter", "", "sedan", undefined]) assert.ok(!isSmallFleetVehicle(big), String(big));
+});

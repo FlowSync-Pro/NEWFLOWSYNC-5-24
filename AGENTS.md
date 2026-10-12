@@ -254,6 +254,18 @@ page, checkout amount, email and message reads from it — never hardcode a pric
   The "$100.45 listed / $145 gig driver / $300 our bid" example is real — keep "one
   load, not a promise" next to it.
 
+- **Small-vehicle fleet price — $197 (owner decision 2026-10-12), ad-only.** The same fleet
+  and the same package (carrier account, dispatched loads, everything in Premium, the
+  make-it-back guarantee) for `FLEET_SMALL.price` = **$197** when the driver's vehicle is a
+  sedan, SUV, minivan, cargo van or pickup truck (`FLEET_SMALL.vehicles`). Sold ONLY on
+  `FLEET_SMALL.path` = `/curri-fleet/small-vehicles` — noindex, not in the sitemap, not
+  linked from the site; the Meta ad set is the only way in. The buyer picks the vehicle
+  at checkout (server-checked, stored in the session metadata and on the new profile);
+  the owner confirms it at activation, and a box truck, Sprinter or pickup + trailer pays
+  the difference or gets a full refund. Don't surface the $197 anywhere else, and don't
+  confuse it with the standby $197 coaching program. Abandoned $197 checkouts get their
+  own text, email and Recovery row (`smallVehicle` in `lib/recovery.ts` / `email.ts`).
+
 **Grandfathering (never take access away):** any driver whose first PAID payment is
 before `LEGACY_CUTOVER_AT` in `src/lib/pricing.ts` keeps every guide and tool they had
 under the old $17 offer (`legacy` in `src/lib/access.ts`). Set that constant to the

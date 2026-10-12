@@ -9,7 +9,7 @@ import { alertOwner, alertIfEmailFailed } from "@/lib/alerts";
 import { sendCapiPurchase } from "@/lib/meta-capi";
 import { sendDriverWelcomeEmail, sendBookingPaidEmail, sendBookingReceiptEmail, sendCheckoutRecoveryEmail, sendFleetWelcomeEmail, sendPremiumUpgradeEmail, sendPurchaseConfirmationEmail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
-import { FLEET, isPremiumTier } from "@/lib/pricing";
+import { FLEET, isPremiumTier, FLEET_SMALL, isSmallFleetVehicle } from "@/lib/pricing";
 import { recoveryText } from "@/lib/recovery";
 import { cancelFleetOfferReminder, cancelOfferClosingReminder, scheduleFleetOfferReminder, scheduleOfferClosingReminder } from "@/lib/offer-reminders";
 import { cancelScheduledMarketing } from "@/lib/marketing";
@@ -129,19 +129,21 @@ async function handleAbandonedCheckout(session: Stripe.Checkout.Session) {
   const firstName = md.firstName || session.customer_details?.name?.split(" ")[0] || "";
   const amount = (session.amount_total ?? 0) / 100;
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-  const resumeUrl = product === "listing" ? `${base}/pricing?resume=1` : `${base}/#curri-fleet`;
+  // The $197 small-vehicle ad page (FLEET_SMALL) gets its own price, wording and link back.
+  const smallVehicle = product === "fleet" && md.variant === "small";
+  const resumeUrl = product === "listing" ? `${base}/pricing?resume=1` : smallVehicle ? `${base}${FLEET_SMALL.path}#join` : `${base}/#curri-fleet`;
 
   // Someone who already has a paid account doesn't need a recovery nudge.
   if (email) {
     const paid = await prisma.payment.findFirst({ where: { status: "PAID", user: { email } }, select: { id: true } });
     if (paid) return;
-    await alertIfEmailFailed(await sendCheckoutRecoveryEmail({ to: email, firstName, product, resumeUrl }));
+    await alertIfEmailFailed(await sendCheckoutRecoveryEmail({ to: email, firstName, product, resumeUrl, smallVehicle }));
   }
 
   await alertOwner(
-    `🛒 Abandoned checkout (${product}, $${amount.toFixed(0)})\n` +
+    `🛒 Abandoned checkout (${smallVehicle ? `small-vehicle fleet, ${md.vehicle ?? "vehicle not given"}` : product}, $${amount.toFixed(0)})\n` +
       `Name: ${firstName || "(not given)"}\nEmail: ${email || "(not given)"}\nPhone: ${phone || "(not given)"}\n\n` +
-      (phone ? `Text them now:\n"${recoveryText(product, firstName)}"` : `Recovery email ${email ? "sent" : "not possible (no email)"}.`),
+      (phone ? `Text them now:\n"${recoveryText(product, firstName, smallVehicle)}"` : `Recovery email ${email ? "sent" : "not possible (no email)"}.`),
   );
 }
 
@@ -357,7 +359,7 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
         mustResetPassword: true,
         emailVerified: new Date(),
         ...(md.firstName
-          ? { driverProfile: { create: { firstName: md.firstName, lastName: md.lastName ?? "", phone: md.phone || session.customer_details?.phone || null, listedAt: new Date() } } }
+          ? { driverProfile: { create: { firstName: md.firstName, lastName: md.lastName ?? "", phone: md.phone || session.customer_details?.phone || null, listedAt: new Date(), ...(isSmallFleetVehicle(md.vehicle) ? { vehicleType: md.vehicle } : {}) } } }
           : {}),
       },
       include: { driverProfile: true },
@@ -414,7 +416,7 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
     });
     if (!welcome.sent) {
       await alertOwner(
-        `⚠️ FlowSync: welcome email FAILED to send (fleet $297 buyer).\n\n` +
+        `⚠️ FlowSync: welcome email FAILED to send (fleet $${((session.amount_total ?? 0) / 100).toFixed(0)} buyer).\n\n` +
           `Driver: ${firstName} ${md.lastName ?? ""}\nEmail: ${user.email}\n\n` +
           `They have paid but may not be able to sign in. Reach out to them.`,
       );
@@ -435,7 +437,11 @@ async function fulfillFleet(session: Stripe.Checkout.Session) {
   // themselves at /account/payouts (the admin page can still send a link).
   await alertOwner(
     `🚚 New Curri fleet member: ${firstName} ${user.driverProfile?.lastName ?? md.lastName ?? ""}\n` +
-      `Email: ${user.email}\nPaid: $${((session.amount_total ?? 0) / 100).toFixed(2)} (${md.source ?? "homepage"})\n\n` +
+      `Email: ${user.email}\nPaid: $${((session.amount_total ?? 0) / 100).toFixed(2)} (${md.variant === "small" ? "small-vehicle page" : (md.source ?? "homepage")})\n` +
+      (md.variant === "small"
+        ? `Vehicle they picked: ${md.vehicle ?? "(not given)"} — $${FLEET_SMALL.price} small-vehicle price. Confirm it at activation; a box truck, Sprinter or pickup + trailer pays the difference or gets a full refund.\n`
+        : "") +
+      `\n` +
       `Next: once they send their city and vehicle, add them on the carrier account and mark "Activated on Curri" on their admin page. ` +
       `They set up Stripe payouts themselves from their account (Payouts page) — if they get stuck, use "Send Stripe setup link" on their admin page.` +
       (user.driverProfile ? `\n${base}/admin/drivers/${user.driverProfile.id}` : ""),
