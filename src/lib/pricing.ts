@@ -207,6 +207,25 @@ const FLEET_PRICE = 297;
 const FLEET_GUARANTEE_DAYS = 60;
 const FLEET_GUARANTEE_CLAIM_DAYS = 30;
 
+/**
+ * Smaller-vehicle fleet price (owner decision 2026-10-12): the SAME fleet and
+ * the same package as FLEET (carrier account, dispatched loads, everything in
+ * Premium, the make-it-back guarantee) for $197 when the driver's vehicle is on
+ * this list. Sold ONLY on the ad landing page FLEET_SMALL.path (noindex, not
+ * linked from the site or the sitemap). The buyer picks the vehicle at checkout
+ * and the owner confirms it at activation: a bigger vehicle (box truck,
+ * Sprinter, pickup + trailer) pays the difference to FLEET.price or gets a full
+ * refund. Labels must match lib/vehicles.ts VEHICLE_TYPES exactly.
+ */
+export const FLEET_SMALL = {
+  price: 197,
+  path: "/curri-fleet/small-vehicles",
+  vehicles: ["Sedan", "SUV", "Minivan", "Cargo van", "Pickup truck"] as const,
+};
+export type SmallFleetVehicle = (typeof FLEET_SMALL.vehicles)[number];
+export const isSmallFleetVehicle = (v: unknown): v is SmallFleetVehicle =>
+  typeof v === "string" && (FLEET_SMALL.vehicles as readonly string[]).includes(v);
+
 export const FLEET = {
   id: "curri-fleet",
   name: "Curri fleet invite",

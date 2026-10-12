@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FLEET } from "@/lib/pricing";
+import { FLEET, FLEET_SMALL } from "@/lib/pricing";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition-colors focus:border-accent";
@@ -12,12 +12,16 @@ const inputCls =
  *    name, email and phone (the owner onboards fleet drivers by text) and
  *    pays $297, which also creates their FlowSync account + listing.
  *  - mode="member": signed-in driver on the fleet guide. One button, $297.
+ *  - smallVehicles (standalone only): the $197 ad page (FLEET_SMALL). Adds a
+ *    required vehicle picker limited to the qualifying vehicles; the server
+ *    checks it again and the owner confirms it at activation.
  */
-export default function FleetCheckout({ mode }: { mode: "standalone" | "member" }) {
+export default function FleetCheckout({ mode, smallVehicles = false }: { mode: "standalone" | "member"; smallVehicles?: boolean }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [vehicle, setVehicle] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +34,7 @@ export default function FleetCheckout({ mode }: { mode: "standalone" | "member" 
       try { ref = localStorage.getItem("fs_ref") || ""; } catch {}
       const payload =
         mode === "standalone"
-          ? { intent: "fleet-standalone", firstName, lastName, email, phone, ref }
+          ? { intent: "fleet-standalone", firstName, lastName, email, phone, ref, ...(smallVehicles ? { variant: "small", vehicle } : {}) }
           : { intent: "fleet" };
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -54,7 +58,8 @@ export default function FleetCheckout({ mode }: { mode: "standalone" | "member" 
     }
   }
 
-  const label = loading ? "Opening secure checkout…" : `Join the fleet — $${FLEET.price} one-time`;
+  const price = smallVehicles && mode === "standalone" ? FLEET_SMALL.price : FLEET.price;
+  const label = loading ? "Opening secure checkout…" : `Join the fleet — $${price} one-time`;
 
   if (mode === "member") {
     return (
@@ -104,6 +109,14 @@ export default function FleetCheckout({ mode }: { mode: "standalone" | "member" 
         onChange={(e) => setPhone(e.target.value)}
         className={inputCls}
       />
+      {smallVehicles && (
+        <select required value={vehicle} onChange={(e) => setVehicle(e.target.value)} className={inputCls} aria-label="Your vehicle">
+          <option value="" disabled>What do you drive?</option>
+          {FLEET_SMALL.vehicles.map((v) => (
+            <option key={v} value={v}>{v}</option>
+          ))}
+        </select>
+      )}
       <button type="submit" disabled={loading} className="btn-primary w-full rounded-full px-6 py-3.5 text-base font-bold disabled:opacity-60">
         {label}
       </button>

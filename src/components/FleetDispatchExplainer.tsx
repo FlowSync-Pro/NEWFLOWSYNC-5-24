@@ -82,10 +82,10 @@ export function FleetControlPoints() {
   );
 }
 
-const timeline = () => [
+const timeline = (price: number) => [
   {
     title: "Join",
-    body: `${FLEET.price} one-time, and your full FlowSync driver account comes with it. ${FLEET.refundShort.split(".")[0]}.`,
+    body: `$${price} one-time, and your full FlowSync driver account comes with it. ${FLEET.refundShort.split(".")[0]}.`,
   },
   {
     title: "Send your city and vehicle",
@@ -106,8 +106,8 @@ const timeline = () => [
 ];
 
 /** What happens between paying and the first payout — no surprises. */
-export function FleetJoinTimeline() {
-  const steps = timeline();
+export function FleetJoinTimeline({ price = FLEET.price }: { price?: number }) {
+  const steps = timeline(price);
   return (
     <ol className="space-y-4">
       {steps.map((s, i) => (
@@ -125,8 +125,11 @@ export function FleetJoinTimeline() {
   );
 }
 
-/** Fleet questions — also the FAQPage structured data on /curri-fleet, so keep the answers plain text. */
-export const fleetFaq = () => [
+/**
+ * Fleet questions — also the FAQPage structured data on /curri-fleet, so keep the answers plain text.
+ * `price` / `smallVehicles` serve the $197 ad page (FLEET_SMALL): same answers, its price, its vehicle list.
+ */
+export const fleetFaq = ({ price = FLEET.price, smallVehicles = false }: { price?: number; smallVehicles?: boolean } = {}) => [
   {
     q: "How is this different from signing up with Curri myself?",
     a: "You run loads on Barham Transport's Curri carrier account instead of waiting on your own approval, and we bid loads rather than only taking the listed price. If you later get your own carrier account, using both is up to you.",
@@ -145,7 +148,7 @@ export const fleetFaq = () => [
   },
   {
     q: "What does it cost?",
-    a: `$${FLEET.price} one-time, which includes your full FlowSync driver account and everything in Premium. No monthly fee and no insurance charge. The ${FLEET.dispatchFeePercent}% fee applies only to loads we bring you — no loads that week, no fee that week.`,
+    a: `$${price} one-time, which includes your full FlowSync driver account and everything in Premium. No monthly fee and no insurance charge. The ${FLEET.dispatchFeePercent}% fee applies only to loads we bring you — no loads that week, no fee that week.`,
   },
   {
     q: "What if I change my mind?",
@@ -153,7 +156,9 @@ export const fleetFaq = () => [
   },
   {
     q: "What vehicles can join?",
-    a: "Sedan through box truck. Each offer lists the vehicle the load needs, and you're only offered loads your vehicle can carry.",
+    a: smallVehicles
+      ? `This price is for sedans, SUVs, minivans, cargo vans and pickup trucks. Box trucks, Sprinters and pickup + trailer join at $${FLEET.price} on the main fleet page. Each offer lists the vehicle the load needs, and you're only offered loads your vehicle can carry. Many Curri loads need a van or truck, so a smaller vehicle may see fewer offers.`
+      : "Sedan through box truck. Each offer lists the vehicle the load needs, and you're only offered loads your vehicle can carry.",
   },
   {
     q: "How many loads will I get?",
@@ -165,10 +170,10 @@ export const fleetFaq = () => [
   },
 ];
 
-export function FleetFaq() {
+export function FleetFaq({ price, smallVehicles }: { price?: number; smallVehicles?: boolean } = {}) {
   return (
     <div className="space-y-3">
-      {fleetFaq().map((item) => (
+      {fleetFaq({ price, smallVehicles }).map((item) => (
         <details key={item.q} className="card group p-5 [&_summary::-webkit-details-marker]:hidden">
           <summary className="flex cursor-pointer items-center justify-between gap-4 font-medium">
             {item.q}

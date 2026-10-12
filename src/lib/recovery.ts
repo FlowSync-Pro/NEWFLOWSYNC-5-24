@@ -1,4 +1,4 @@
-import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, premiumUpgradePrice } from "./pricing";
+import { FLEET, FLEET_SMALL, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, premiumUpgradePrice } from "./pricing";
 import { SITE_URL } from "./site";
 
 // Ready-to-send follow-up messages. One source so the admin recovery page, the
@@ -26,13 +26,20 @@ export function listingPriceLine(): string {
 const FLEET_HOOK =
   "Got a van, box truck or pickup + trailer? Join my Curri fleet: I bid the loads, you run the ones you want, paid every Friday.";
 const FLEET_GUARANTEE = `Make your $${FLEET.price} back in your first ${FLEET.guaranteeDays} days or I refund all of it. No questions asked.`;
+// The $197 small-vehicle ad page (FLEET_SMALL): its own hook, price and link.
+const FLEET_SMALL_HOOK =
+  "Drive a car, SUV, minivan, cargo van or pickup? Join my Curri fleet: I bid the loads, you run the ones you want, paid every Friday.";
+const FLEET_SMALL_GUARANTEE = `Make your $${FLEET_SMALL.price} back in your first ${FLEET.guaranteeDays} days or I refund all of it. No questions asked.`;
 
 /** A driver's personal fleet referral link — the same one their account's "Refer drivers" card shows (ReferralCard). */
 export const fleetReferralLink = (code: string) => `${base()}/?ref=${code}#curri-fleet`;
 
 /** SMS-length text the owner sends from his own phone. */
-export function recoveryText(product: RecoveryProduct, firstName?: string | null): string {
+export function recoveryText(product: RecoveryProduct, firstName?: string | null, smallVehicle = false): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
+  if (product === "fleet" && smallVehicle) {
+    return `${hi}Nas from FlowSync. ${FLEET_SMALL_HOOK}\n\n${FLEET_SMALL_GUARANTEE}\n\n${base()}${FLEET_SMALL.path}`;
+  }
   if (product === "fleet") {
     return `${hi}Nas from FlowSync. ${FLEET_HOOK}\n\n${FLEET_GUARANTEE}\n\n${base()}/curri-fleet`;
   }
@@ -83,11 +90,12 @@ export function premiumPitchText(firstName?: string | null, premiumPrice = premi
  * room; when the month is full it says so, because the buyer would start next
  * month (the guarantee's days count from activation, so they lose nothing).
  */
-export function fleetFollowUpText(firstName: string | null | undefined, roomThisMonth: boolean, from: "public" | "account"): string {
-  const link = from === "account" ? `${base()}/account/curri-fleet` : `${base()}/curri-fleet`;
+export function fleetFollowUpText(firstName: string | null | undefined, roomThisMonth: boolean, from: "public" | "account", smallVehicle = false): string {
+  const link = smallVehicle ? `${base()}${FLEET_SMALL.path}` : from === "account" ? `${base()}/account/curri-fleet` : `${base()}/curri-fleet`;
+  const price = smallVehicle ? FLEET_SMALL.price : FLEET.price;
   return (
     `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
-    `If the fleet doesn't pay for itself in your first ${FLEET.guaranteeDays} days, I refund the $${FLEET.price}. You can't lose. ` +
+    `If the fleet doesn't pay for itself in your first ${FLEET.guaranteeDays} days, I refund the $${price}. You can't lose. ` +
     (roomThisMonth ? "" : "This month's spots are full, so you'd start next month. ") +
     link
   );

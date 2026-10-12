@@ -108,6 +108,22 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-12: $197 small-vehicle fleet page (ad-only)
+Owner ask: a copy of `/curri-fleet` at $197 for sedans, SUVs, minivans, cargo vans and pickups,
+with its own link for a Meta ad set. Owner decisions: that vehicle list; same package as $297
+(including Premium); the buyer picks the vehicle, the owner verifies at activation (bigger
+vehicle → pays the difference or full refund).
+- `src/app/curri-fleet/small-vehicles/page.tsx` — same sections as `/curri-fleet`, $197,
+  noindex, no structured data, not in the sitemap, links to the $297 page for bigger vehicles.
+- `FLEET_SMALL` in `src/lib/pricing.ts`; `FleetCheckout smallVehicles` adds a required vehicle
+  picker; `/api/checkout` `fleet-standalone` + `variant: "small"` checks the vehicle and charges
+  $197 (metadata `variant`, `vehicle`); the webhook saves the vehicle on the new profile and
+  puts it in the owner alert.
+- Abandoned $197 checkouts: own hook/price/link in the recovery text, follow-up, email and the
+  Recovery row.
+Deploy: **RISKY (Stripe checkout code)** — owner approved the build 2026-10-12; no migration,
+no env vars. Test a real $197 checkout on the preview before merging.
+
 ## 🚧 Pending — 2026-10-10: "Copy dispute evidence" page
 `/admin/dispute` (linked from the Admin header and each driver's ops page): look a buyer up
 by email (form action — the email never goes in a URL) → `/admin/dispute/<userId>` shows one

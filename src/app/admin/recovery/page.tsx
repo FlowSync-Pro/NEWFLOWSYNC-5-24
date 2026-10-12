@@ -71,6 +71,7 @@ async function abandonedCheckouts(roomThisMonth: boolean): Promise<{ rows: Recov
       const md = s.metadata ?? {};
       const product = md.type === "listing" ? "listing" : md.type === "fleet" && md.standalone === "1" ? "fleet" : null;
       if (!product) continue;
+      const small = product === "fleet" && md.variant === "small"; // the $197 small-vehicle ad page
       const email = (s.customer_details?.email ?? s.customer_email ?? md.email ?? "").toLowerCase();
       const phone = s.customer_details?.phone ?? null;
       if (!email && !phone) continue;
@@ -84,9 +85,9 @@ async function abandonedCheckouts(roomThisMonth: boolean): Promise<{ rows: Recov
         name: [firstName, md.lastName].filter(Boolean).join(" ") || s.customer_details?.name || "",
         email: email || null,
         phone,
-        meta: `Abandoned the ${product === "fleet" ? `$${FLEET.price} fleet invite` : `$${((s.amount_total ?? 0) / 100).toFixed(0)} listing`} · ${ago(new Date(s.created * 1000))}`,
-        text: recoveryText(product, firstName),
-        followUp: product === "fleet" ? fleetFollowUpText(firstName, roomThisMonth, "public") : listingFollowUpText(firstName),
+        meta: `Abandoned the $${((s.amount_total ?? 0) / 100).toFixed(0)} ${product === "fleet" ? (small ? `small-vehicle fleet invite (${md.vehicle ?? "vehicle not given"})` : "fleet invite") : "listing"} · ${ago(new Date(s.created * 1000))}`,
+        text: recoveryText(product, firstName, small),
+        followUp: product === "fleet" ? fleetFollowUpText(firstName, roomThisMonth, "public", small) : listingFollowUpText(firstName),
         mailSubject: product === "fleet" ? "Your fleet spot is still open" : "Your FlowSync listing is still waiting",
       });
     }

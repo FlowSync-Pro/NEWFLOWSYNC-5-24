@@ -4,7 +4,7 @@ import { tagEmailLinks } from "./attribution";
 import { fleetTelegramInviteUrl } from "./telegram-invite";
 import { CHALLENGE_DAYS, challengeName } from "./challenge";
 import { EARNINGS_SOURCE, type Vehicle } from "./earnings";
-import { FLEET, REFUND_WINDOW_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, OFFER_WINDOW_HOURS, premiumOfferPrice, premiumUpgradePrice } from "./pricing";
+import { FLEET, FLEET_SMALL, REFUND_WINDOW_DAYS, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, OFFER_WINDOW_HOURS, premiumOfferPrice, premiumUpgradePrice } from "./pricing";
 
 // Lazy + graceful: when RESEND_API_KEY isn't set, email sends are skipped (logged)
 // so the rest of the flow still works. Swap nothing to go live — just set the keys.
@@ -863,10 +863,13 @@ export async function sendCheckoutRecoveryEmail(opts: {
   firstName?: string;
   product: "listing" | "fleet";
   resumeUrl: string;
+  /** The $197 small-vehicle ad page (FLEET_SMALL): its price and hook. */
+  smallVehicle?: boolean;
 }) {
   const name = opts.firstName || "there";
   const isFleet = opts.product === "fleet";
-  const price = isFleet ? FLEET.price : listingPrice();
+  const small = isFleet && !!opts.smallVehicle;
+  const price = small ? FLEET_SMALL.price : isFleet ? FLEET.price : listingPrice();
   const pending = !isFleet && listingIncreasePending();
   const what = isFleet ? "joining the Curri fleet" : "your FlowSync driver listing";
   // Fleet: the same short offer as the owner's recovery text (lib/recovery.ts) —
@@ -874,7 +877,7 @@ export async function sendCheckoutRecoveryEmail(opts: {
   const body = isFleet
     ? `
     <p ${P}>Hi ${name}, Nas here.</p>
-    <p ${P}>Got a van, box truck or pickup + trailer? Join my Curri fleet: I bid the loads, you run the ones you want, paid every Friday.</p>
+    <p ${P}>${small ? "Drive a car, SUV, minivan, cargo van or pickup?" : "Got a van, box truck or pickup + trailer?"} Join my Curri fleet: I bid the loads, you run the ones you want, paid every Friday.</p>
     <p ${P}><strong style="color:#e7ecef">Make your $${price} back in your first ${FLEET.guaranteeDays} days or I refund all of it. No questions asked.</strong></p>
     <p style="margin:0 0 18px">${button(opts.resumeUrl, `Finish joining — $${price}`)}</p>
     <p ${P}>Questions? Reply to this email — I read every one.</p>

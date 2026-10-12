@@ -6,11 +6,11 @@ import { FLEET } from "@/lib/pricing";
  * why bidding beats a gig account. Server component — plain JSX, no state.
  */
 
-export function FleetTerms({ standalone }: { standalone?: boolean }) {
+export function FleetTerms({ standalone, price = FLEET.price }: { standalone?: boolean; price?: number }) {
   return (
     <ul className="space-y-2 text-sm leading-relaxed text-muted">
       <li>
-        <strong className="font-semibold text-foreground">${FLEET.price} one-time</strong> to join
+        <strong className="font-semibold text-foreground">${price} one-time</strong> to join
         {standalone ? " — includes your full FlowSync driver account" : ""}. No
         monthly fee, no insurance charges.
       </li>
