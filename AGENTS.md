@@ -274,7 +274,9 @@ launch merge time; late is harmless, early takes things away.
 
 **Entitlements** live in `src/lib/access.ts` (`getEntitlements`, `hasProAccess`,
 `canReadGuide`). Free public tools (`/calculator`, `/tools/profit-loss`) stay public as
-lead magnets; the gated ones are the account versions.
+lead magnets; the gated ones are the account versions. Any signed-in driver can download the trips
+they saved as a CSV (`/api/trips/export`, owner decision 2026-10-15) — the trip log tool
+itself stays Premium.
 
 **Abandoned-checkout recovery (live):** new-buyer Checkouts (listing, homepage fleet)
 expire after 60 minutes with Stripe recovery on and a phone field (owner-approved

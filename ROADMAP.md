@@ -108,6 +108,13 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-15: every driver can download their own trips
+Owner decision (2026-10-15): "Download my trips" is no longer Premium-only — it's the
+driver's own data. `/api/trips/export` now needs only a signed-in driver (still only their
+own trips, no photos). On `/account/trips`, non-Premium drivers who have saved trips see the
+download card above the "Part of Premium" box; the trip log itself stays Premium. Card moved
+to `src/components/TripDownload.tsx`. Deploy: SAFE (no migration, no env vars, no Stripe/auth).
+
 ## 🚧 Pending — 2026-10-15: Fleet readiness — "Send on Telegram"
 Each nudge on `/admin/fleet-readiness` gets a **Send on Telegram** button for drivers linked
 to the bot: one confirm, one message from the FlowSync bot to that one driver (replies relay
