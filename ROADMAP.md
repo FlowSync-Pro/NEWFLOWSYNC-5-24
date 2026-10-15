@@ -108,6 +108,17 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-15: Fleet readiness — "Send on Telegram"
+Each nudge on `/admin/fleet-readiness` gets a **Send on Telegram** button for drivers linked
+to the bot: one confirm, one message from the FlowSync bot to that one driver (replies relay
+to the owner as usual). The server action (`sendReadinessNudgeOnTelegram`) rebuilds the text
+from the database — never from the browser — and refuses non-fleet, not-linked, or
+nothing-to-do drivers; a Telegram failure shows "copy the text and send it yourself". "Sent ✓"
+shows until the page reloads (not stored — storing it would need a migration; the EmailLog
+table is avoided on purpose because its rows count toward the 48-hour marketing gap).
+Loader moved to `src/lib/fleet-readiness-data.ts`. Deploy: SAFE (no migration, no env vars,
+no Stripe/auth; sends only on the owner's click).
+
 ## 🚧 Pending — 2026-10-15: Fleet readiness board
 `/admin/fleet-readiness` (button on `/admin`, link on `/admin/dispatch`): every fleet member
 with ✓ / ✗ for what an offer needs — Activated on Curri (owner's step), a home ZIP we can

@@ -18,6 +18,8 @@ import { optOutOfMarketing } from "@/lib/marketing";
 import { ensureConnectAccount, syncConnectStatus, type ConnectSync } from "@/lib/stripe-connect";
 import { cancelPayout as cancelPayoutRow, logDelivery, parseDollars, payAllPending as payAllPendingRows, payPayout, type PayAllSummary, type PayResult } from "@/lib/payouts";
 import { linkPayout } from "@/lib/dispatch";
+import { fleetReadinessFor } from "@/lib/fleet-readiness-data";
+import { sendTelegramMessage } from "@/lib/telegram";
 import type { PayPlan } from "@prisma/client";
 
 // ---- Fleet payouts (Stripe Connect phase 2) ------------------------------
@@ -153,6 +155,28 @@ export async function sendFleetInviteEmails(): Promise<{ ok: true; result: Fleet
  * Dispute evidence lookup: find a buyer by email (from the Stripe dispute) and open
  * their evidence page. A form action, so the email stays out of the URL.
  */
+/**
+ * Fleet readiness: send one driver their nudge from the FlowSync bot. The text
+ * is rebuilt here from the database (never taken from the browser), only for a
+ * fleet member linked on Telegram who still has a step of their own to do.
+ * One driver per click; nothing is sent automatically.
+ */
+export async function sendReadinessNudgeOnTelegram(userId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireAdmin();
+  const row = await fleetReadinessFor(userId);
+  if (!row) return { ok: false, error: "Not a fleet member." };
+  const chatId = row.u.telegramChatId;
+  if (!chatId) return { ok: false, error: "Not on Telegram — copy the text and send it yourself." };
+  if (!row.r.nudge) return { ok: false, error: "Nothing left for them to do." };
+  try {
+    await sendTelegramMessage(chatId, row.r.nudge);
+  } catch (e) {
+    console.error("[fleet-readiness] telegram nudge failed:", e instanceof Error ? e.message : e);
+    return { ok: false, error: "Telegram didn't take it — copy the text and send it yourself." };
+  }
+  return { ok: true };
+}
+
 export async function openDisputeEvidence(formData: FormData): Promise<void> {
   await requireAdmin();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();

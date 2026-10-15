@@ -92,6 +92,7 @@ export const VERIFY_ITEMS: VerifyItem[] = [
     steps: [
       { text: "Open it: every fleet member is listed, blocked drivers first, with ✓ / ✗ for each step.", href: "/admin/fleet-readiness" },
       { text: "Spot-check one driver against their driver page (Activated on Curri, ZIP, vehicle, Telegram)." },
+      { text: "\"Send on Telegram\" on one driver who's linked: they get the text from the FlowSync bot, and the button turns to \"Sent ✓\"." },
     ],
   },
   {
