@@ -1,62 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { getAdminUserId } from "@/lib/admin";
-import { zipCentroid } from "@/lib/geo";
-import { vehicleClassFromType } from "@/lib/dispatch";
-import { readiness, readinessRank } from "@/lib/fleet-readiness";
 import { ptClock, ptDay } from "@/lib/pt-time";
-import CopyTextButton from "@/components/CopyTextButton";
+import ReadinessNudge from "@/components/ReadinessNudge";
+import { loadFleetReadiness, OFFER_LOOKBACK_DAYS } from "@/lib/fleet-readiness-data";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Fleet readiness — Admin", robots: { index: false } };
 
-const OFFER_LOOKBACK_DAYS = 30;
-const smsHref = (phone: string | null, body: string) => (phone ? `sms:${phone.replace(/[^+\d]/g, "")}?&body=${encodeURIComponent(body)}` : null);
-
-/** Every fleet member with their readiness and recent offer counts, most-blocked first. */
-async function loadRows() {
-  const since = new Date(Date.now() - OFFER_LOOKBACK_DAYS * 86_400_000);
-  const users = await prisma.user.findMany({
-    where: { fleetJoinedAt: { not: null } },
-    orderBy: { fleetJoinedAt: "asc" },
-    select: {
-      id: true, email: true, fleetJoinedAt: true, telegramChatId: true, stripeConnectAccountId: true, stripeConnectPayoutsEnabled: true,
-      driverProfile: { select: { id: true, firstName: true, lastName: true, phone: true, baseZip: true, vehicleType: true, curriActivatedAt: true, onDutyUntil: true } },
-    },
-  });
-  const profileIds = users.map((u) => u.driverProfile?.id).filter((x): x is string => !!x);
-  const offerRows = profileIds.length
-    ? await prisma.dispatchOffer.groupBy({ by: ["driverProfileId", "response"], where: { driverProfileId: { in: profileIds }, sentAt: { gte: since } }, _count: { _all: true } })
-    : [];
-  const offers = new Map<string, { sent: number; accepted: number }>();
-  for (const r of offerRows) {
-    const o = offers.get(r.driverProfileId) ?? { sent: 0, accepted: 0 };
-    o.sent += r._count._all;
-    if (r.response === "ACCEPTED") o.accepted += r._count._all;
-    offers.set(r.driverProfileId, o);
-  }
-
-  const rows = users.map((u) => {
-    const p = u.driverProfile;
-    const r = readiness({
-      hasProfile: !!p,
-      firstName: p?.firstName ?? "",
-      curriActivated: !!p?.curriActivatedAt,
-      zipSet: !!p?.baseZip?.trim(),
-      zipKnown: !!zipCentroid(p?.baseZip),
-      vehicleType: p?.vehicleType ?? null,
-      vehicleClass: vehicleClassFromType(p?.vehicleType),
-      telegramLinked: !!u.telegramChatId,
-      payoutsReady: !!u.stripeConnectAccountId && u.stripeConnectPayoutsEnabled,
-      activeUntil: p?.onDutyUntil ?? null,
-    });
-    return { u, p, r, o: p ? offers.get(p.id) : undefined };
-  }).sort((a, b) => readinessRank(b.r) - readinessRank(a.r));
-  return rows;
-}
 
 // Owner-only, read-only. Every fleet member and whether a load offer can reach
 // them (src/lib/fleet-readiness.ts), with a ready-to-send text for the steps
@@ -66,7 +19,7 @@ export default async function AdminFleetReadinessPage() {
   if (!session) redirect("/signin");
   if (!(await getAdminUserId())) redirect("/account");
 
-  const rows = await loadRows();
+  const rows = await loadFleetReadiness();
 
   const blocked = rows.filter((x) => !x.r.canGetOffers).length;
   const active = rows.filter((x) => x.r.canGetOffers && x.r.activeNow).length;
@@ -90,7 +43,6 @@ export default async function AdminFleetReadinessPage() {
       <div className="mt-6 space-y-4">
         {rows.map(({ u, p, r, o }) => {
           const name = p ? `${p.firstName} ${p.lastName}`.trim() || u.email : u.email;
-          const sms = r.nudge ? smsHref(p?.phone ?? null, r.nudge) : null;
           return (
             <section key={u.id} className="card p-5">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -125,13 +77,7 @@ export default async function AdminFleetReadinessPage() {
               <p className="mt-1 text-xs text-muted">{o ? `Offers in the last ${OFFER_LOOKBACK_DAYS} days: ${o.sent} sent · ${o.accepted} accepted` : `No offers in the last ${OFFER_LOOKBACK_DAYS} days`}</p>
 
               {r.nudge && (
-                <div className="mt-4 rounded-xl border border-border bg-surface-2 p-4">
-                  <p className="text-sm">{r.nudge}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <CopyTextButton value={r.nudge} label="Copy text" />
-                    {sms && <a href={sms} className="btn-ghost rounded-full px-5 py-2.5 text-sm">Text {p?.firstName || "them"}</a>}
-                  </div>
-                </div>
+                <ReadinessNudge userId={u.id} nudge={r.nudge} firstName={p?.firstName ?? ""} phone={p?.phone ?? null} onTelegram={!!u.telegramChatId} />
               )}
             </section>
           );
