@@ -2,7 +2,7 @@ import type { DispatchLane, DispatchStatus, OfferResponse, VehicleClass } from "
 import { prisma } from "./db";
 import { locate, haversineMiles, zipCentroid } from "./geo";
 import { FLEET } from "./pricing";
-import { notifyDriverAssigned, notifyDriverLoadStatus, notifyNoTaker, notifyOffers } from "./dispatch-notify";
+import { notifyDriverAssigned, notifyDriverLoadStatus, notifyNoTaker, notifyOffers, notifyOffersTaken } from "./dispatch-notify";
 
 // Dispatch board, stage 1a — docs/DISPATCH-FLOW.md.
 //
@@ -384,11 +384,22 @@ export async function assignLoad(loadId: string, profileId: string, actorId: str
     data: { status: "ASSIGNED", assignedProfileId: profileId },
   });
   if (r.count === 0) return { ok: false, error: "Someone else just changed this load — reload." };
-  await prisma.dispatchOffer.updateMany({ where: { loadId, response: "PENDING", driverProfileId: { not: profileId } }, data: { response: "EXPIRED", respondedAt: new Date() } });
+  // Close everyone else's offer. Those still inside their window get a "Taken"
+  // line on Telegram (after the log write below), so nobody taps a dead offer.
+  const now = new Date();
+  const others = await prisma.dispatchOffer.findMany({ where: { loadId, response: "PENDING", driverProfileId: { not: profileId } }, select: { id: true, expiresAt: true } });
+  await prisma.dispatchOffer.updateMany({ where: { id: { in: others.map((o) => o.id) }, response: "PENDING" }, data: { response: "EXPIRED", respondedAt: now } });
   // A phone-confirmed driver's own open offer is answered too, so a later tap on it reads "already yours", not "taken".
   if (!opts.viaOffer) await prisma.dispatchOffer.updateMany({ where: { loadId, driverProfileId: profileId, response: "PENDING" }, data: { response: "ACCEPTED", respondedAt: new Date() } });
   await logEvent(loadId, actorId, load.status, "ASSIGNED", `${c.name} (${c.milesToPickup ?? "?"} mi to pickup)${opts.viaOffer ? " — accepted the offer" : " — confirmed by phone"}`);
   if (!opts.viaOffer) await notifyDriverAssigned(loadId); // offer accepts are confirmed on the tap itself
+  const stillOpen = others.filter((o) => o.expiresAt > now).map((o) => o.id);
+  try {
+    await notifyOffersTaken(loadId, stillOpen);
+  } catch (e) {
+    // Best-effort: the load is assigned either way; a late tap still reads "Taken".
+    console.error("[dispatch] taken notice failed:", e instanceof Error ? e.message : e);
+  }
   return { ok: true };
 }
 

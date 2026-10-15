@@ -84,6 +84,17 @@ export const VERIFY_ITEMS: VerifyItem[] = [
     ],
   },
   {
+    id: "taken-notice-2026-10-15",
+    title: "Dispatch: \"⌛ Taken\" line to the other drivers",
+    since: "Oct 15",
+    risk: "safe",
+    why: "When one driver gets a load, the others with an open offer are told right away.",
+    steps: [
+      { text: "Offer a test load to two Telegram accounts (yours + a test driver).", href: "/admin/dispatch" },
+      { text: "Accept on one: the other gets \"⌛ Taken — this load went to another driver.\" Then cancel the test load." },
+    ],
+  },
+  {
     id: "trip-download-2026-10-15",
     title: "Drivers: \"Download my trips\" spreadsheet",
     since: "Oct 15",

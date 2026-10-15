@@ -90,16 +90,24 @@ export async function notifyDriverLoadStatus(loadId: string, profileId: string, 
   return sendSafely(p.user.telegramChatId, `${head}\n${s.text}`);
 }
 
-/** The load left Curri's feed before anyone accepted: tell the drivers holding an open offer so nobody taps a dead one. */
-export async function notifyOffersWithdrawn(loadId: string, offerIds: string[]): Promise<number> {
+/** One line to each driver holding the given offers (sent at once), with the load's first summary line. */
+async function tellOfferHolders(loadId: string, offerIds: string[], head: string): Promise<number> {
   if (!offerIds.length) return 0;
   const s = await loadSummary(loadId);
   const offers = await prisma.dispatchOffer.findMany({ where: { id: { in: offerIds } }, select: { driverProfile: { select: { user: { select: { telegramChatId: true } } } } } });
-  let sent = 0;
-  for (const o of offers) {
-    if (await sendSafely(o.driverProfile.user.telegramChatId, `⌛ Gone — that offer is no longer available (another carrier took it).${s ? `\n${s.text.split("\n")[0]}` : ""}`)) sent++;
-  }
-  return sent;
+  const text = `${head}${s ? `\n${s.text.split("\n")[0]}` : ""}`;
+  const sent = await Promise.all(offers.map((o) => sendSafely(o.driverProfile.user.telegramChatId, text)));
+  return sent.filter(Boolean).length;
+}
+
+/** The load left Curri's feed before anyone accepted: tell the drivers holding an open offer so nobody taps a dead one. */
+export async function notifyOffersWithdrawn(loadId: string, offerIds: string[]): Promise<number> {
+  return tellOfferHolders(loadId, offerIds, "⌛ Gone — that offer is no longer available (another carrier took it).");
+}
+
+/** Another driver got the load: tell the drivers whose offer was still open, so nobody taps (or drives toward) a dead one. */
+export async function notifyOffersTaken(loadId: string, offerIds: string[]): Promise<number> {
+  return tellOfferHolders(loadId, offerIds, "⌛ Taken — this load went to another driver. No need to answer that offer.");
 }
 
 /** The owner's/dispatcher's phone. */

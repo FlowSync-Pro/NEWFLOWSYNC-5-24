@@ -108,6 +108,14 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-15: "⌛ Taken" line to the other drivers
+When a load gets its driver (Telegram Accept, fleet-page Accept, or phone-confirmed Assign),
+every other driver whose offer was still open gets one Telegram line: "⌛ Taken — this load
+went to another driver. No need to answer that offer." Passed / closed-window drivers and the
+winner get nothing; best-effort (assign succeeds if Telegram is down). Details:
+`docs/DISPATCH-FLOW.md` "Taken notice". Deploy: SAFE (no migration, no env vars, no
+Stripe/auth). On `/admin/verify`.
+
 ## 🚧 Pending — 2026-10-15: "Download my trips" (CSV for taxes)
 On `/account/trips` (Premium, same access as the page): a "Download my trips" card — pick a
 year (first trip's year → this year) or "All trips" → `GET /api/trips/export?year=` returns the
