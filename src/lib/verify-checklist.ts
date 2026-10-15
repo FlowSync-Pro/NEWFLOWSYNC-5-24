@@ -84,6 +84,17 @@ export const VERIFY_ITEMS: VerifyItem[] = [
     ],
   },
   {
+    id: "trip-download-2026-10-15",
+    title: "Drivers: \"Download my trips\" spreadsheet",
+    since: "Oct 15",
+    risk: "safe",
+    why: "Read-only: a driver downloads their own trip log for taxes.",
+    steps: [
+      { text: "Signed in as a Premium driver with trips (or yourself): the \"Download my trips\" card shows under the totals.", href: "/account/trips" },
+      { text: "Pick this year, Download: the file opens in Excel / Google Sheets with one row per trip and a TOTAL row matching the page." },
+    ],
+  },
+  {
     id: "recovery-send-all-2026-10-10",
     title: "Recovery page: Send all + \"Emailed\" + \"Asked to stop\"",
     since: "Oct 10",

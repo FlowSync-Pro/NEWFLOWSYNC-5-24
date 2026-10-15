@@ -42,6 +42,12 @@ export default async function TripsPage() {
   });
   if (!profile) redirect("/account/setup");
 
+  // Years offered by "Download my trips": the first trip's year through this year.
+  const first = await prisma.trip.findFirst({ where: { driverProfileId: profile.id }, orderBy: { date: "asc" }, select: { date: true } });
+  const thisYear = new Date().getUTCFullYear();
+  const startYear = Math.min(first ? first.date.getUTCFullYear() : thisYear, thisYear);
+  const exportYears = Array.from({ length: thisYear - startYear + 1 }, (_, i) => thisYear - i);
+
   const trips: TripView[] = profile.trips.map((t) => ({
     id: t.id,
     date: t.date.toISOString(),
@@ -73,7 +79,7 @@ export default async function TripsPage() {
         <div className="mx-auto max-w-5xl px-5 pt-6">
           <Link href="/account" className="text-sm text-muted hover:text-foreground">← Account</Link>
         </div>
-        <TripsManager trips={trips} inspections={inspections} />
+        <TripsManager trips={trips} inspections={inspections} exportYears={first ? exportYears : []} />
       </div>
     </div>
   );
