@@ -108,6 +108,17 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-15: "Verify after deploy" checklist page
+`/admin/verify` (button on `/admin`): every merged change that still needs a click-through on
+the live site — the "Pending" sections below — plus owner-only settings (Stripe Terms URL,
+Meta ads, Vercel Sensitive vars, portal-bot tick, attorney review). Each step has a tick box
+and an "Open ↗" link; ticks are remembered in the owner's browser only (localStorage), never
+on the server. Automatic checks at the top (read-only): database reachable, latest migration
+applied (`LATEST_MIGRATION`), fleet-invite emails sent, and whether the key settings exist
+(presence only, never values). Items live in `src/lib/verify-checklist.ts`: add one with a
+new id when a change merges; remove it once it's verified here. Deploy: SAFE (no migration,
+no env vars, no Stripe/auth code, no new dependency).
+
 ## 🚧 Pending — 2026-10-12: $197 small-vehicle fleet page (ad-only)
 Owner ask: a copy of `/curri-fleet` at $197 for sedans, SUVs, minivans, cargo vans and pickups,
 with its own link for a Meta ad set. Owner decisions: that vehicle list; same package as $297
