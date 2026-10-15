@@ -108,6 +108,16 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-15: "Download my trips" (CSV for taxes)
+On `/account/trips` (Premium, same access as the page): a "Download my trips" card — pick a
+year (first trip's year → this year) or "All trips" → `GET /api/trips/export?year=` returns the
+signed-in driver's OWN trips as a CSV: date (as entered), pickup, dropoff, earnings, paid /
+deadhead / total miles, fuel, tolls, other, total expenses, net profit, minutes, notes, plus a
+TOTAL row. Photos never included. Typed text can't run as a spreadsheet formula. Builder in
+`src/lib/trips-csv.ts`, tests `npm run test:trips` (5/5). Roadmap idea "Earnings/tax export".
+Deploy: SAFE (read-only; no migration, no env vars, no Stripe/auth, no new dependency).
+On `/admin/verify` as "Download my trips".
+
 ## 🚧 Pending — 2026-10-15: "Verify after deploy" checklist page
 `/admin/verify` (button on `/admin`): every merged change that still needs a click-through on
 the live site — the "Pending" sections below — plus owner-only settings (Stripe Terms URL,
