@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { FLEET, FLEET_SMALL, REFUND_WINDOW_DAYS, TIERS } from "./pricing";
+import { FLEET, REFUND_WINDOW_DAYS, TIERS } from "./pricing";
 import { FLEET_INVITE_KIND } from "./fleet-invite-email";
 
 // The "verify after deploy" checklist (/admin/verify). Each merged change that
@@ -34,11 +34,8 @@ export const VERIFY_ITEMS: VerifyItem[] = [
     title: `${REFUND_WINDOW_DAYS}-day refund window (listing + Premium)`,
     since: "Oct 10",
     risk: "risky",
-    why: "Changes the refund terms and adds a required checkbox to the Stripe checkout.",
+    why: "The refund pages were checked live on Oct 15; what's left is the checkout box and the receipt line.",
     steps: [
-      { text: `Refund policy page says ${REFUND_WINDOW_DAYS} days (and that buyers before Oct 11 keep 30).`, href: "/refund-policy" },
-      { text: `Terms page says ${REFUND_WINDOW_DAYS} days.`, href: "/terms" },
-      { text: `Pricing page shows "Clear refund terms" and no "30-day" anywhere.`, href: "/pricing" },
       { text: `Start a $${TIERS.standard.price} checkout: Stripe shows the "I agree that refunds…" checkbox. Then close it without paying.`, href: "/pricing" },
       { text: "The next real purchase's welcome email ends with the refund line." },
     ],
@@ -59,40 +56,14 @@ export const VERIFY_ITEMS: VerifyItem[] = [
     ],
   },
   {
-    id: "small-fleet-2026-10-12",
-    title: `$${FLEET_SMALL.price} small-vehicle fleet page (ad-only)`,
-    since: "Oct 12",
-    risk: "risky",
-    why: "New Stripe checkout path. Do one real test purchase before the Meta ad set goes live.",
-    steps: [
-      { text: `The page loads, says $${FLEET_SMALL.price}, and links to the $${FLEET.price} page for bigger vehicles.`, href: FLEET_SMALL.path },
-      { text: "Checkout asks for the vehicle (required) and charges the right amount." },
-      { text: "After paying: the new driver's profile has that vehicle, and your owner alert names it. Refund the test in Stripe." },
-      { text: "Abandon one checkout: the Recovery page row shows the small-vehicle text and link.", href: "/admin/recovery" },
-    ],
-  },
-  {
     id: "fleet-guarantee-2026-10-09",
     title: `Fleet "make it back" guarantee (${FLEET.guaranteeDays} days)`,
     since: "Oct 9",
     risk: "risky",
-    why: "Changes the fleet refund terms and the checkout checkbox wording.",
+    why: "The refund policy and terms pages were checked live on Oct 15; what's left is the checkout box and the recovery texts.",
     steps: [
-      { text: "Refund policy page shows the fleet guarantee.", href: "/refund-policy" },
       { text: "Start a fleet checkout: the terms checkbox shows the new sentence. Close it without paying.", href: "/curri-fleet" },
       { text: "Recovery page fleet rows show the new text with line breaks.", href: "/admin/recovery" },
-    ],
-  },
-  {
-    id: "fleet-readiness-2026-10-15",
-    title: "Fleet readiness board",
-    since: "Oct 15",
-    risk: "safe",
-    why: "Read-only: who can't get load offers yet, and a text to send them.",
-    steps: [
-      { text: "Open it: every fleet member is listed, blocked drivers first, with ✓ / ✗ for each step.", href: "/admin/fleet-readiness" },
-      { text: "Spot-check one driver against their driver page (Activated on Curri, ZIP, vehicle, Telegram)." },
-      { text: "\"Send on Telegram\" on one driver who's linked: they get the text from the FlowSync bot, and the button turns to \"Sent ✓\"." },
     ],
   },
   {
@@ -162,22 +133,6 @@ export const VERIFY_ITEMS: VerifyItem[] = [
       { text: "Cancel the test load with the reason \"verify test\"." },
       { text: "First real portal load end to end: card + \"Offered to N…\" + Accept / Pass." },
     ],
-  },
-  {
-    id: "owner-stripe-tos-url",
-    title: "Stripe: Terms of Service URL",
-    since: "Oct 10",
-    risk: "owner",
-    why: "Without it, Stripe silently drops the refund / fleet terms checkboxes.",
-    steps: [{ text: "Stripe → Settings → Public details → Terms of Service URL = https://flowsyncdriver.com/terms" }],
-  },
-  {
-    id: "owner-meta-ads-30day",
-    title: "Meta ads: remove \"30-day money-back\"",
-    since: "Oct 10",
-    risk: "owner",
-    why: `The listing and Premium refund window is now ${REFUND_WINDOW_DAYS} days; ads must match.`,
-    steps: [{ text: "Edit every live ad that still says \"30-day money-back\"." }],
   },
   {
     id: "owner-vercel-sensitive",
