@@ -115,6 +115,7 @@ export const VERIFY_ITEMS: VerifyItem[] = [
     steps: [
       { text: "Signed in as a Premium driver with trips (or yourself): the \"Download my trips\" card shows under the totals.", href: "/account/trips" },
       { text: "Pick this year, Download: the file opens in Excel / Google Sheets with one row per trip and a TOTAL row matching the page." },
+      { text: "A NON-Premium driver who has saved trips sees the same card above the \"Part of Premium\" box on /account/trips and can download (owner decision Oct 15)." },
     ],
   },
   {

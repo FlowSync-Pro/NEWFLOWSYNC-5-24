@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { getEntitlements, hasProAccess } from "@/lib/access";
 import { exportRange, tripsToCsv } from "@/lib/trips-csv";
 
 // "Download my trips": the signed-in driver's OWN trip log as a CSV file
-// (src/lib/trips-csv.ts). Same access as /account/trips. Read-only; the only
-// query parameter is the year, never anything personal. Photos are left out.
+// (src/lib/trips-csv.ts). Any signed-in driver, Premium or not — it's their
+// own data (owner decision 2026-10-15). Read-only; the only query parameter is
+// the year, never anything personal. Photos are left out.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +15,6 @@ export async function GET(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   if (session.mustResetPassword) return NextResponse.json({ error: "Set your password first." }, { status: 403 });
-  if (!hasProAccess(await getEntitlements())) return NextResponse.json({ error: "The trip log is part of Premium." }, { status: 403 });
 
   const range = exportRange(new URL(req.url).searchParams.get("year"));
   if ("error" in range) return NextResponse.json({ error: range.error }, { status: 400 });
