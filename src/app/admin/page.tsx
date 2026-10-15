@@ -158,6 +158,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
                 <span className="ml-2 rounded-full bg-amber-400/20 px-2 py-0.5 text-[11px] font-bold text-amber-300">{pendingReviewCount} pending</span>
               )}
             </Link>
+            <Link href="/admin/verify" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Verify after deploy</Link>
             <Link href="/admin/recovery" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Recovery</Link>
             <Link href="/admin/dispute" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Dispute evidence</Link>
             <Link href="/admin/referrals" className="btn-ghost rounded-full px-5 py-2.5 text-sm">Fleet referrals</Link>
