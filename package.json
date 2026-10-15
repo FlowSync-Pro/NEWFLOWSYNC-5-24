@@ -13,6 +13,7 @@
     "test:telegram": "node --experimental-strip-types --test scripts/telegram-utils.test.mjs",
     "test:vehicles": "node --experimental-strip-types --test scripts/vehicles.test.mjs",
     "test:trips": "node --experimental-strip-types --test scripts/trips-csv.test.mjs",
+    "test:fleet-readiness": "node --experimental-strip-types --test scripts/fleet-readiness.test.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
