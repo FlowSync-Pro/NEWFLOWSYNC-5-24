@@ -108,6 +108,18 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 📍 Checkpoint — 2026-10-15 (evening): owner steps done
+Owner confirmed (2026-10-15): Stripe → Public details → Terms of Service URL set to
+`https://flowsyncdriver.com/terms` (the refund / fleet terms checkboxes can now show); one real
+$197 small-vehicle purchase made and refunded; Meta ads cleaned of "30-day money-back"; fleet
+drivers marked "Activated on Curri" and nudged from `/admin/fleet-readiness`. Also checked live
+from the sandbox the same day: `/api/health` all OK; `/refund-policy` and `/terms` say 7 days
+(30 kept for buyers before Oct 11) and carry the 60-day fleet guarantee; `/pricing` has no
+"30-day"; `/curri-fleet/small-vehicles` is $197, noindex. Still open on `/admin/verify`: the
+$47 / fleet checkout checkboxes, the vehicles change, Recovery send-all, fleet invite first
+batch, dispute page, NO TAKER / Taken / trip-download live checks, Vercel Sensitive vars,
+portal-bot tick, attorney review. Next milestone: the first real portal load end to end.
+
 ## 🚧 Pending — 2026-10-15: every driver can download their own trips
 Owner decision (2026-10-15): "Download my trips" is no longer Premium-only — it's the
 driver's own data. `/api/trips/export` now needs only a signed-in driver (still only their
@@ -115,7 +127,7 @@ own trips, no photos). On `/account/trips`, non-Premium drivers who have saved t
 download card above the "Part of Premium" box; the trip log itself stays Premium. Card moved
 to `src/components/TripDownload.tsx`. Deploy: SAFE (no migration, no env vars, no Stripe/auth).
 
-## 🚧 Pending — 2026-10-15: Fleet readiness — "Send on Telegram"
+## ✅ Verified — 2026-10-15: Fleet readiness — "Send on Telegram"
 Each nudge on `/admin/fleet-readiness` gets a **Send on Telegram** button for drivers linked
 to the bot: one confirm, one message from the FlowSync bot to that one driver (replies relay
 to the owner as usual). The server action (`sendReadinessNudgeOnTelegram`) rebuilds the text
@@ -126,7 +138,7 @@ table is avoided on purpose because its rows count toward the 48-hour marketing 
 Loader moved to `src/lib/fleet-readiness-data.ts`. Deploy: SAFE (no migration, no env vars,
 no Stripe/auth; sends only on the owner's click).
 
-## 🚧 Pending — 2026-10-15: Fleet readiness board
+## ✅ Verified — 2026-10-15: Fleet readiness board — in use by the owner (drivers marked, nudges sent)
 `/admin/fleet-readiness` (button on `/admin`, link on `/admin/dispatch`): every fleet member
 with ✓ / ✗ for what an offer needs — Activated on Curri (owner's step), a home ZIP we can
 place, a vehicle Curri uses, Telegram connected — plus Stripe payouts and Active now, and
@@ -166,7 +178,7 @@ applied (`LATEST_MIGRATION`), fleet-invite emails sent, and whether the key sett
 new id when a change merges; remove it once it's verified here. Deploy: SAFE (no migration,
 no env vars, no Stripe/auth code, no new dependency).
 
-## 🚧 Pending — 2026-10-12: $197 small-vehicle fleet page (ad-only)
+## ✅ Verified — 2026-10-12: $197 small-vehicle fleet page (ad-only) — owner test purchase + refund done 2026-10-15
 Owner ask: a copy of `/curri-fleet` at $197 for sedans, SUVs, minivans, cargo vans and pickups,
 with its own link for a Meta ad set. Owner decisions: that vehicle list; same package as $297
 (including Premium); the buyer picks the vehicle, the owner verifies at activation (bigger
