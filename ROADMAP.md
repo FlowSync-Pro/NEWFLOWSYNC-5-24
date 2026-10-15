@@ -108,6 +108,17 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-15: Fleet readiness board
+`/admin/fleet-readiness` (button on `/admin`, link on `/admin/dispatch`): every fleet member
+with ✓ / ✗ for what an offer needs — Activated on Curri (owner's step), a home ZIP we can
+place, a vehicle Curri uses, Telegram connected — plus Stripe payouts and Active now, and
+offers sent / accepted in the last 30 days. Drivers who can't get offers come first. Each one
+gets a ready-to-send text for only THEIR missing steps (Copy, and Text when there's a phone);
+no driver text when only the owner's step is missing. The checks mirror `rankCandidates`.
+"Last time Active" isn't stored (only when Active ends), so it shows Active now / until.
+Logic + copy in `src/lib/fleet-readiness.ts`, tests `npm run test:fleet-readiness` (9/9).
+Deploy: SAFE (read-only; nothing is sent; no migration, no env vars, no Stripe/auth).
+
 ## 🚧 Pending — 2026-10-15: "⌛ Taken" line to the other drivers
 When a load gets its driver (Telegram Accept, fleet-page Accept, or phone-confirmed Assign),
 every other driver whose offer was still open gets one Telegram line: "⌛ Taken — this load

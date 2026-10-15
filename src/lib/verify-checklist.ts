@@ -84,6 +84,17 @@ export const VERIFY_ITEMS: VerifyItem[] = [
     ],
   },
   {
+    id: "fleet-readiness-2026-10-15",
+    title: "Fleet readiness board",
+    since: "Oct 15",
+    risk: "safe",
+    why: "Read-only: who can't get load offers yet, and a text to send them.",
+    steps: [
+      { text: "Open it: every fleet member is listed, blocked drivers first, with ✓ / ✗ for each step.", href: "/admin/fleet-readiness" },
+      { text: "Spot-check one driver against their driver page (Activated on Curri, ZIP, vehicle, Telegram)." },
+    ],
+  },
+  {
     id: "taken-notice-2026-10-15",
     title: "Dispatch: \"⌛ Taken\" line to the other drivers",
     since: "Oct 15",
