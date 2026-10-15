@@ -445,7 +445,7 @@ longer picks the driver. Free: Telegram + the existing board. **No migration, no
 - ~~A "nobody accepted" ping when the window closes needs a per-minute scheduler (Vercel Pro
   cron) — not built.~~ **Built free (2026-10-08), see "No taker" below.**
 - Editing the other drivers' offer messages to "Taken" needs each message id stored (a
-  migration) — skipped; they learn on tap.
+  migration) — skipped. **Instead (2026-10-15, free, no migration):** see "Taken notice" below.
 
 ### Trade-off to accept
 Loads that go in seconds now wait for a driver's tap before the owner can claim. Active
@@ -627,3 +627,16 @@ rules, but it's the live dispatch path, so the owner says "push" after a two-dri
 page Accept vs Telegram Accept from another driver at the same moment, page Accept +
 Telegram Pass from the same driver, expired / taken / someone else's offer / non-member /
 signed-out refusals, and a re-run of the Telegram race tests.
+
+## Taken notice (2026-10-15) — BUILT, free
+
+When a load gets its driver — a Telegram Accept, an Accept on the fleet page, or the owner's
+"Assign — confirmed by phone" — every OTHER driver whose offer was still open (inside its
+window, not yet answered) gets one Telegram line: "⌛ Taken — this load went to another
+driver. No need to answer that offer." plus the load's pickup line. Drivers who passed, whose
+window had already closed, or the winner get nothing. Their original offer message keeps its
+buttons (editing it would need stored message ids — a migration); a late tap still answers
+"Taken — someone was faster". Sent in parallel and best-effort: if Telegram is down the
+assign still succeeds. Same pattern as the "⌛ Gone" line for loads that leave the Curri feed.
+No migration, no env var. Files: lib/dispatch.ts (`assignLoad`), lib/dispatch-notify.ts
+(`notifyOffersTaken`, shared `tellOfferHolders`).
