@@ -101,6 +101,74 @@ export function fleetFollowUpText(firstName: string | null | undefined, roomThis
   );
 }
 
+/**
+ * The reply email for someone who abandoned a fleet checkout and then WROTE
+ * BACK with questions (owner request 2026-10-16): how the fleet works start to
+ * finish, the make-it-back guarantee, and what happens step by step after they
+ * pay. Plain text so it copies cleanly into any mail app. It promises the
+ * REFUND, never earnings (AGENTS.md sections D–E). `roomThisMonth` must come
+ * from real numbers (this month's activations vs FLEET.monthlyCap).
+ */
+export function fleetReplyEmail(firstName: string | null | undefined, roomThisMonth: boolean, smallVehicle = false): { subject: string; body: string } {
+  const price = smallVehicle ? FLEET_SMALL.price : FLEET.price;
+  const link = smallVehicle ? `${base()}${FLEET_SMALL.path}` : `${base()}/curri-fleet#join`;
+  const days = FLEET.guaranteeDays;
+  const keep = 100 - FLEET.dispatchFeePercent;
+  const lines = [
+    `Hey ${firstName?.trim() || "there"},`,
+    "",
+    "Thanks for getting back to me. Here's exactly how the fleet works, start to finish, so you know what you're getting before you pay a dollar.",
+    "",
+    "WHAT IT IS",
+    "You run Curri loads on my carrier account (Barham Transport) instead of waiting months for your own approval. I bid the loads, you get offers on your phone, and you only run the ones you want.",
+    "",
+    "THE DIFFERENCE BIDDING MAKES",
+    `A gig account claims a load at the listed price. We place bids instead. One real example: a load posted at $100.45. We bid $300 and won it. On the way there, the app texted a gig driver $145 for the same pallet, same pickup, same drop-off. That's one load, not a promise. Every load is different and bids don't always win. But it's why keeping ${keep}% of a $300 load beats keeping all of a $145 one.`,
+    "",
+    "WHAT IT COSTS",
+    `- $${price} one-time. No monthly fee, no insurance charge.`,
+    `- ${FLEET.dispatchFeePercent}% dispatching fee, only on loads we bring you. No loads that week, no fee that week.`,
+    `- Want your pay sooner? Payment in 1-2 business days is ${FLEET.fastPayoutFeePercent}%. Standard pay is every Friday.`,
+    "- Prefer to pay over time? Klarna, Afterpay or Affirm at checkout, if you're eligible.",
+    ...(smallVehicle
+      ? ["- This price is for sedans, SUVs, minivans, cargo vans and pickups. At activation I confirm the vehicle; a box truck, Sprinter or pickup + trailer pays the difference or gets a full refund."]
+      : []),
+    "",
+    "MAKE IT BACK OR GET IT BACK",
+    `Make your $${price} back in your first ${days} days or I refund all of it. No questions asked.`,
+    "- Before you're activated, it's fully refundable anytime.",
+    `- After activation, if your take-home from fleet loads in your first ${days} days (after the dispatching fee, from my payout records) adds up to less than the $${price}, email me or text me within ${FLEET.guaranteeClaimDays} days after and I refund it in full. Nothing to prove. A refund ends your fleet membership.`,
+    "- The one exception: two violations on the carrier account means removal from the fleet with no refund, because violations put every driver on the account at risk.",
+    "",
+    "STEP BY STEP, AFTER YOU PAY",
+    "1. Right away: your FlowSync account is created and you get a welcome email with your sign-in. Everything in Premium is unlocked: the bidding calculator, the P&L tracker, every guide, and the Curri mastermind course.",
+    `2. Reply to that email with your city, your vehicle (year, make, model), and standard pay (Fridays, ${FLEET.dispatchFeePercent}%) or faster pay (1-2 business days, ${FLEET.fastPayoutFeePercent}%).`,
+    "3. I add you to the carrier account myself, usually the same day I have your details. That's your activation.",
+    "4. Set up payouts (about 5 minutes): in your account, open Payouts and fill in Stripe's short form. Your bank details go to Stripe, not to me. That's where every payout lands, and where your 1099 comes from at year end.",
+    "5. Connect Telegram with one tap from your fleet page (the app is free), and join the fleet driver group.",
+    "6. Go Active when you want loads: one tap on your fleet page, or send /active to the FlowSync bot. Active turns itself off after your hours, so you're never woken up at 2 AM.",
+    "7. Offers come to your phone: pickup, drop-off, miles and your take-home pay, with Accept and Pass. Offers go to the nearest Active drivers, and the first to accept gets the load. Pass on anything that doesn't suit you. Once you accept, I claim or bid it in Curri, so only accept loads you'll run.",
+    `8. Run the load, then get paid every Friday through Stripe (or in 1-2 business days on faster pay).`,
+    "",
+    "WHAT I CAN'T PROMISE",
+    `How many loads you'll get. It depends on your market and how often you're Active. I take on a limited number of new drivers each month so each one gets real dispatch support. ${
+      roomThisMonth
+        ? "There's still room this month."
+        : "This month is full, so you'd be first in line for next month, fully refundable until you're activated."
+    }`,
+    "",
+    `Ready? Grab your spot here: ${link}`,
+    "",
+    "Questions first? Just reply. It's me reading these, not a bot.",
+    "",
+    "- Nas Barham",
+    "Barham Transport / FlowSync Drivers",
+    "",
+    "FlowSync and Barham Transport LLC are independent and are not owned by, affiliated with, or part of Curri. Fleet drivers are independent contractors. No guarantee of load volume or earnings.",
+  ];
+  return { subject: "Re: your Curri fleet spot", body: lines.join("\n") };
+}
+
 /** Follow-up for an abandoned listing checkout — direct style (owner decision 2026-10-10). */
 export function listingFollowUpText(firstName?: string | null): string {
   return (

@@ -108,6 +108,18 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-16: fleet reply email template (Recovery page)
+Owner ask: an email that closes people who REPLY to the abandoned fleet checkout email — how
+the fleet works, the make-it-back guarantee, and what happens step by step after paying.
+`fleetReplyEmail()` in `src/lib/recovery.ts` (plain text; prices, fees, days and the cap line
+all from `lib/pricing.ts`; $197 small-vehicle variant with its own price, vehicle line and
+link; "room this month" from real activations). Shown on every abandoned fleet checkout row
+of `/admin/recovery` as "Reply email — when they write back" with Copy and Open in email app.
+It promises the refund, never earnings ("Make your $297 back in your first 60 days or I refund
+all of it"), keeps "one load, not a promise" with the $100.45 / $145 / $300 example, and ends
+with the not-affiliated-with-Curri / no-guarantee-of-earnings line. Nothing is sent
+automatically. Deploy: SAFE (copy only; no migration, no env vars, no Stripe/auth).
+
 ## 📍 Checkpoint — 2026-10-15 (evening): owner steps done
 Owner confirmed (2026-10-15): Stripe → Public details → Terms of Service URL set to
 `https://flowsyncdriver.com/terms` (the refund / fleet terms checkboxes can now show); one real

@@ -15,6 +15,8 @@ export interface RecoveryRow {
   text: string;
   /** The one follow-up: two days later, only if they haven't replied. None for favors (referral asks). */
   followUp?: string;
+  /** The long reply email for someone who wrote back with questions (abandoned fleet checkouts). */
+  reply?: { subject: string; body: string };
   mailSubject: string;
   /** An admin page to act from (e.g. the driver's card with "Reset password"). */
   link?: { href: string; label: string };
@@ -248,6 +250,20 @@ export default function RecoveryLists({ groups }: { groups: RecoveryGroup[] }) {
                     {!stopped && (
                       <>
                         <p className="mt-3 whitespace-pre-line rounded-lg border border-border bg-surface-2 p-3 text-xs leading-relaxed text-muted">{r.text}</p>
+                        {r.reply && (
+                          <details className="mt-2 rounded-lg border border-border">
+                            <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted">Reply email — when they write back with questions (how it works, the guarantee, step by step)</summary>
+                            <div className="border-t border-border p-3">
+                              <p className="text-xs text-muted">{`Subject: ${r.reply.subject}`}</p>
+                              <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-muted">{r.reply.body}</p>
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <CopyButton value={r.reply.body} />
+                                {r.email && <a href={mailHref(r.email, r.reply.subject, r.reply.body)!} className="rounded-full border border-border px-4 py-2 text-xs text-muted hover:text-foreground">Open in email app</a>}
+                              </div>
+                              <p className="mt-2 text-xs text-muted">Best: Copy, then paste it as your reply in the thread they wrote back on. Some email apps cut a message this long short when opened from a link.</p>
+                            </div>
+                          </details>
+                        )}
                         {r.followUp && (
                           <details className="mt-2 rounded-lg border border-border">
                             <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted">Follow-up — send 2 days later, only if they haven&apos;t replied</summary>

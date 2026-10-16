@@ -90,6 +90,17 @@ export const VERIFY_ITEMS: VerifyItem[] = [
     ],
   },
   {
+    id: "fleet-reply-email-2026-10-16",
+    title: "Recovery: fleet reply email template",
+    since: "Oct 16",
+    risk: "safe",
+    why: "The long \"how it works + guarantee + step by step\" reply for people who answer your abandoned fleet checkout email.",
+    steps: [
+      { text: "Abandoned checkouts tab: open a fleet row → \"Reply email\": their first name, the right price ($297 or $197) and link are filled in.", href: "/admin/recovery" },
+      { text: "Copy it, paste into a reply to yourself, and check it reads right in your email app." },
+    ],
+  },
+  {
     id: "recovery-send-all-2026-10-10",
     title: "Recovery page: Send all + \"Emailed\" + \"Asked to stop\"",
     since: "Oct 10",
