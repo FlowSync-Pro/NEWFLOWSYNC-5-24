@@ -303,7 +303,9 @@ pending — no refund pitch (owner decision 2026-10-10), no discounts, no fake u
 `/curri-fleet` real-runs page and mention pay over time (Klarna/Afterpay/Affirm, "if
 you're eligible"); the fleet follow-up says "still room this month" only when this
 month's activations are under `FLEET.monthlyCap`, otherwise "first in line for next
-month". One text, one follow-up two days later, stop on request.
+month". One text, one follow-up two days later, stop on request. Abandoned fleet rows also carry a long **reply email**
+(`fleetReplyEmail`) for buyers who write back with questions — how it works, the guarantee,
+step by step after paying; same rules (refund promised, never earnings).
 
 **ON STANDBY — do NOT pitch, build CTAs for, or surface anywhere:**
 - $197 four-week coaching program (a different product from the $197 fleet invite)

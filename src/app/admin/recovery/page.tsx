@@ -8,6 +8,7 @@ import { getStripe } from "@/lib/stripe";
 import { FLEET, LISTING_INCREASE_DATE_LABEL, LISTING_PRICE_AFTER, listingIncreasePending, listingPrice, premiumUpgradePrice } from "@/lib/pricing";
 import {
   fleetFollowUpText,
+  fleetReplyEmail,
   fleetPitchText,
   fleetReferralLink,
   listingFollowUpText,
@@ -88,6 +89,7 @@ async function abandonedCheckouts(roomThisMonth: boolean): Promise<{ rows: Recov
         meta: `Abandoned the $${((s.amount_total ?? 0) / 100).toFixed(0)} ${product === "fleet" ? (small ? `small-vehicle fleet invite (${md.vehicle ?? "vehicle not given"})` : "fleet invite") : "listing"} · ${ago(new Date(s.created * 1000))}`,
         text: recoveryText(product, firstName, small),
         followUp: product === "fleet" ? fleetFollowUpText(firstName, roomThisMonth, "public", small) : listingFollowUpText(firstName),
+        reply: product === "fleet" ? fleetReplyEmail(firstName, roomThisMonth, small) : undefined,
         mailSubject: product === "fleet" ? "Your fleet spot is still open" : "Your FlowSync listing is still waiting",
       });
     }
