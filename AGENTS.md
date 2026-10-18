@@ -303,7 +303,11 @@ pending — no refund pitch (owner decision 2026-10-10), no discounts, no fake u
 `/curri-fleet` real-runs page and mention pay over time (Klarna/Afterpay/Affirm, "if
 you're eligible"); the fleet follow-up says "still room this month" only when this
 month's activations are under `FLEET.monthlyCap`, otherwise "first in line for next
-month". One text, one follow-up two days later, stop on request. Abandoned fleet rows also carry a long **reply email**
+month". One text, one follow-up two days later, stop on request. Every sales text and follow-up ends with
+"Reply STOP to opt out." (`STOP` in `lib/recovery.ts`, owner decision 2026-10-17); texts that say
+"my Curri fleet" also say "I'm independent, not part of Curri."; support texts to people who
+already paid don't carry it. The fleet follow-up no longer says "You can't lose." (the
+two-violations exception makes it untrue). Abandoned fleet rows also carry a long **reply email**
 (`fleetReplyEmail`) for buyers who write back with questions — how it works, the guarantee,
 step by step after paying; same rules (refund promised, never earnings).
 

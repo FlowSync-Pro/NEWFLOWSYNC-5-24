@@ -108,6 +108,14 @@ Vercel; Stripe + Resend are the only outside SaaS (both already in use/requested
 writing the code against env placeholders + setup docs; provisioning + secrets happen in the
 owner's Vercel/Stripe/Resend accounts, then deploy.
 
+## 🚧 Pending — 2026-10-17: STOP line on every sales text
+Owner "go" 2026-10-17 (48-hour fleet push): every sales text and follow-up in
+`src/lib/recovery.ts` (Recovery page rows and the "Text them now" line in the abandoned-checkout
+owner alert) now ends with "Reply STOP to opt out."; the fleet texts (first text, $197 row,
+paid-driver pitch) also say "I'm independent, not part of Curri."; the fleet follow-up drops
+"You can't lose." Support texts ("Paid, can't get in") are unchanged. The automatic recovery
+EMAIL has its own copy in `lib/email.ts` and is unchanged. Deploy: SAFE (copy only).
+
 ## 🚧 Pending — 2026-10-16: fleet reply email template (Recovery page)
 Owner ask: an email that closes people who REPLY to the abandoned fleet checkout email — how
 the fleet works, the make-it-back guarantee, and what happens step by step after paying.
