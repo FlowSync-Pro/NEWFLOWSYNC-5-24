@@ -90,6 +90,17 @@ export const VERIFY_ITEMS: VerifyItem[] = [
     ],
   },
   {
+    id: "stop-line-texts-2026-10-17",
+    title: "Recovery texts: STOP line + \"not part of Curri\"",
+    since: "Oct 17",
+    risk: "safe",
+    why: "Every sales text ends with \"Reply STOP to opt out.\"; fleet texts say you're independent of Curri; \"You can't lose.\" is gone.",
+    steps: [
+      { text: "Open any abandoned or paid-driver row: the text ends with \"Reply STOP to opt out.\" (fleet rows also \"I'm independent, not part of Curri.\").", href: "/admin/recovery" },
+      { text: "Open a fleet row's follow-up: no \"You can't lose.\", ends with the STOP line." },
+    ],
+  },
+  {
     id: "fleet-reply-email-2026-10-16",
     title: "Recovery: fleet reply email template",
     since: "Oct 16",

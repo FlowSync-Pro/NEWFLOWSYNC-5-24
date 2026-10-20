@@ -31,6 +31,12 @@ const FLEET_SMALL_HOOK =
   "Drive a car, SUV, minivan, cargo van or pickup? Join my Curri fleet: I bid the loads, you run the ones you want, paid every Friday.";
 const FLEET_SMALL_GUARANTEE = `Make your $${FLEET_SMALL.price} back in your first ${FLEET.guaranteeDays} days or I refund all of it. No questions asked.`;
 
+// Every SALES text (first texts and follow-ups) ends with the opt-out line
+// (owner decision 2026-10-17); texts that say "my Curri fleet" also say we're
+// independent of Curri. Support texts to people who already paid don't carry it.
+const STOP = "Reply STOP to opt out.";
+const INDEPENDENT = "I'm independent, not part of Curri.";
+
 /** A driver's personal fleet referral link — the same one their account's "Refer drivers" card shows (ReferralCard). */
 export const fleetReferralLink = (code: string) => `${base()}/?ref=${code}#curri-fleet`;
 
@@ -38,17 +44,17 @@ export const fleetReferralLink = (code: string) => `${base()}/?ref=${code}#curri
 export function recoveryText(product: RecoveryProduct, firstName?: string | null, smallVehicle = false): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
   if (product === "fleet" && smallVehicle) {
-    return `${hi}Nas from FlowSync. ${FLEET_SMALL_HOOK}\n\n${FLEET_SMALL_GUARANTEE}\n\n${base()}${FLEET_SMALL.path}`;
+    return `${hi}Nas from FlowSync. ${FLEET_SMALL_HOOK}\n\n${FLEET_SMALL_GUARANTEE}\n\n${base()}${FLEET_SMALL.path}\n\n${INDEPENDENT} ${STOP}`;
   }
   if (product === "fleet") {
-    return `${hi}Nas from FlowSync. ${FLEET_HOOK}\n\n${FLEET_GUARANTEE}\n\n${base()}/curri-fleet`;
+    return `${hi}Nas from FlowSync. ${FLEET_HOOK}\n\n${FLEET_GUARANTEE}\n\n${base()}/curri-fleet\n\n${INDEPENDENT} ${STOP}`;
   }
   // Listing — direct style (owner decision 2026-10-10), same shape as the fleet text.
   return (
     `${hi}Nas from FlowSync. You were one step from getting listed. ` +
     `Finish and customers can find you and book you directly, at the prices you set.\n\n` +
     `$${listingPrice()} one-time.\n\n` +
-    `${base()}/pricing`
+    `${base()}/pricing\n\n${STOP}`
   );
 }
 
@@ -59,14 +65,14 @@ export function unpaidSignupText(firstName?: string | null): string {
     `${hi}Nas from FlowSync. You made an account, but customers can't find you yet. ` +
     `Get listed and they book you directly, at the prices you set.\n\n` +
     `$${listingPrice()} one-time.\n\n` +
-    `${base()}/pricing`
+    `${base()}/pricing\n\n${STOP}`
   );
 }
 
 /** Text for a paid driver who isn't in the Curri fleet. */
 export function fleetPitchText(firstName?: string | null): string {
   const hi = firstName ? `Hey ${firstName}, ` : "Hey, ";
-  return `${hi}Nas from FlowSync. ${FLEET_HOOK}\n\n${FLEET_GUARANTEE}\n\nJoin from your account: ${base()}/account/curri-fleet`;
+  return `${hi}Nas from FlowSync. ${FLEET_HOOK}\n\n${FLEET_GUARANTEE}\n\nJoin from your account: ${base()}/account/curri-fleet\n\n${INDEPENDENT} ${STOP}`;
 }
 
 /** Text for a Verified driver who hasn't upgraded to Premium — direct style (owner decision 2026-10-10). */
@@ -76,7 +82,7 @@ export function premiumPitchText(firstName?: string | null, premiumPrice = premi
     `${hi}Nas from FlowSync. Want to know what a load is worth before you take it? ` +
     `Premium gives you the bidding calculator (your floor and your bid on every load), the P&L tracker with your cost per mile, and my Curri course.\n\n` +
     `$${premiumPrice} one-time.\n\n` +
-    `${base()}/account/edit`
+    `${base()}/account/edit\n\n${STOP}`
   );
 }
 
@@ -95,9 +101,9 @@ export function fleetFollowUpText(firstName: string | null | undefined, roomThis
   const price = smallVehicle ? FLEET_SMALL.price : FLEET.price;
   return (
     `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
-    `If the fleet doesn't pay for itself in your first ${FLEET.guaranteeDays} days, I refund the $${price}. You can't lose. ` +
+    `If the fleet doesn't pay for itself in your first ${FLEET.guaranteeDays} days, I refund the $${price}. ` +
     (roomThisMonth ? "" : "This month's spots are full, so you'd start next month. ") +
-    link
+    `${link}\n\n${STOP}`
   );
 }
 
@@ -173,7 +179,7 @@ export function fleetReplyEmail(firstName: string | null | undefined, roomThisMo
 export function listingFollowUpText(firstName?: string | null): string {
   return (
     `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
-    `Your listing is one step away, $${listingPrice()} one-time: ${base()}/pricing`
+    `Your listing is one step away, $${listingPrice()} one-time: ${base()}/pricing\n\n${STOP}`
   );
 }
 
@@ -181,7 +187,7 @@ export function listingFollowUpText(firstName?: string | null): string {
 export function unpaidFollowUpText(firstName?: string | null): string {
   return (
     `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
-    `Your account's done. Getting listed is the last step so customers can find you, $${listingPrice()} one-time: ${base()}/pricing`
+    `Your account's done. Getting listed is the last step so customers can find you, $${listingPrice()} one-time: ${base()}/pricing\n\n${STOP}`
   );
 }
 
@@ -191,7 +197,7 @@ export function premiumFollowUpText(firstName?: string | null, premiumPrice = pr
   return (
     `${firstName ? `${firstName}, ` : "Hey, "}Nas again, last one from me. ` +
     `Premium is the business side of your listing: the bidding calculator (your floor and your bid on every load), the P&L tracker, and my Curri course. ` +
-    `$${premiumPrice} one-time: ${base()}/account/edit`
+    `$${premiumPrice} one-time: ${base()}/account/edit\n\n${STOP}`
   );
 }
 
@@ -210,7 +216,7 @@ export function referralAskText(firstName: string | null | undefined, link: stri
     `${hi}it's Nas. ${activated ? "Thanks for running with the fleet." : "Thanks for joining the fleet."} Know any drivers who'd want loads dispatched to them? ` +
     `If someone joins the fleet through your link, I'll send you $${FLEET.referralBonus} once they're activated on the carrier account (they need to be new to FlowSync and sign up through your link). ` +
     (link ? `Your link: ${link} ` : `Your personal link is in your account under "Refer drivers": ${base()}/account `) +
-    `— if you share it, just mention you get a bonus if they join.`
+    `— if you share it, just mention you get a bonus if they join.\n\n${STOP}`
   );
 }
 
